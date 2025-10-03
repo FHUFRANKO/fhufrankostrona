@@ -1,0 +1,76 @@
+<analysis>
+The trajectory documents the evolution of a React application from a general car marketplace to a specialized BUS/LCV marketplace for a company named FHU FRANKO. The initial AI engineer successfully pivoted the application's theme, mock data, and UI components to match the new niche. Following this, the engineer implemented several user requests iteratively: creating a Kontakt page with a functional form, building an O nas (About Us) page with company details and statistics, updating the footer with correct business information, and removing the login button from the header. The engineer also handled requests to create production builds of the application, copying them to specified folders (, ), and updated the website's title and meta tags for SEO.
+
+The most recent and substantial task was a major overhaul based on a detailed specification. This included a global rebrand from BUSY/LCV to BUSY/DOSTAWCZE, significant content updates on the homepage, implementation of advanced, multi-parameter filters on the listings page, extending the data model for listings with detailed cargo dimensions and equipment, and revamping the contact form. The final piece of this overhaul was to add an AI-powered description generator to the admin panel, which used a Handlebars template to create listing descriptions based on form data. The engineer was in the middle of implementing this generator when a request to create a build failed, marking the end of the trajectory.
+</analysis>
+
+<product_requirements>
+The project's goal is to build and refine a specialized web marketplace for FHU FRANKO, a company dealing in commercial vehicles (BUSY/DOSTAWCZE).
+
+**Initial State & Pivot:** The application began as a generic car marketplace. The primary requirement was to pivot entirely to a commercial vehicle (LCV/Bus) focus. This involved removing functionalities like financing and public listings, and updating all content, branding, and mock data to reflect the new specialization.
+
+**Core Features Implemented:**
+*   **Static Pages:** Creation of a Kontakt (Contact) page with company details and a functional contact form, and an O nas (About Us) page detailing the company's history, values, and statistics.
+*   **UI/Branding:** The UI was updated to use the FHU FRANKO – Autohandel BUSY/DOSTAWCZE branding consistently across the Header, Footer, and page titles. The login functionality was removed. All content was localized to Polish.
+*   **Homepage:** The homepage was extensively modified with new hero section text, updated benefit tiles, new content sections for vehicle categories, and an About Us summary.
+*   **Advanced Filtering:** The listings page was enhanced with a persistent, multi-parameter filtering system including Brand (with result counts), Body Type, Price range, and Year range, all reflected in URL query parameters.
+*   **Admin Panel:** The mock admin panel's form for adding new listings was updated to allow free-text input for all fields instead of dropdowns and was expanded to include a comprehensive list of checkboxes for vehicle equipment.
+
+**Current Major Requirement (In Progress):**
+*   **AI Description Generator:** Implement a smart description generator within the admin panel. This tool should auto-generate a detailed, formatted sales description for a vehicle based on the data entered into the form, using a pre-defined Handlebars template. This includes a UI for enabling/disabling auto-generation and adding new form fields for cargo dimensions.
+</product_requirements>
+
+<key_technical_concepts>
+- **Frontend Framework:** React.
+- **UI Components:** Shadcn UI library.
+- **Styling:** Tailwind CSS for utility-first styling.
+- **Routing:**  for client-side navigation.
+- **State Management:** React Hooks (, ).
+- **Mock Data-Driven:** Development relies heavily on a central  file for all application data.
+- **Build Tool:** CRACO (a configuration layer for Create React App).
+- **Templating:** Handlebars.js for the AI description generator.
+</key_technical_concepts>
+
+<code_architecture>
+The application is a frontend-only React application that uses a mock data file instead of a live backend.
+
+
+
+-   **/app/frontend/public/index.html**: This file is the main HTML template. It was important for setting the global page title, meta descriptions for SEO, and language attribute (). It was last modified to change the site title to FHU FRANKO - Sprzedaż busów.
+-   **/app/frontend/src/App.js**: The root component that sets up the application's routing using . It was modified multiple times to add routes for newly created pages like  and , linking them to their respective components (, ).
+-   **/app/frontend/src/mock.js**: A critical file that acts as the application's database. It was extensively modified to pivot from car data to bus data. It was later updated with new body types (), expanded equipment lists, and new company benefit descriptions () to support various UI changes.
+-   **/app/frontend/src/components/Header.jsx**: The main navigation component. It was modified to update the brand name to FHU FRANKO – Autohandel BUSY/DOSTAWCZE, change the contact phone number, and remove the Logowanie (Login) button from both desktop and mobile views.
+-   **/app/frontend/src/components/Footer.jsx**: The site footer. This was significantly overhauled to display correct and detailed company information, including address, contact details, opening hours, and updated navigation links consistent with the site's focus.
+-   **/app/frontend/src/pages/HomePage.jsx**: The main landing page. This file saw the most content changes, including updates to the H1 hero title, subtitle, benefit sections, and the addition of new sections for vehicle categories and a company summary.
+-   **/app/frontend/src/pages/KontaktPage.jsx**: A newly created page to display company contact information and a contact form. The form logic was later updated to match new requirements (new fields, labels, and success message).
+-   **/app/frontend/src/pages/ONasPage.jsx**: A newly created About Us page. It was built from scratch to present the company's story, values, and key statistics. A statistic for kraje importu (import countries) was later updated from 4 to 6.
+-   **/app/frontend/src/pages/CarListingPage.jsx**: This page displays the vehicle listings. It was significantly refactored to remove old filter logic and integrate the new  component. The filtering logic was updated to work with URL query parameters.
+-   **/app/frontend/src/components/AdvancedFilters.jsx**: A new component created to house the advanced filtering UI. It was initially built with three controls (Brand, Body Type, and a Price/Year toggle). It was later modified to display four separate controls, removing the toggle and showing price and year filters simultaneously.
+-   **/app/frontend/src/pages/AdminPanel.jsx**: This mock admin panel was heavily modified. First, all  inputs in the Add Bus form were replaced with free-text  fields. Then, the equipment checklist was massively expanded. Most recently, it was being modified to integrate the  component, including adding new form fields for cargo dimensions and the generator's UI controls.
+-   **/app/frontend/src/components/DescriptionGenerator.jsx**: A new component created to house the logic for the AI description generator. It contains the Handlebars template and the function to process vehicle data and generate the description. This component's implementation was in progress.
+</code_architecture>
+
+<pending_tasks>
+- Complete the implementation and integration of the AI-powered description generator in the Admin Panel.
+- Debug and fix the error preventing the successful creation of the production build (yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.).
+- Create the  and  folders as requested by the user once the build process is fixed.
+</pending_tasks>
+
+<current_work>
+The most recent work was focused on implementing a sophisticated AI-powered description generator for vehicle listings within the mock Admin Panel, as per a very detailed user specification.
+
+This involved several concurrent tasks:
+1.  **UI Expansion in **: New UI elements were being added to the Add Bus form. This included four new input fields for specific cargo dimensions (, , etc.) and a new section for the generator itself, containing a checkbox to enable/disable auto-generation, a button to refresh the description from the template, and a  to display the generated output.
+2.  **State Management**: The component's state () in  was being extended to include the new fields for cargo dimensions and other metadata required by the generator template (e.g., , ).
+3.  **Generator Logic in **: A new component was created to encapsulate the generator's logic. This component contains a hardcoded Handlebars template string and the core  function, which takes vehicle data, processes it according to the template's logic (conditionals, loops), and returns a formatted description string. This implementation included creating custom Handlebars helpers (, , etc.) to handle data formatting.
+4.  **Integration**: The  function in  was being modified to automatically call the  function whenever a form field changed, providing a real-time preview of the description.
+
+Immediately before the summary request, the user asked to create a production build. The AI engineer attempted to run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command., but the command failed with a  error, indicating a potential issue with the recent code changes made while implementing the description generator. The work stopped at this point, with the generator's implementation incomplete and the build process broken.
+</current_work>
+
+<optional_next_step>
+I will investigate the yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. failure. This likely involves checking for syntax errors, dependency issues, or incorrect configurations introduced during the recent, complex changes related to the description generator.
+</optional_next_step>
