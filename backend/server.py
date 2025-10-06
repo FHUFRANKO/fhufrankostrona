@@ -73,3 +73,13 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# --- Static frontend (SPA) serwowany przez FastAPI ---
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+_PUBLIC_DIR = Path(__file__).parent / "public"
+if _PUBLIC_DIR.exists():
+    # Uwaga: API-routry powinny być zarejestrowane powyżej.
+    # html=True → index.html jako fallback dla tras SPA.
+    app.mount("/", StaticFiles(directory=str(_PUBLIC_DIR), html=True), name="frontend")
