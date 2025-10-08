@@ -1,15 +1,11 @@
 # --- Build frontendu (React/CRACO) ---
 FROM node:20-alpine AS fe
 WORKDIR /app/frontend
-COPY frontend/package.json ./
-# skopiuj locka jeśli istnieje (nie przerywaj, jeśli go nie ma)
-COPY frontend/yarn.lock ./ 2>/dev/null || true
-RUN corepack enable
-# install: preferuj yarn, fallback na npm
-RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
-    else npm ci || npm install; fi
-COPY frontend ./
-RUN if [ -f package.json ]; then \
+# kopiujemy cały frontend (to proste i pewne)
+COPY frontend/ ./
+RUN corepack enable \
+ && if [ -f yarn.lock ]; then yarn install --frozen-lockfile; else npm ci || npm install; fi \
+ && if [ -f package.json ]; then \
       if [ -f yarn.lock ]; then yarn build; else npm run build; fi; \
     fi
 
@@ -20,18 +16,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 WORKDIR /app
 
-# skopiuj cały backend i zainstaluj zależności jeśli istnieją
+# kod backendu i zależności (jeśli plik istnieje)
 COPY backend ./backend
 RUN if [ -f backend/requirements.txt ]; then \
       pip install --no-cache-dir -r backend/requirements.txt; \
     fi
 
-# wgraj build frontu do backend/public (jeśli zbudowano)
+# statyczny build frontu trafia do backend/public
 RUN mkdir -p ./backend/public
 COPY --from=fe /app/frontend/build ./backend/public
 
 WORKDIR /app/backend
 EXPOSE 8000
 ENV PORT=8000
-# uruchom FastAPI / Uvicorn – nie zmienia kodu
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
