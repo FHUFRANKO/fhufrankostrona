@@ -15,7 +15,27 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.getenv('MONGO_URL')
+
+
+# --- optional MongoDB init (skipped when MONGO_URL is not set) ---
+client = None
+db = None
+if mongo_url:
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+        client = AsyncIOMotorClient(mongo_url)
+        try:
+            db = client.get_default_database()
+        except Exception:
+            pass
+    except Exception:
+        # If motor is not installed or URL invalid, skip silently
+        pass
+else:
+    import logging
+    logging.warning("MONGO_URL not set; skipping MongoDB init")
+# --- end optional MongoDB init ---
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
