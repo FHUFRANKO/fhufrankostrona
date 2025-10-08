@@ -18,6 +18,27 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.getenv('MONGO_URL')
 
 
+
+db_name = os.getenv('DB_NAME')
+
+# --- Optional MongoDB init (skipped when MONGO_URL or DB_NAME is missing) ---
+client = None
+db = None
+if mongo_url and db_name:
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+        client = AsyncIOMotorClient(mongo_url)
+        try:
+            db = client[db_name]
+        except Exception:
+            db = None
+    except Exception:
+        client = None
+        db = None
+else:
+    import logging
+    logging.warning("Mongo disabled: MONGO_URL or DB_NAME not set")
+# --- end optional MongoDB init ---
 # --- optional MongoDB init (skipped when MONGO_URL is not set) ---
 client = None
 db = None
@@ -37,7 +58,7 @@ else:
     logging.warning("MONGO_URL not set; skipping MongoDB init")
 # --- end optional MongoDB init ---
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.getenv('DB_NAME')]
 
 # Create the main app without a prefix
 app = FastAPI()

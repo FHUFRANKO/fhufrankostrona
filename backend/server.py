@@ -29,7 +29,7 @@ if mongo_url and db_name:
         from motor.motor_asyncio import AsyncIOMotorClient
         client = AsyncIOMotorClient(mongo_url)
         try:
-            db = client[db_name]
+            db = (client[db_name] if (client is not None and db_name) else None)
         except Exception:
             db = None
     except Exception:
@@ -58,7 +58,7 @@ else:
     logging.warning("MONGO_URL not set; skipping MongoDB init")
 # --- end optional MongoDB init ---
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.getenv('DB_NAME')]
+db = (client[db_name] if (client is not None and db_name) else None)
 
 # Create the main app without a prefix
 app = FastAPI()
