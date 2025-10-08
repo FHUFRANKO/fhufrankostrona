@@ -1,3 +1,4 @@
+providers = ["python", "node"]
+
 [phases.setup]
-# Python i Node (z Yarnem przez corepack)
 nixPkgs = ["python311", "nodejs_20"]
