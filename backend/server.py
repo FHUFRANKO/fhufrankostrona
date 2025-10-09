@@ -1,4 +1,6 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import FileResponse
+from admin_gate import require_admin, gate_page, login_api, APIRouter
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -124,3 +126,23 @@ if _PUBLIC_DIR.exists():
     # Uwaga: API-routry powinny być zarejestrowane powyżej.
     # html=True → index.html jako fallback dla tras SPA.
     app.mount("/", StaticFiles(directory=str(_PUBLIC_DIR), html=True), name="frontend")
+
+
+@app.get("/admin-gate")
+async def admin_gate(request: Request):
+    key = request.query_params.get("key")
+    return gate_page(key)
+
+@app.post("/api/admin/login")
+async def admin_login(payload: dict):
+    return await login_api(payload)
+
+# przykład ochrony: wejście do panelu
+@app.get("/admin")
+async def admin_root(_=Depends(require_admin)):
+    # jeśli panel to SPA z public/index.html – dostosuj ścieżkę:
+    try:
+        return FileResponse("public/index.html")
+    except Exception:
+        # fallback — jeśli admin ma osobny index
+        return FileResponse("public/admin/index.html")
