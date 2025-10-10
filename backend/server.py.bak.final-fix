@@ -172,7 +172,8 @@ except Exception:
     # nic nie wysadzaj – w razie czego sprawdzimy w logach
     pass
 
-:
+# --- attach routers at module end (after app & routers exist) ---
+def _attach_routers():
     try:
         if "app" in globals() and "api_router" in globals():
     except Exception:
@@ -183,18 +184,21 @@ except Exception:
         pass
 
 _attach_routers()
-:
+# --- attach routers at module end (after app & routers exist) ---
+def _attach_routers_safely():
     try:
         # upewnij się, że app istnieje i jest FastAPI
         if 'app' in globals() and isinstance(app, FastAPI):
             # dołącz API router jeśli istnieje
             if 'api_router' in globals():
                 try:
+                    app.include_router(api_router)
                 except Exception:
                     pass
             # dołącz ADMIN router jeśli istnieje
             if 'admin_router' in globals():
                 try:
+                    app.include_router(admin_router)
                 except Exception:
                     pass
     except Exception:
@@ -202,24 +206,3 @@ _attach_routers()
         pass
 
 _attach_routers_safely()
-
-# --- attach routers (final, safe) ---
-def _final_attach_routers():
-    try:
-        from fastapi import FastAPI as _F
-        if "app" not in globals() or not isinstance(app, _F):
-            return
-        if "api_router" in globals():
-            try:
-                app.include_router(api_router)
-            except Exception:
-                pass
-        if "admin_router" in globals():
-            try:
-                app.include_router(admin_router)
-            except Exception:
-                pass
-    except Exception:
-        pass
-
-_final_attach_routers()
