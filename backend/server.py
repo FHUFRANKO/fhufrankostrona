@@ -1,228 +1,73 @@
-from fastapi import FastAPI, Request, HTTPException, APIRouter, APIRouter, Depends, Request
-from fastapi.responses import FileResponse
-from admin_gate import require_admin, gate_page, login_api
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
-import uuid
-from datetime import datetime
+from typing import Optional
 
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse, JSONResponse
+from starlette.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+# Admin gate helpers
+from admin_gate import require_admin, gate_page, login_api
 
-# MongoDB connection
-mongo_url = os.getenv('MONGO_URL')
+ROOT = Path(__file__).parent
+PUBLIC_DIR = ROOT / "public"
+INDEX_FILE = PUBLIC_DIR / "index.html"
 
+# --- App ---
+app = FastAPI()
 
-
-db_name = os.getenv('DB_NAME')
-
-# --- Optional MongoDB init (skipped when MONGO_URL or DB_NAME is missing) ---
-except Exception:
-    pass
-client = None
-db = None
-if mongo_url and db_name:
-    try:
-        from motor.motor_asyncio import AsyncIOMotorClient
-        client = AsyncIOMotorClient(mongo_url)
-        try:
-            db = (client[db_name] if (client is not None and db_name) else None)
-
-            db = None
-
-        client = None
-        db = None
-    except Exception:
-        pass
-else:
-    import logging
-    logging.warning("Mongo disabled: MONGO_URL or DB_NAME not set")
-# --- end optional MongoDB init ---
-# --- optional MongoDB init (skipped when MONGO_URL is not set) ---
-client = None
-db = None
-if mongo_url:
-    try:
-        from motor.motor_asyncio import AsyncIOMotorClient
-        client = AsyncIOMotorClient(mongo_url)
-        try:
-            db = client.get_default_database()
-
-            pass
-
-        # If motor is not installed or URL invalid, skip silently
-        pass
-else:
-    import logging
-    logging.warning("MONGO_URL not set; skipping MongoDB init")
-# --- end optional MongoDB init ---
-client = AsyncIOMotorClient(mongo_url)
-db = (client[db_name] if (client is not None and db_name) else None)
-
-# Create the main app without a prefix
-
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
-
-# Include the router in the main app
-
+# CORS (open by default, możesz ograniczyć przez env CORS_ALLOW_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "*").split(","),
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Static /public (assets)
+if PUBLIC_DIR.exists():
+    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# --- Optional Mongo (bez crasha, jeśli brak envów) ---
+client = None
+db = None
+MONGO_URL = os.getenv("MONGO_URL")
+DB_NAME = os.getenv("DB_NAME")
+if MONGO_URL and DB_NAME:
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+        client = AsyncIOMotorClient(MONGO_URL)
+        db = client[DB_NAME]
+    except Exception as e:
+        logging.warning("Mongo init failed: %s", e)
+else:
+    logging.warning("Mongo disabled: MONGO_URL or DB_NAME not set")
 
-# --- Static frontend (SPA) serwowany przez FastAPI ---
-from pathlib import Path
-from fastapi.staticfiles import StaticFiles
-
-_PUBLIC_DIR = Path(__file__).parent / "public"
-if _PUBLIC_DIR.exists():
-    # Uwaga: API-routry powinny być zarejestrowane powyżej.
-    # html=True → index.html jako fallback dla tras SPA.
-    app.mount("/", StaticFiles(directory=str(_PUBLIC_DIR), html=True), name="frontend")
-
-
-@app.get("/admin-gate")
+# --- Admin routes ---
+@app.get("/admin-gate", response_class=HTMLResponse)
 async def admin_gate(request: Request):
     key = request.query_params.get("key")
     return gate_page(key)
 
 @app.post("/api/admin/login")
-async def admin_login(payload: dict):
-    return await login_api(payload)
+async def admin_login(request: Request):
+    return await login_api(request)
 
-# przykład ochrony: wejście do panelu
+@app.get("/admin")
+async def admin_panel(request: Request, _=Depends(require_admin)):
+    admin_index = PUBLIC_DIR / "admin" / "index.html"
+    if admin_index.exists():
+        return FileResponse(str(admin_index))
+    if INDEX_FILE.exists():
+        return FileResponse(str(INDEX_FILE))
+    return HTMLResponse("<h1>Admin OK</h1>")
 
-
-
-admin_router = APIRouter()
-
-@admin_router.get("/admin-gate", response_class=HTMLResponse)
-async def admin_gate(request: Request):
-    key = request.query_params.get("key")
-    return gate_page(key)
-
-@admin_router.post("/api/admin/login")
-async def admin_login(payload: dict):
-    return await login_api(payload)
-
-@admin_router.get("/admin")
-async def admin_root(request: Request):
-    # 1) jeśli masz już cookie -> serwuj index frontu
-    if _has_admin_cookie(request):
-        candidate = "public/index.html"
-        if not os.path.exists(candidate):
-            raise HTTPException(status_code=404, detail="Admin index not found")
-        return FileResponse(candidate)
-    # 2) pierwszy raz: jeśli jest key w URL -> pokaż bramkę
-    key = request.query_params.get("key")
-    if key:
-        return gate_page(key)
-    # 3) inaczej przekieruj na bramkę
-    return RedirectResponse("/admin-gate", status_code=307)
-
-# --- attach admin router (placed at end, after app & admin_router exist) ---
-try:
-    if "app" in globals() and "admin_router" in globals():
-
-    # nic nie wysadzaj – w razie czego sprawdzimy w logach
-    pass
-
-:
-    try:
-        if "app" in globals() and "api_router" in globals():
-
-        pass
-    try:
-        if "app" in globals() and "admin_router" in globals():
-
-        pass
-
-_attach_routers()
-:
-    try:
-        # upewnij się, że app istnieje i jest FastAPI
-        if 'app' in globals() and isinstance(app, FastAPI):
-            # dołącz API router jeśli istnieje
-            if 'api_router' in globals():
-                try:
-
-                    pass
-            # dołącz ADMIN router jeśli istnieje
-            if 'admin_router' in globals():
-                try:
-
-                    pass
-
-        # nic nie wysadzaj – najwyżej sprawdzimy logi
-        pass
-
-_attach_routers_safely()
-# --- attach routers (final & safe) ---
-def _final_attach():
-    from fastapi import FastAPI as _F
-    app_obj = globals().get("app")
-    if not isinstance(app_obj, _F):
-        return
-    r = globals().get("api_router")
-    if r is not None:
-        try:
-            app_obj.include_router(r)
-        except Exception:
-            pass
-    r = globals().get("admin_router")
-    if r is not None:
-        try:
-            app_obj.include_router(r)
-        except Exception:
-            pass
-
-_final_attach()
+# --- SPA fallback (serve index.html) ---
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    if INDEX_FILE.exists():
+        return FileResponse(str(INDEX_FILE))
+    return HTMLResponse("<h1>OK</h1>")
