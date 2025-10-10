@@ -95,6 +95,7 @@ async def get_status_checks():
     return [StatusCheck(**status_check) for status_check in status_checks]
 
 # Include the router in the main app
+app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -168,21 +169,7 @@ async def admin_root(request: Request):
 # --- attach admin router (placed at end, after app & admin_router exist) ---
 try:
     if "app" in globals() and "admin_router" in globals():
+        app.include_router(admin_router)
 except Exception:
     # nic nie wysadzaj – w razie czego sprawdzimy w logach
     pass
-
-# --- attach routers at module end (after app & routers exist) ---
-def _attach_routers():
-    try:
-        if "app" in globals() and "api_router" in globals():
-            app.include_router(api_router)
-    except Exception:
-        pass
-    try:
-        if "app" in globals() and "admin_router" in globals():
-            app.include_router(admin_router)
-    except Exception:
-        pass
-
-_attach_routers()
