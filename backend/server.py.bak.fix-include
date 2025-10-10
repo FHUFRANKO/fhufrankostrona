@@ -63,6 +63,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = (client[db_name] if (client is not None and db_name) else None)
 
 # Create the main app without a prefix
+\1
 app.include_router(admin_router)
 
 # Create a router with the /api prefix
