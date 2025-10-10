@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, Request
+from fastapi import FastAPI, Request, HTTPException, APIRouter, APIRouter, Depends, Request
 from fastapi.responses import FileResponse
 from admin_gate import require_admin, gate_page, login_api
 from dotenv import load_dotenv
@@ -63,7 +63,8 @@ client = AsyncIOMotorClient(mongo_url)
 db = (client[db_name] if (client is not None and db_name) else None)
 
 # Create the main app without a prefix
-app = FastAPI()
+\1
+app.include_router(admin_router)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -140,17 +141,29 @@ async def admin_login(payload: dict):
 # przykład ochrony: wejście do panelu
 
 
-@app.get("/admin")
+
+admin_router = APIRouter()
+
+@admin_router.get("/admin-gate", response_class=HTMLResponse)
+async def admin_gate(request: Request):
+    key = request.query_params.get("key")
+    return gate_page(key)
+
+@admin_router.post("/api/admin/login")
+async def admin_login(payload: dict):
+    return await login_api(payload)
+
+@admin_router.get("/admin")
 async def admin_root(request: Request):
-    # masz już ważną sesję?
+    # 1) jeśli masz już cookie -> serwuj index frontu
     if _has_admin_cookie(request):
-        candidate="public/index.html"
+        candidate = "public/index.html"
         if not os.path.exists(candidate):
-            # awaryjny fallback – nie dotyka frontu
             raise HTTPException(status_code=404, detail="Admin index not found")
         return FileResponse(candidate)
-    # pierwszy raz: jeśli przyszedłeś z key -> pokaż bramkę; jeśli nie -> przekieruj
+    # 2) pierwszy raz: jeśli jest key w URL -> pokaż bramkę
     key = request.query_params.get("key")
     if key:
         return gate_page(key)
+    # 3) inaczej przekieruj na bramkę
     return RedirectResponse("/admin-gate", status_code=307)
