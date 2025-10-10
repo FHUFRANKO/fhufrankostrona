@@ -32,9 +32,9 @@ if mongo_url and db_name:
         client = AsyncIOMotorClient(mongo_url)
         try:
             db = (client[db_name] if (client is not None and db_name) else None)
-
+        except Exception:
             db = None
-
+    except Exception:
         client = None
         db = None
 else:
@@ -50,9 +50,9 @@ if mongo_url:
         client = AsyncIOMotorClient(mongo_url)
         try:
             db = client.get_default_database()
-
+        except Exception:
             pass
-
+    except Exception:
         # If motor is not installed or URL invalid, skip silently
         pass
 else:
@@ -168,18 +168,18 @@ async def admin_root(request: Request):
 # --- attach admin router (placed at end, after app & admin_router exist) ---
 try:
     if "app" in globals() and "admin_router" in globals():
-
+except Exception:
     # nic nie wysadzaj – w razie czego sprawdzimy w logach
     pass
 
 :
     try:
         if "app" in globals() and "api_router" in globals():
-
+    except Exception:
         pass
     try:
         if "app" in globals() and "admin_router" in globals():
-
+    except Exception:
         pass
 
 _attach_routers()
@@ -190,35 +190,36 @@ _attach_routers()
             # dołącz API router jeśli istnieje
             if 'api_router' in globals():
                 try:
-
+                except Exception:
                     pass
             # dołącz ADMIN router jeśli istnieje
             if 'admin_router' in globals():
                 try:
-
+                except Exception:
                     pass
-
+    except Exception:
         # nic nie wysadzaj – najwyżej sprawdzimy logi
         pass
 
 _attach_routers_safely()
-# --- attach routers (final & safe) ---
-def _final_attach():
-    from fastapi import FastAPI as _F
-    app_obj = globals().get("app")
-    if not isinstance(app_obj, _F):
-        return
-    r = globals().get("api_router")
-    if r is not None:
-        try:
-            app_obj.include_router(r)
-        except Exception:
-            pass
-    r = globals().get("admin_router")
-    if r is not None:
-        try:
-            app_obj.include_router(r)
-        except Exception:
-            pass
 
-_final_attach()
+# --- attach routers (final, safe) ---
+def _final_attach_routers():
+    try:
+        from fastapi import FastAPI as _F
+        if "app" not in globals() or not isinstance(app, _F):
+            return
+        if "api_router" in globals():
+            try:
+                app.include_router(api_router)
+            except Exception:
+                pass
+        if "admin_router" in globals():
+            try:
+                app.include_router(admin_router)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+_final_attach_routers()
