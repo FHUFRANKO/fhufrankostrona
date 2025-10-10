@@ -24,6 +24,8 @@ mongo_url = os.getenv('MONGO_URL')
 db_name = os.getenv('DB_NAME')
 
 # --- Optional MongoDB init (skipped when MONGO_URL or DB_NAME is missing) ---
+except Exception:
+    pass
 client = None
 db = None
 if mongo_url and db_name:
