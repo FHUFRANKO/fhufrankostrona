@@ -139,31 +139,18 @@ async def admin_login(payload: dict):
 
 # przykład ochrony: wejście do panelu
 
+
 @app.get("/admin")
 async def admin_root(request: Request):
-    # 1) jeśli mamy cookie admina -> serwuj plik
+    # masz już ważną sesję?
     if _has_admin_cookie(request):
-        # plik zbudowanego frontu (Docker kopiuje do ./public)
-        candidate = "public/index.html"
+        candidate="public/index.html"
         if not os.path.exists(candidate):
-            # fallback – jeśli build jest gdzie indziej (awaryjnie)
-            alt = os.path.join(os.getcwd(), "public", "index.html")
-            if os.path.exists(alt):
-                candidate = alt
-            else:
-                # ostatecznie 404 – ale to nie powinno się zdarzyć skoro / działa
-                raise HTTPException(status_code=404, detail="Admin index not found")
+            # awaryjny fallback – nie dotyka frontu
+            raise HTTPException(status_code=404, detail="Admin index not found")
         return FileResponse(candidate)
-
-    # 2) jeśli jest key w URL -> pokaż bramkę z formularzem
+    # pierwszy raz: jeśli przyszedłeś z key -> pokaż bramkę; jeśli nie -> przekieruj
     key = request.query_params.get("key")
     if key:
-        # gate_page zwraca gotowy HTML z formularzem
-        try:
-            from admin_gate import gate_page
-            return gate_page(key)
-        except Exception:
-            return RedirectResponse("/admin-gate?key="+key, status_code=307)
-
-    # 3) inaczej przekieruj na bramkę
+        return gate_page(key)
     return RedirectResponse("/admin-gate", status_code=307)
