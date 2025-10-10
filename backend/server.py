@@ -37,6 +37,8 @@ if mongo_url and db_name:
 
         client = None
         db = None
+    except Exception:
+        pass
 else:
     import logging
     logging.warning("Mongo disabled: MONGO_URL or DB_NAME not set")
