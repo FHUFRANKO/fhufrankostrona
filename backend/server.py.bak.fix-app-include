@@ -63,6 +63,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = (client[db_name] if (client is not None and db_name) else None)
 
 # Create the main app without a prefix
+app.include_router(admin_router)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -165,11 +166,3 @@ async def admin_root(request: Request):
         return gate_page(key)
     # 3) inaczej przekieruj na bramkę
     return RedirectResponse("/admin-gate", status_code=307)
-
-# --- attach admin router (placed at end, after app & admin_router exist) ---
-try:
-    if "app" in globals() and "admin_router" in globals():
-        app.include_router(admin_router)
-except Exception:
-    # nic nie wysadzaj – w razie czego sprawdzimy w logach
-    pass
