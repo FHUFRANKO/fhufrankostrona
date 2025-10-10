@@ -32,38 +32,39 @@ async def require_admin(request: Request):
     # 3) inaczej blokada
     raise HTTPException(status_code=403, detail="Admin access required")
 
-def gate_page(key: Optional[str]) -> HTMLResponse:
-    # prosta strona z formularzem (styl minimalny)
-    html = f"""<!doctype html>
+def gate_page(*_args, **_kwargs) -> HTMLResponse:
+    html = """<!doctype html>
 <html lang="pl"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Panel Admina — bramka</title>
 <style>
-body{{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa}}
-.card{{background:#fff;padding:24px 28px;border-radius:14px;box-shadow:0 10px 35px rgba(0,0,0,.08);max-width:380px;width:100%}}
-h1{{font-size:18px;margin:0 0 12px}}
-input{{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none}}
-button{{margin-top:12px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:#f0b400;font-weight:600;font-size:16px;cursor:pointer}}
-small{{color:#666}}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa}
+.card{background:#fff;padding:24px 28px;border-radius:14px;box-shadow:0 10px 35px rgba(0,0,0,.08);max-width:380px;width:100%}
+h1{font-size:18px;margin:0 0 12px}
+input{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:16px;outline:none}
+button{margin-top:12px;width:100%;padding:12px 14px;border:0;border-radius:10px;background:#f0b400;font-weight:600;font-size:16px;cursor:pointer}
+small{color:#666}
 </style>
 </head><body>
 <div class="card">
 <h1>Wpisz kod dostępu</h1>
 <form id="f">
 <input name="code" placeholder="Kod" autocomplete="one-time-code" required />
-<input type="hidden" name="key" value="{(key or '')}"/>
+<input type="hidden" name="key" id="kField" />
 <button>Potwierdź</button>
 <small>Masz dedykowany link i kod. Nie udostępniaj dalej.</small>
 </form>
 <script>
 const f=document.getElementById('f');
+const q=new URLSearchParams(location.search);
+document.getElementById('kField').value = q.get('key') || '';
 f.addEventListener('submit', async(e)=>{
   e.preventDefault();
   const fd=new FormData(f);
-  const r=await fetch('/api/admin/login', {{
+  const r=await fetch('/api/admin/login', {
     method:'POST',
-    headers:{{'Content-Type':'application/json'}},
-    body: JSON.stringify({{ code: fd.get('code'), key: fd.get('key') }})
-  }});
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ code: fd.get('code'), key: fd.get('key') })
+  });
   if(r.status===200) location.href='/admin';
   else alert('Niepoprawny kod lub link.');
 });

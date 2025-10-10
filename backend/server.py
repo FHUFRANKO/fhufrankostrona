@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import FileResponse
-from admin_gate import require_admin, gate_page, login_api, APIRouter
+from admin_gate import require_admin, gate_page, login_api
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
