@@ -138,11 +138,32 @@ async def admin_login(payload: dict):
     return await login_api(payload)
 
 # przykład ochrony: wejście do panelu
+
 @app.get("/admin")
-async def admin_root(_=Depends(require_admin)):
-    # jeśli panel to SPA z public/index.html – dostosuj ścieżkę:
-    try:
-        return FileResponse("public/index.html")
-    except Exception:
-        # fallback — jeśli admin ma osobny index
-        return FileResponse("public/admin/index.html")
+async def admin_root(request: Request):
+    # 1) jeśli mamy cookie admina -> serwuj plik
+    if _has_admin_cookie(request):
+        # plik zbudowanego frontu (Docker kopiuje do ./public)
+        candidate = "public/index.html"
+        if not os.path.exists(candidate):
+            # fallback – jeśli build jest gdzie indziej (awaryjnie)
+            alt = os.path.join(os.getcwd(), "public", "index.html")
+            if os.path.exists(alt):
+                candidate = alt
+            else:
+                # ostatecznie 404 – ale to nie powinno się zdarzyć skoro / działa
+                raise HTTPException(status_code=404, detail="Admin index not found")
+        return FileResponse(candidate)
+
+    # 2) jeśli jest key w URL -> pokaż bramkę z formularzem
+    key = request.query_params.get("key")
+    if key:
+        # gate_page zwraca gotowy HTML z formularzem
+        try:
+            from admin_gate import gate_page
+            return gate_page(key)
+        except Exception:
+            return RedirectResponse("/admin-gate?key="+key, status_code=307)
+
+    # 3) inaczej przekieruj na bramkę
+    return RedirectResponse("/admin-gate", status_code=307)
