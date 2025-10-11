@@ -1,14 +1,11 @@
 import React from 'react';
 import AdsGrid from './components/AdsGrid';
-import AdDetails from './components/AdDetails';
 
-let Original: any = null;
-// @ts-ignore
-try { Original = require('./AppOriginal').default; } catch(e) {}
-
-export default function App() {
-  const path = typeof window !== 'undefined' ? window.location.pathname : '/';
-  if (path === '/' || path.startsWith('/ogloszenia')) return <AdsGrid />;
-  if (path.startsWith('/ogloszenie/')) return <AdDetails />;
-  return Original ? <Original /> : <AdsGrid />;
+function App() {
+  return (
+    <div>
+      <AdsGrid />
+    </div>
+  );
 }
+export default App;
