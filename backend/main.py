@@ -1,16 +1,20 @@
 from pathlib import Path
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
-# 1) Spróbuj użyć Twojej aplikacji, jeśli masz backend/server.py:app
+# Jeśli masz własne API w backend/server.py z obiektem `app`, to go użyj:
 try:
     from .server import app  # type: ignore
 except Exception:
-    from fastapi import FastAPI
     app = FastAPI()
 
-# 2) Serwuj zbudowany frontend (SPA fallback)
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+# Prosty healthcheck dla Railway
+@app.get("/healthz", include_in_schema=False)
+def healthz():
+    return PlainTextResponse("ok")
 
+# Serwowanie zbudowanego frontendu (SPA)
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_BUILD = BASE_DIR / "frontend" / "build"
 
@@ -20,9 +24,10 @@ if FRONTEND_BUILD.exists():
         app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     @app.get("/", include_in_schema=False)
-    async def index():
+    def index():
         return FileResponse(FRONTEND_BUILD / "index.html")
 
     @app.get("/{full_path:path}", include_in_schema=False)
-    async def spa(full_path: str):
-        return FileResponse(FRONTEND_BUILD / "index.html")
+    def spa(full_path: str):
+        index = FRONTEND_BUILD / "index.html"
+        return FileResponse(index if index.exists() else FRONTEND_BUILD / "index.html")
