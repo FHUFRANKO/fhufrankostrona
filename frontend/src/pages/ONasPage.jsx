@@ -48,7 +48,7 @@ export const ONasPage = () => {
   const statystyki = [
     { liczba: "500+", opis: "Sprzedanych pojazdów" },
     { liczba: "15+", opis: "Lat doświadczenia" },
-    { liczba: "6", opis: "Kraje importu" },
+    { liczba: "4", opis: "Kraje importu" },
     { liczba: "100%", opis: "Zadowolonych klientów" }
   ];
 
@@ -90,7 +90,7 @@ export const ONasPage = () => {
                 FHU FRANKO
               </h1>
               <p className="text-lg text-[#838282] mt-2">
-                Autohandel BUSY/DOSTAWCZE
+                Autohandel BUSY/LCV
               </p>
             </div>
           </div>

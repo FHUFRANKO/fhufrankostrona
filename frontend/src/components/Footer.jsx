@@ -33,7 +33,7 @@ export const Footer = () => {
                   FHU FRANKO
                 </div>
                 <div className="text-sm text-gray-400 leading-tight">
-                  Autohandel BUSY/DOSTAWCZE
+                  Autohandel BUSY/LCV
                 </div>
               </div>
             </div>

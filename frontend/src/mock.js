@@ -1,4 +1,4 @@
-// Mock data for FHU FRANKO – Autohandel BUSY/DOSTAWCZE marketplace
+// Mock data for FHU FRANKO - BUSY/LCV marketplace
 
 export const marki = [
   'Mercedes-Benz', 'Ford', 'Volkswagen', 'Iveco', 'Renault', 'Peugeot', 
@@ -29,14 +29,16 @@ export const napedy = ['Przedni (FWD)', 'Tylni (RWD)', '4x4 (AWD)'];
 // Typy nadwozi specyficzne dla busów/LCV
 export const typyNadwozi = [
   'Furgon', 
+  'Brygadowy (5-7 miejsc)', 
   'Kontener', 
   'Plandeka', 
-  'Skrzynia', 
   'Chłodnia', 
-  'Minibus', 
-  'Brygadowy', 
-  'Doka', 
-  'Osobowe'
+  'Izoterma',
+  'Wywrotka', 
+  'Skrzynia', 
+  'Laweta', 
+  'Minibus (9-20 miejsc)', 
+  'Pick-up użytkowy'
 ];
 
 // Masy całkowite (DMC)
@@ -94,23 +96,24 @@ export const miasta = [
   'Katowice', 'Lublin', 'Białystok', 'Szczecin', 'Bydgoszcz', 'Olsztyn'
 ];
 
-// Wyposażenie specyficzne dla busów/LCV - rozszerzone zgodnie z wymaganiami
+// Wyposażenie specyficzne dla busów/LCV
 export const wyposazenie = {
-  'Bezpieczeństwo / układy': [
-    'ABS', 'ASR', 'alarm', 'immobilizer', 'poduszka powietrzna kierowcy', 'poduszka powietrzna pasażera'
+  'Bezpieczeństwo': [
+    'ABS', 'ESP', 'Poduszki powietrzne', 'Asystent pasa ruchu', 
+    'Czujniki parkowania', 'Kamera cofania', 'Tempomat adaptacyjny', 'AdBlue'
   ],
-  'Komfort / sterowanie': [
-    'klimatyzacja', 'webasto', 'podgrzewane siedzenia', 'elektryczne szyby', 
-    'elektryczne lusterka', 'centralny zamek', 'wspomaganie kierownicy', 
-    'fotel pneumatyczny', 'komputer pokładowy'
+  'Użytkowe': [
+    'Winda załadowcza', 'Hak holowniczy', 'Podłoga antypoślizgowa', 
+    'Relingi dachowe', 'Twin wheel (bliźniaki)', 'Przegroda kabiny', 
+    'Klimatyzacja przestrzeni ładunkowej', 'Ogrzewanie postojowe'
   ],
-  'Asysta / infotainment': [
-    'tempomat', 'czujniki parkowania', 'kamera cofania', 'nawigacja GPS', 
-    'radio', 'bluetooth', 'wielofunkcyjna kierownica'
+  'Komfort': [
+    'Klimatyzacja kabiny', 'Elektr. szyby', 'Centralny zamek', 
+    'Światła LED', 'Tempomat', 'Radio', 'Bluetooth', 'USB'
   ],
-  'Nadwozie / dostęp': [
-    'przesuwane drzwi', 'tylne drzwi skrzydełka', 'drzwi tylne 360°', 
-    'klapa bagażnika', 'halogeny', 'oświetlenie przestrzeni bagażowej'
+  'Minibus': [
+    'Tachograf', 'Fotele pasażerskie', 'Klimatyzacja tylna', 
+    'Dodatkowe okna', 'Drzwi przesuwne', 'Schowki bagażowe'
   ]
 };
 
@@ -188,14 +191,6 @@ export const generateMockBuses = (count = 50) => {
       wymiarLMm: parseInt(wymiary[lDim].replace('mm', '')),
       wymiarHMm: parseInt(wymiary[hDim].replace('mm', '')),
       
-      // Wymiary paki (mm)
-      wymiaryPaki: {
-        dlugosc_mm: typNadwozia === 'Furgon' || typNadwozia === 'Kontener' ? 2800 + Math.floor(Math.random() * 1500) : null,
-        szerokosc_mm: typNadwozia === 'Furgon' || typNadwozia === 'Kontener' ? 1600 + Math.floor(Math.random() * 200) : null,
-        szerokosc_miedzy_nadkolami_mm: typNadwozia === 'Furgon' || typNadwozia === 'Kontener' ? 1200 + Math.floor(Math.random() * 150) : null,
-        wysokosc_mm: typNadwozia === 'Furgon' || typNadwozia === 'Kontener' ? 1700 + Math.floor(Math.random() * 400) : null
-      },
-      
       moc: Math.floor(Math.random() * 100) + 90, // 90-190 KM
       pojemnosc: Math.floor(Math.random() * 1000) + 1500, // 1.5-2.5L
       kolor: kolory[Math.floor(Math.random() * kolory.length)],
@@ -232,21 +227,28 @@ export const generateMockBuses = (count = 50) => {
                          typNadwozia === 'Brygadowy (5-7 miejsc)' ? 'przewozie ekip roboczych' :
                          'zastosowaniach komercyjnych'}.`,
       
-      // Szczegółowe wyposażenie - nowe kategorie
+      // Szczegółowe wyposażenie
       wyposazenie: {
-        'Bezpieczeństwo / układy': wyposazenie['Bezpieczeństwo / układy'].slice(0, Math.floor(Math.random() * 4) + 2),
-        'Komfort / sterowanie': wyposazenie['Komfort / sterowanie'].slice(0, Math.floor(Math.random() * 6) + 3),
-        'Asysta / infotainment': wyposazenie['Asysta / infotainment'].slice(0, Math.floor(Math.random() * 5) + 2),
-        'Nadwozie / dostęp': wyposazenie['Nadwozie / dostęp'].slice(0, Math.floor(Math.random() * 4) + 2)
+        'Bezpieczeństwo': wyposazenie['Bezpieczeństwo'].slice(0, Math.floor(Math.random() * 4) + 3),
+        'Użytkowe': (() => {
+          const items = [];
+          if (winda) items.push('Winda załadowcza');
+          if (hak) items.push('Hak holowniczy');
+          if (klimatyzacjaLadunkowa) items.push('Klimatyzacja przestrzeni ładunkowej');
+          if (przegroda) items.push('Przegroda kabiny');
+          if (twinWheel) items.push('Twin wheel (bliźniaki)');
+          return items.concat(wyposazenie['Użytkowe'].slice(0, Math.floor(Math.random() * 3) + 1));
+        })(),
+        'Komfort': wyposazenie['Komfort'].slice(0, Math.floor(Math.random() * 4) + 2),
+        ...(typNadwozia.includes('Minibus') && {
+          'Minibus': wyposazenie['Minibus'].slice(0, Math.floor(Math.random() * 3) + 2)
+        })
       },
-      
-      // Hak jako osobna flaga
-      hak,
       
       drzwi: drzwi[Math.floor(Math.random() * drzwi.length)],
       
       kontakt: {
-        nazwa: 'FHU FRANKO – Autohandel BUSY/DOSTAWCZE',
+        nazwa: 'FHU FRANKO - Busy/LCV',
         telefon: '+48 123 456 789',
         email: 'busy@fhufranko.pl',
         godziny: 'Pn-Pt: 8:00-18:00, Sb: 9:00-15:00'
@@ -263,103 +265,28 @@ export const generateMockBuses = (count = 50) => {
 
 export const mockBuses = generateMockBuses();
 
-// Mock reviews/opinions - zaktualizowane pod BUSY/DOSTAWCZE
+// Mock reviews/opinions - zaktualizowane pod busy/LCV
 export const mockOpinie = [
   {
     id: 1,
-    autor: 'Marek K.',
-    branza: 'Transport i logistyka',
+    autor: 'Firma Logistyczna ABC',
     ocena: 5,
-    komentarz: 'Doskonały furgon do pracy miejskiej. Wszystkie serwisy udokumentowane, auto bez wkładu finansowego. Bardzo profesjonalna obsługa.',
-    data: '2024-02-15'
+    komentarz: 'Doskonały furgon do pracy miejskiej. Po leasingu flotowym, wszystkie serwisy udokumentowane. Polecam!',
+    data: '2024-01-15'
   },
   {
     id: 2,
-    autor: 'Anna S.',
-    branza: 'Usługi kurierskie',
+    autor: 'Transport XYZ Sp. z o.o.',
     ocena: 5,
-    komentarz: 'Szybka realizacja zakupu, bus idealny do dostaw miejskich. Polecam każdemu kto szuka niezawodnego auta dostawczego.',
-    data: '2024-02-20'
+    komentarz: 'Szybka realizacja, bus z windą idealny do naszych potrzeb. Profesjonalna obsługa.',
+    data: '2024-01-20'
   },
   {
     id: 3,
-    autor: 'Tomasz W.',
-    branza: 'Budownictwo',
-    ocena: 5,
-    komentarz: 'Solidny brygadowy, wygodny dla całej ekipy. Świetna cena za stan techniczny, wszystko zgodnie z opisem.',
-    data: '2024-03-05'
-  },
-  {
-    id: 4,
-    autor: 'Karolina M.',
-    branza: 'Handel detaliczny',
+    autor: 'Firma Budowlana DEF',
     ocena: 4,
-    komentarz: 'Bardzo dobry kontakt z firmą, szybkie załatwienie formalności. Bus spełnia wszystkie oczekiwania.',
-    data: '2024-03-12'
-  },
-  {
-    id: 5,
-    autor: 'Piotr Z.',
-    branza: 'Usługi remontowe',
-    ocena: 5,
-    komentarz: 'Auto jak z salonu, pełna dokumentacja serwisowa. Polecam FHU FRANKO za rzetelność i profesjonalizm.',
-    data: '2024-03-18'
-  },
-  {
-    id: 6,
-    autor: 'Michał D.',
-    branza: 'Catering',
-    ocena: 5,
-    komentarz: 'Idealne auto do przewozu żywności. Klimatyzacja ładunkowa działała bez zarzutu. Bardzo zadowolony z obsługi.',
-    data: '2024-03-22'
-  },
-  {
-    id: 7,
-    autor: 'Agnieszka L.',
-    branza: 'E-commerce',
-    ocena: 4,
-    komentarz: 'Sprawny proces zakupu, auto odpowiadało dokładnie opisowi. Miła i kompetentna obsługa klienta.',
-    data: '2024-04-02'
-  },
-  {
-    id: 8,
-    autor: 'Robert K.',
-    branza: 'Usługi instalacyjne',
-    ocena: 5,
-    komentarz: 'Bus z windą załadowczą to było dokładnie to czego szukałem. Świetny stan techniczny, polecam!',
-    data: '2024-04-08'
-  },
-  {
-    id: 9,
-    autor: 'Magdalena P.',
-    branza: 'Kwiaciarnia',
-    ocena: 5,
-    komentarz: 'Kompaktowy furgon idealny do dostaw kwiatów po mieście. Niskie spalanie, bardzo ekonomiczny.',
-    data: '2024-04-15'
-  },
-  {
-    id: 10,
-    autor: 'Janusz B.',
-    branza: 'Chłodnictwo',
-    ocena: 4,
-    komentarz: 'Solidne auto do przewozu sprzętu chłodniczego. Wszystko załatwione sprawnie i bez problemów.',
-    data: '2024-04-20'
-  },
-  {
-    id: 11,
-    autor: 'Katarzyna R.',
-    branza: 'Usługi sprzątające',
-    ocena: 5,
-    komentarz: 'Przestronny bus, zmieści cały sprzęt do sprzątania. Przegroda kabiny bardzo praktyczna.',
-    data: '2024-04-25'
-  },
-  {
-    id: 12,
-    autor: 'Łukasz G.',
-    branza: 'Elektryk',
-    ocena: 5,
-    komentarz: 'Wysokość ładunkowa wystarczająca dla długich rur i kabli. Auto w doskonałym stanie technicznym.',
-    data: '2024-05-03'
+    komentarz: 'Solidny brygadowy, wygodny dla 7-osobowej ekipy. Dobra cena za stan techniczny.',
+    data: '2024-01-25'
   }
 ];
 
@@ -368,43 +295,38 @@ export const mockUslugi = [
   {
     id: 'busy-dostawcze',
     tytul: 'Busy Dostawcze',
-    opis: 'Furgony, kontenery, plandeki, skrzynie- pojazdy do transportu towarów',
+    opis: 'Furgony, kontenery, plandeki - pojazdy do transportu towarów',
     ikona: 'Truck'
   },
   {
     id: 'busy-osobowe', 
-    tytul: 'Brygadowe i osobowe',
-    opis: 'Brygadowe, doki do przewozu towarów i pasażerów',
+    tytul: 'Busy Osobowe',
+    opis: 'Brygadowe i minibusy do przewozu pracowników i pasażerów',
     ikona: 'Users'
   },
   {
     id: 'specjalistyczne',
     tytul: 'Pojazdy Specjalistyczne', 
-    opis: 'Chłodnie, lawety, wywrotki, maszyny i inne',
+    opis: 'Chłodnie, lawety, wywrotki z dodatkowym wyposażeniem',
     ikona: 'Settings'
   }
 ];
 
 export const mockPrzewagi = [
   {
+    ikona: 'FileText', 
+    tytul: 'Faktura VAT 23%',
+    opis: 'Możliwość wystawienia faktury VAT dla firm - odlicz podatek od zakupu'
+  },
+  {
     ikona: 'Settings',
     tytul: 'Specjalizacja w Pojazdach Użytkowych', 
-    opis: 'Profesjonalne doradztwo w wyborze busa do pracy i obsługa'
+    opis: 'Rozumiemy potrzeby branży - doradztwo w doborze busa do zastosowania'
   },
   {
     ikona: 'Clock',
     tytul: 'Natychmiastowa Dostępność',
-    opis: 'Busy gotowe do pracy od zaraz – nie czekaj na zamówienie'
-  },
-  {
-    ikona: 'Truck',
-    tytul: 'Dostawa pod dom',
-    opis: 'Oferujemy bezpieczny transport auta pod Twoją firmę lub dom'
-  },
-  {
-    ikona: 'Globe',
-    tytul: 'Import z krajów UE',
-    opis: 'Niemcy, Holandia, Belgia, Dania + auta krajowe z pełną dokumentacją'
+    opis: 'Busy gotowe do pracy od zaraz - nie czekaj na zamówienie'
   }
 ];
 

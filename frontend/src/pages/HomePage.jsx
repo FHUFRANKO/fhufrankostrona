@@ -78,7 +78,7 @@ export const HomePage = () => {
             
             <div className="text-center lg:text-left">
               <Badge className="bg-[#F3BC30] text-[#222122] hover:bg-[#E0AA2B] mb-6 text-sm font-medium px-4 py-2">
-                🚐 Nowe busy w ofercie
+                🚐 Nowe busy w ofercie co tydzień
               </Badge>
               
               <h1 className="text-4xl lg:text-6xl font-bold text-[#222122] mb-6 leading-tight">
@@ -87,7 +87,7 @@ export const HomePage = () => {
               </h1>
               
               <p className="text-xl text-[#838282] mb-8 max-w-2xl">
-                Sprawdzone busy dostawcze z dokumentacją flotową, VAT 23%. Furgony, brygadowe, chłodnie, minibusy - wszystko dla Twojej branży.
+                Sprawdzone pojazdy LCV z dokumentacją flotową, VAT 23% i gwarancją. Furgony, brygadowe, chłodnie, minibusy - wszystko dla Twojej branży.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -160,79 +160,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Vehicle Categories */}
-      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[#222122] mb-4">
-              Kategorie pojazdów – znajdź busa dla Twojej branży
-            </h2>
-            <p className="text-[#838282] max-w-3xl mx-auto">
-              Specjalizujemy się w różnych typach pojazdów użytkowych dostosowanych do potrzeb każdej branży
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg cursor-pointer"
-                  onClick={() => navigate('/ogloszenia?typ=Furgon')}>
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-[#F3BC30]/20 transition-colors">
-                  <Truck className="h-10 w-10 text-[#F3BC30]" />
-                </div>
-                <h3 className="font-bold text-xl text-[#222122] mb-3">
-                  Busy dostawcze
-                </h3>
-                <p className="text-[#838282] mb-4">
-                  Furgony, kontenery, plandeki, skrzynie- pojazdy do transportu towarów
-                </p>
-                <Button variant="ghost" className="text-[#F3BC30] hover:text-[#222122] hover:bg-[#F3BC30]/10">
-                  Zobacz oferty
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg cursor-pointer"
-                  onClick={() => navigate('/ogloszenia?typ=Brygadowy')}>
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-[#F3BC30]/20 transition-colors">
-                  <Users className="h-10 w-10 text-[#F3BC30]" />
-                </div>
-                <h3 className="font-bold text-xl text-[#222122] mb-3">
-                  Brygadowe i osobowe
-                </h3>
-                <p className="text-[#838282] mb-4">
-                  Brygadowe, doki do przewozu towarów i pasażerów
-                </p>
-                <Button variant="ghost" className="text-[#F3BC30] hover:text-[#222122] hover:bg-[#F3BC30]/10">
-                  Zobacz oferty
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg cursor-pointer"
-                  onClick={() => navigate('/ogloszenia?typ=Chłodnia')}>
-              <CardContent className="p-8 text-center">
-                <div className="w-20 h-20 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-[#F3BC30]/20 transition-colors">
-                  <Settings className="h-10 w-10 text-[#F3BC30]" />
-                </div>
-                <h3 className="font-bold text-xl text-[#222122] mb-3">
-                  Pojazdy specjalistyczne
-                </h3>
-                <p className="text-[#838282] mb-4">
-                  Chłodnie, lawety, wywrotki, maszyny i inne
-                </p>
-                <Button variant="ghost" className="text-[#F3BC30] hover:text-[#222122] hover:bg-[#F3BC30]/10">
-                  Zobacz oferty
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
       {/* Featured Buses */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -278,76 +205,23 @@ export const HomePage = () => {
               Dlaczego FHU FRANKO?
             </h2>
             <p className="text-[#838282] max-w-2xl mx-auto">
-              Profesjonalny import i sprzedaż aut dostawczych. Gwarancja jakości oraz szeroki wybór: blaszaki, brygadowe, kontenery, chłodnie i minibusy.
+              Specjalizujemy się w pojazdach użytkowych z wieloletnim doświadczeniem i profesjonalnym podejściem do branży LCV
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {mockPrzewagi.map((przewaga, index) => (
               <Card key={index} className="group hover:shadow-lg transition-all duration-200 border-0 shadow-md">
                 <CardContent className="p-6 text-center">
-                  {przewaga.tytul === 'Import z krajów UE' ? (
-                    <>
-                      <div className="w-16 h-16 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#F3BC30]/20 transition-colors">
-                        <IconComponent name={przewaga.ikona} className="h-8 w-8 text-[#F3BC30]" />
-                      </div>
-                      <h3 className="font-semibold text-[#222122] mb-3">
-                        {przewaga.tytul}
-                      </h3>
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-5 bg-black rounded-sm mb-1 flex items-center justify-center">
-                            <span className="text-yellow-400 text-xs font-bold">🇩🇪</span>
-                          </div>
-                          <span className="text-xs text-[#838282]">Niemcy</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-5 bg-orange-500 rounded-sm mb-1 flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">🇳🇱</span>
-                          </div>
-                          <span className="text-xs text-[#838282]">Holandia</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-5 bg-black rounded-sm mb-1 flex items-center justify-center">
-                            <span className="text-yellow-400 text-xs font-bold">🇧🇪</span>
-                          </div>
-                          <span className="text-xs text-[#838282]">Belgia</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-5 bg-red-600 rounded-sm mb-1 flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">🇩🇰</span>
-                          </div>
-                          <span className="text-xs text-[#838282]">Dania</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <div className="w-8 h-5 bg-white border border-red-500 rounded-sm mb-1 flex items-center justify-center">
-                            <span className="text-red-500 text-xs font-bold">🇵🇱</span>
-                          </div>
-                          <span className="text-xs text-[#838282]">Polska</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <Badge className="bg-[#F3BC30] text-[#222122] text-xs px-2 py-1">
-                            krajowe
-                          </Badge>
-                        </div>
-                      </div>
-                      <p className="text-[#838282] text-sm">
-                        {przewaga.opis}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-16 h-16 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#F3BC30]/20 transition-colors">
-                        <IconComponent name={przewaga.ikona} className="h-8 w-8 text-[#F3BC30]" />
-                      </div>
-                      <h3 className="font-semibold text-[#222122] mb-2">
-                        {przewaga.tytul}
-                      </h3>
-                      <p className="text-[#838282] text-sm">
-                        {przewaga.opis}
-                      </p>
-                    </>
-                  )}
+                  <div className="w-16 h-16 bg-[#F3BC30]/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-[#F3BC30]/20 transition-colors">
+                    <IconComponent name={przewaga.ikona} className="h-8 w-8 text-[#F3BC30]" />
+                  </div>
+                  <h3 className="font-semibold text-[#222122] mb-2">
+                    {przewaga.tytul}
+                  </h3>
+                  <p className="text-[#838282] text-sm">
+                    {przewaga.opis}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -399,7 +273,7 @@ export const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-[#222122] mb-4">
-              Kategorie pojazdów
+              Kategorie pojazdów LCV
             </h2>
             <p className="text-[#838282]">
               Znajdź odpowiedni bus dla Twojej branży
@@ -429,83 +303,6 @@ export const HomePage = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Us */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            
-            <div>
-              <h2 className="text-3xl font-bold text-[#222122] mb-6">
-                Nasza Specjalizacja
-              </h2>
-              
-              <div className="space-y-4 text-[#838282]">
-                <p>
-                  Import busów z Niemiec, Holandii, Belgii, Danii
-                </p>
-                
-                <p>
-                  Samochody dostawcze i użytkowe
-                </p>
-                
-                <p>
-                  Minibusy i pojazdy specjalistyczne
-                </p>
-                
-                <p>
-                  Pomoc i profesjonalne doradztwo
-                </p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 mt-8">
-                <Button
-                  size="lg"
-                  className="bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122] font-semibold"
-                  onClick={() => navigate('/o-nas')}
-                >
-                  Więcej o nas
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-[#F3BC30] text-[#F3BC30] hover:bg-[#F3BC30] hover:text-[#222122]"
-                  onClick={() => navigate('/kontakt')}
-                >
-                  <Phone className="mr-2 h-5 w-5" />
-                  Kontakt
-                </Button>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="bg-gradient-to-br from-[#F3BC30]/10 to-[#F3BC30]/5 rounded-2xl p-8">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F3BC30] mb-2">500+</div>
-                    <div className="text-sm text-[#838282]">Sprzedanych busów</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F3BC30] mb-2">15+</div>
-                    <div className="text-sm text-[#838282]">Lat doświadczenia</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F3BC30] mb-2">6</div>
-                    <div className="text-sm text-[#838282]">Kraje importu</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-[#F3BC30] mb-2">100%</div>
-                    <div className="text-sm text-[#838282]">Zadowolonych klientów</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
           </div>
         </div>
       </section>

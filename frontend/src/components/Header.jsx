@@ -59,7 +59,7 @@ export const Header = () => {
                     FHU FRANKO
                   </div>
                   <div className="text-xs text-[#838282] leading-tight">
-                    Autohandel BUSY/DOSTAWCZE
+                    Autohandel BUSY/LCV
                   </div>
                 </div>
               </div>

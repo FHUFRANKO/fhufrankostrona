@@ -20,8 +20,8 @@ export const KontaktPage = () => {
     name: '',
     email: '',
     phone: '',
-    message: '',
-    rodoConsent: false
+    subject: '',
+    message: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,8 +47,8 @@ export const KontaktPage = () => {
         name: '',
         email: '',
         phone: '',
-        message: '',
-        rodoConsent: false
+        subject: '',
+        message: ''
       });
       
       setTimeout(() => {
@@ -211,10 +211,10 @@ export const KontaktPage = () => {
               <CardHeader>
                 <CardTitle className="text-2xl text-[#222122] flex items-center">
                   <Send className="h-6 w-6 text-[#F3BC30] mr-3" />
-                  Napisz do nas
+                  Napisz do Nas
                 </CardTitle>
                 <p className="text-[#838282]">
-                  Masz pytania? Chcesz uzyskać więcej informacji? Wypełnij formularz, a odpowiemy w ciągu 24 godzin.
+                  Masz pytania? Potrzebujesz wyceny? Wypełnij formularz, a skontaktujemy się z Tobą w ciągu 24 godzin.
                 </p>
               </CardHeader>
               <CardContent>
@@ -233,14 +233,7 @@ export const KontaktPage = () => {
                         required
                         placeholder="Jan Kowalski"
                         className="border-[#F3BC30]/30 focus:border-[#F3BC30] focus:ring-[#F3BC30]"
-                        aria-invalid={!formData.name ? 'true' : 'false'}
-                        aria-describedby={!formData.name ? 'name-error' : undefined}
                       />
-                      {!formData.name && (
-                        <p id="name-error" className="text-red-600 text-sm mt-1" role="alert">
-                          Pole wymagane
-                        </p>
-                      )}
                     </div>
                     
                     <div className="space-y-2">
@@ -271,19 +264,26 @@ export const KontaktPage = () => {
                       required
                       placeholder="jan@example.com"
                       className="border-[#F3BC30]/30 focus:border-[#F3BC30] focus:ring-[#F3BC30]"
-                      aria-invalid={!formData.email ? 'true' : 'false'}
-                      aria-describedby={!formData.email ? 'email-error' : undefined}
                     />
-                    {!formData.email && (
-                      <p id="email-error" className="text-red-600 text-sm mt-1" role="alert">
-                        Pole wymagane
-                      </p>
-                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subject" className="text-[#222122] font-medium">
+                      Temat
+                    </Label>
+                    <Input
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      placeholder="Zapytanie o bus dostawczy"
+                      className="border-[#F3BC30]/30 focus:border-[#F3BC30] focus:ring-[#F3BC30]"
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="message" className="text-[#222122] font-medium">
-                      Treść wiadomości *
+                      Wiadomość *
                     </Label>
                     <Textarea
                       id="message"
@@ -294,45 +294,13 @@ export const KontaktPage = () => {
                       rows={5}
                       placeholder="Opisz swoje potrzeby, interesujące Cię parametry pojazdu lub zadaj pytanie..."
                       className="border-[#F3BC30]/30 focus:border-[#F3BC30] focus:ring-[#F3BC30] resize-none"
-                      aria-invalid={!formData.message ? 'true' : 'false'}
-                      aria-describedby={!formData.message ? 'message-error' : undefined}
                     />
-                    {!formData.message && (
-                      <p id="message-error" className="text-red-600 text-sm mt-1" role="alert">
-                        Pole wymagane
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      id="rodoConsent"
-                      name="rodoConsent"
-                      checked={formData.rodoConsent}
-                      onChange={(e) => setFormData(prev => ({ ...prev, rodoConsent: e.target.checked }))}
-                      required
-                      className="mt-1 h-4 w-4 text-[#F3BC30] focus:ring-[#F3BC30] border-[#F3BC30]/30 rounded"
-                    />
-                    <Label htmlFor="rodoConsent" className="text-sm text-[#838282] cursor-pointer">
-                      Wyrażam zgodę na przetwarzanie moich danych osobowych zgodnie z{' '}
-                      <a
-                        href="/polityka-prywatnosci"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#F3BC30] hover:underline"
-                        aria-label="Przeczytaj politykę prywatności w nowej karcie"
-                      >
-                        polityką prywatności
-                      </a>{' '}
-                      w celu obsługi zapytania. *
-                    </Label>
                   </div>
 
                   {submitStatus === 'success' && (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg" role="alert" aria-live="polite">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                       <p className="text-green-800 text-sm font-medium">
-                        ✅ Dziękujemy za wiadomość! Odpowiadamy w 24h.
+                        ✅ Dziękujemy za wiadomość! Skontaktujemy się z Tobą w ciągu 24 godzin.
                       </p>
                     </div>
                   )}

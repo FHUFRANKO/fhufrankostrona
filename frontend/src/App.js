@@ -9,7 +9,6 @@ import { CarDetailPage } from "./pages/CarDetailPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { KontaktPage } from "./pages/KontaktPage";
 import { ONasPage } from "./pages/ONasPage";
-import { OpiniePage } from "./pages/OpiniePage";
 
 // Placeholder components for other pages
 const PlaceholderPage = ({ title }) => (
@@ -62,7 +61,7 @@ function App() {
           <Route path="/opinie" element={
             <>
               <Header />
-              <OpiniePage />
+              <main><PlaceholderPage title="Opinie Klientów" /></main>
               <Footer />
             </>
           } />

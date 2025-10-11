@@ -282,46 +282,6 @@ export const CarDetailPage = () => {
               </CardContent>
             </Card>
 
-            {/* Wymiary paki */}
-            {car.wymiaryPaki && Object.values(car.wymiaryPaki).some(val => val !== null) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Car className="h-5 w-5 text-[#F3BC30]" />
-                    Wymiary paki
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {car.wymiaryPaki.dlugosc_mm && (
-                      <div className="flex justify-between">
-                        <span className="text-[#838282]">Długość:</span>
-                        <span className="font-medium text-[#222122]">{car.wymiaryPaki.dlugosc_mm} mm</span>
-                      </div>
-                    )}
-                    {car.wymiaryPaki.szerokosc_mm && (
-                      <div className="flex justify-between">
-                        <span className="text-[#838282]">Szerokość:</span>
-                        <span className="font-medium text-[#222122]">{car.wymiaryPaki.szerokosc_mm} mm</span>
-                      </div>
-                    )}
-                    {car.wymiaryPaki.szerokosc_miedzy_nadkolami_mm && (
-                      <div className="flex justify-between">
-                        <span className="text-[#838282]">Szerokość między nadkolami:</span>
-                        <span className="font-medium text-[#222122]">{car.wymiaryPaki.szerokosc_miedzy_nadkolami_mm} mm</span>
-                      </div>
-                    )}
-                    {car.wymiaryPaki.wysokosc_mm && (
-                      <div className="flex justify-between">
-                        <span className="text-[#838282]">Wysokość:</span>
-                        <span className="font-medium text-[#222122]">{car.wymiaryPaki.wysokosc_mm} mm</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Equipment */}
             <Card>
               <CardHeader>
@@ -331,33 +291,18 @@ export const CarDetailPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {Object.entries(car.wyposazenie).map(([kategoria, elementy]) => {
-                  // Renderuj tylko kategorie z elementami
-                  if (!elementy || elementy.length === 0) return null;
-                  
-                  return (
-                    <div key={kategoria} className="mb-6 last:mb-0">
-                      <h4 className="font-medium text-[#222122] mb-3">{kategoria}</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {elementy.map((element, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            ✓ {element}
-                          </Badge>
-                        ))}
-                      </div>
+                {Object.entries(car.wyposazenie).map(([kategoria, elementy]) => (
+                  <div key={kategoria} className="mb-6 last:mb-0">
+                    <h4 className="font-medium text-[#222122] mb-3">{kategoria}</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {elementy.map((element, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {element}
+                        </Badge>
+                      ))}
                     </div>
-                  );
-                })}
-                
-                {/* Hak jako osobny element */}
-                {car.hak && (
-                  <div className="mt-6 pt-6 border-t">
-                    <h4 className="font-medium text-[#222122] mb-3">Dodatkowe wyposażenie</h4>
-                    <Badge variant="secondary" className="bg-[#F3BC30]/10 text-[#F3BC30]">
-                      ✓ Hak holowniczy
-                    </Badge>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
 

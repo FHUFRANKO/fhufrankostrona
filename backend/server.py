@@ -1,73 +1,75 @@
+from fastapi import FastAPI, APIRouter
+from dotenv import load_dotenv
+from starlette.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import List
+import uuid
+from datetime import datetime
 
-from fastapi import FastAPI, Request, Depends
-from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse, JSONResponse
-from starlette.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
 
-# Admin gate helpers
-from admin_gate import require_admin, gate_page, login_api
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
-ROOT = Path(__file__).parent
-PUBLIC_DIR = ROOT / "public"
-INDEX_FILE = PUBLIC_DIR / "index.html"
+# MongoDB connection
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
 
-# --- App ---
+# Create the main app without a prefix
 app = FastAPI()
 
-# CORS (open by default, możesz ograniczyć przez env CORS_ALLOW_ORIGINS)
+# Create a router with the /api prefix
+api_router = APIRouter(prefix="/api")
+
+
+# Define Models
+class StatusCheck(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    client_name: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class StatusCheckCreate(BaseModel):
+    client_name: str
+
+# Add your routes to the router instead of directly to app
+@api_router.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@api_router.post("/status", response_model=StatusCheck)
+async def create_status_check(input: StatusCheckCreate):
+    status_dict = input.dict()
+    status_obj = StatusCheck(**status_dict)
+    _ = await db.status_checks.insert_one(status_obj.dict())
+    return status_obj
+
+@api_router.get("/status", response_model=List[StatusCheck])
+async def get_status_checks():
+    status_checks = await db.status_checks.find().to_list(1000)
+    return [StatusCheck(**status_check) for status_check in status_checks]
+
+# Include the router in the main app
+app.include_router(api_router)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ALLOW_ORIGINS", "*").split(","),
     allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Static /public (assets)
-if PUBLIC_DIR.exists():
-    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-# --- Optional Mongo (bez crasha, jeśli brak envów) ---
-client = None
-db = None
-MONGO_URL = os.getenv("MONGO_URL")
-DB_NAME = os.getenv("DB_NAME")
-if MONGO_URL and DB_NAME:
-    try:
-        from motor.motor_asyncio import AsyncIOMotorClient
-        client = AsyncIOMotorClient(MONGO_URL)
-        db = client[DB_NAME]
-    except Exception as e:
-        logging.warning("Mongo init failed: %s", e)
-else:
-    logging.warning("Mongo disabled: MONGO_URL or DB_NAME not set")
-
-# --- Admin routes ---
-@app.get("/admin-gate", response_class=HTMLResponse)
-async def admin_gate(request: Request):
-    key = request.query_params.get("key")
-    return gate_page(key)
-
-@app.post("/api/admin/login")
-async def admin_login(request: Request):
-    return await login_api(request)
-
-@app.get("/admin")
-async def admin_panel(request: Request, _=Depends(require_admin)):
-    admin_index = PUBLIC_DIR / "admin" / "index.html"
-    if admin_index.exists():
-        return FileResponse(str(admin_index))
-    if INDEX_FILE.exists():
-        return FileResponse(str(INDEX_FILE))
-    return HTMLResponse("<h1>Admin OK</h1>")
-
-# --- SPA fallback (serve index.html) ---
-@app.get("/{full_path:path}")
-async def spa_fallback(full_path: str):
-    if INDEX_FILE.exists():
-        return FileResponse(str(INDEX_FILE))
-    return HTMLResponse("<h1>OK</h1>")
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
