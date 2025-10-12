@@ -2,7 +2,7 @@
 FROM node:20-alpine AS fe-build
 WORKDIR /fe/frontend
 COPY frontend/package*.json ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 COPY frontend/ ./
 RUN npm run build || npm run build:prod || echo "no build script, skipping"
 
