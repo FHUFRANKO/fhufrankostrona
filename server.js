@@ -73,7 +73,6 @@ app.get("*", (_, res) => res.sendFile(path.join(STATIC_DIR, "index.html")));
 app.listen(PORT, "0.0.0.0", () => console.log("Serving", STATIC_DIR, "on", PORT));
 
 /* ===== Supabase API for listings ===== */
-import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
