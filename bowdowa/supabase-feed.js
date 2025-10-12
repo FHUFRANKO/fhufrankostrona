@@ -8,26 +8,43 @@ async function fetchListings(){
 function money(v, wal="PLN"){ if(v==null) return ""; try{ return new Intl.NumberFormat("pl-PL",{style:"currency",currency:wal}).format(Number(v)); } catch { return `${v} ${wal}`; } }
 function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
 
-/* Znajdź największy grid/listę kart w obrębie strony */
-function findGrid(ctx=document){
-  const main = ctx.querySelector("main") || ctx;
-  // najpierw sekcja z nagłówkiem „Busy i samochody…” lub „Ogłoszenia”
-  const hint = Array.from(main.querySelectorAll("h1,h2,h3")).find(h=>/busy|samochody|ogłoszenia|ogloszenia/i.test(h.textContent||""));
-  if(hint){
-    let n=hint; for(let i=0;i<7&&n;i++){ n=n.parentElement; if(!n) break;
-      const cs=getComputedStyle(n);
-      if(cs.display==="grid"||cs.display==="flex") return n;
+function looksLikeGrid(node){
+  const cs = getComputedStyle(node);
+  return cs.display==="grid" || cs.display==="flex";
+}
+function countCards(node){
+  return Array.from(node.querySelectorAll("a,button")).filter(b=>/szczeg|szczegóły/i.test(b.textContent||"")).length;
+}
+function findListingContainers(){
+  // szukaj po przyciskach "Szczegóły" i idź w górę do kontenera z wieloma kartami
+  const found = new Set();
+  const candidates = [];
+
+  Array.from(document.querySelectorAll("a,button")).forEach(btn=>{
+    if(!/szczeg|szczegóły/i.test(btn.textContent||"")) return;
+    let cur = btn.closest("article,li,div") || btn.parentElement;
+    for(let i=0;i<7 && cur; i++){
+      if(looksLikeGrid(cur) && cur.children.length>=3 && countCards(cur)>=3){
+        if(!found.has(cur)){ found.add(cur); candidates.push(cur); }
+      }
+      cur = cur.parentElement;
     }
+  });
+
+  if(!candidates.length){
+    // fallback: największy grid/flex w <main> z wieloma "Szczegóły"
+    const main = document.querySelector("main") || document;
+    const grids = Array.from(main.querySelectorAll("section,div,ul"))
+      .filter(n=>looksLikeGrid(n) && n.children.length>=3 && countCards(n)>=3)
+      .sort((a,b)=>b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight);
+    if(grids[0]) candidates.push(grids[0]);
   }
-  // fallback: największy grid/flex
-  const grids = Array.from(main.querySelectorAll("section,div,ul"))
-    .filter(x=>["grid","flex"].includes(getComputedStyle(x).display));
-  return grids.sort((a,b)=>b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight)[0] || null;
+  return candidates;
 }
 
 function renderCards(list){
   return list.map(x=>{
-    const img = Array.isArray(x.zdjecia)&&x.zdjecia[0]?x.zdjecia[0]:"https://placehold.co/640x360?text=Brak+zdjecia";
+    const img = Array.isArray(x.zdjecia)&&x.zdjecia[0] ? x.zdjecia[0] : "https://placehold.co/640x360?text=Brak+zdjecia";
     const cechy = Array.isArray(x.cechy)?x.cechy.slice(0,6).join(" • "):"";
     return el(`
       <article class="vis-card" style="background:#13161b;border:1px solid #1f232a;border-radius:12px;overflow:hidden">
@@ -43,60 +60,74 @@ function renderCards(list){
   });
 }
 
-async function replaceOnPage(){
-  // czekaj aż pojawi się grid (SPA może dociągać HTML)
-  const start = Date.now();
-  let grid = findGrid();
-  if(!grid){
-    await new Promise(resolve=>{
-      const obs = new MutationObserver(()=>{
-        grid = findGrid();
-        if(grid){ obs.disconnect(); resolve(); }
-        if(Date.now()-start>5000){ obs.disconnect(); resolve(); }
-      });
-      obs.observe(document, {childList:true, subtree:true});
-      setTimeout(()=>{obs.disconnect(); resolve();}, 5000);
-    });
-    grid = findGrid();
-  }
-  if(!grid) return;
-
-  // wyczyść mocki i wstaw prawdziwe dane
-  const data = await fetchListings();
-  grid.innerHTML = "";
-  if(Array.isArray(data) && data.length){
-    renderCards(data).forEach(card=>grid.appendChild(card));
-  }else{
-    grid.appendChild(el(`<div style="padding:24px;border:1px dashed #30363d;border-radius:12px;color:#9aa4b2;background:#0f1217">Brak ogłoszeń w bazie Supabase.</div>`));
-  }
+function cleanupOldDynamic(){
+  document.querySelectorAll(".vis-dyn-grid,#dynamic-listings-root,[data-mock-list='true']").forEach(n=>{
+    // usuń stare dynamiczne kontenery, jeśli były
+    if(n.classList.contains("vis-dyn-grid")) n.remove();
+    if(n.id==="dynamic-listings-root") n.remove();
+  });
 }
 
-/* Obsługa SPA: reaguj na każdą zmianę adresu i klik w link */
+async function replaceAllListings(){
+  const containers = findListingContainers();
+  if(!containers.length) return;
+  const data = await fetchListings();
+
+  cleanupOldDynamic();
+
+  containers.forEach(container=>{
+    container.setAttribute("data-mock-list","true");
+    container.innerHTML = ""; // wyczyść mockowe karty
+
+    const grid = document.createElement("div");
+    grid.className = "vis-dyn-grid";
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fill,minmax(260px,1fr))";
+    grid.style.gap = "16px";
+
+    if(Array.isArray(data) && data.length){
+      renderCards(data).forEach(card=>grid.appendChild(card));
+    }else{
+      grid.appendChild(el(`<div style="padding:24px;border:1px dashed #30363d;border-radius:12px;color:#9aa4b2;background:#0f1217">Brak ogłoszeń w bazie Supabase.</div>`));
+    }
+    container.appendChild(grid);
+  });
+}
+
+/* Reaguj na SPA (pushState/replaceState/popstate) i klik w linki */
 function onRoute(){
   const p = location.pathname;
-  if (p === "/" || /^\/ogloszenia(\/|$)/.test(p)) replaceOnPage();
+  if (p === "/" || /^\/ogloszenia(\/|$)/.test(p)) {
+    // poczekaj chwilę aż SPA wyrenderuje DOM
+    setTimeout(replaceAllListings, 50);
+    const obs = new MutationObserver((m, o)=>{
+      // jeśli w trakcie SPA pojawi się kontener – podmień
+      if(findListingContainers().length){ replaceAllListings(); o.disconnect(); }
+    });
+    obs.observe(document, {childList:true, subtree:true});
+    setTimeout(()=>obs.disconnect(), 5000);
+  }
 }
 
 (function(){
-  // patch pushState/replaceState -> custom event
   ["pushState","replaceState"].forEach(fn=>{
     const orig = history[fn];
-    history[fn] = function(){ const r = orig.apply(this, arguments); window.dispatchEvent(new Event("locationchange")); return r; };
+    history[fn] = function(){ const r=orig.apply(this, arguments); window.dispatchEvent(new Event("locationchange")); return r; };
   });
   window.addEventListener("popstate", ()=>window.dispatchEvent(new Event("locationchange")));
-  window.addEventListener("locationchange", ()=>setTimeout(onRoute, 0));
+  window.addEventListener("locationchange", onRoute);
 
-  // klik w dowolny link tego samego originu
+  // klik w link w obrębie tej samej domeny
   document.addEventListener("click", e=>{
     const a = e.target && e.target.closest && e.target.closest("a[href]");
     if(!a) return;
+    const href = a.getAttribute("href"); if(!href) return;
     try{
-      const u = new URL(a.getAttribute("href"), location.href);
+      const u = new URL(href, location.href);
       if(u.origin === location.origin) setTimeout(onRoute, 50);
     }catch(_){}
   });
 
-  // pierwsze uruchomienie
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", onRoute);
   } else {
