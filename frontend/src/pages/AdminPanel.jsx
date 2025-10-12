@@ -21,7 +21,7 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { marki, modele, typyNadwozi, paliwa, skrzynie, normyEmisji, miasta, kolory, drzwi } from '../mock';
+// import { marki, modele, typyNadwozi, paliwa, skrzynie, normyEmisji, miasta, kolory, drzwi } from '../mock';
 
 export const AdminPanel = () => {
   const navigate = useNavigate();

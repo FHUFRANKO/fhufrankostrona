@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Grid3X3, List, SlidersHorizontal } from 'lucide-react';
-import { mockBuses, szybkieFiltry } from '../mock';
+// import { mockBuses, szybkieFiltry } from '../mock';
 
 export const CarListingPage = () => {
   const location = useLocation();

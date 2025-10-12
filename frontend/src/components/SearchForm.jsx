@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { marki, modele, paliwa, typyNadwozi, skrzynie, szybkieFiltry } from '../mock';
+// import { marki, modele, paliwa, typyNadwozi, skrzynie, szybkieFiltry } from '../mock';
 
 export const SearchForm = ({ onSearch, initialFilters = {}, compact = false }) => {
   const [filters, setFilters] = useState({
