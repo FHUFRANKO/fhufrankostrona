@@ -11,60 +11,47 @@ def _sanitize_host_brackets(url: str) -> str:
     if not m:
         return url
     scheme, netloc, rest = m.group(1), m.group(2), m.group(3) or ''
-    # Usuń przypadkowe [] wokół hosta (IPv6 format nie dla domen)
+    # Usuń przypadkowe [] jeśli to nie jest IPv6 literal
     if not netloc.startswith('['):
         netloc = netloc.replace('@[', '@').replace(']@', '@').replace(']:', ':').replace('[', '').replace(']', '')
     return f"{scheme}{netloc}{rest}"
 
-def _force_ipv4_in_netloc(p):
-    """Zastąp host w p.netloc jego adresem IPv4, zachowując user:pass i port."""
-    netloc = p.netloc
-    creds = ''
-    hostport = netloc
-    if '@' in netloc:
-        creds, hostport = netloc.rsplit('@', 1)
-    host = hostport
-    port = p.port or 5432
-    if ':' in hostport:
-        host, _maybe_port = hostport.rsplit(':', 1)
-        # port bierzemy z p.port (pewniejsze)
-    try:
-        ipv4 = socket.gethostbyname(host)
-    except Exception:
-        return p.netloc  # nie udało się -> zostaw jak było
-    new_hostport = f"{ipv4}:{port}"
-    return f"{creds}@{new_hostport}" if creds else new_hostport
-
-def _enrich_supabase(url: str) -> str:
-    url = _sanitize_host_brackets(url)
+def _ensure_ssl_and_timeout(url: str) -> str:
     p = urlparse(url)
     qs = dict(parse_qsl(p.query, keep_blank_values=True))
-    host = (p.hostname or '').lower()
-
-    if host.endswith('supabase.co') or host.endswith('supabase.net'):
-        # 1) SSL zawsze
-        qs.setdefault('sslmode', 'require')
-        # 2) Wymuś IPv4 – podmień host w netloc na IPv4 (żeby libpq nie wybierał IPv6)
-        new_netloc = _force_ipv4_in_netloc(p)
-        return urlunparse(p._replace(netloc=new_netloc, query=urlencode(qs)))
-
-    # Nie Supabase – tylko dopnij sslmode jeżeli podano
-    if 'sslmode' not in qs and p.scheme.startswith('postgres'):
-        qs['sslmode'] = 'require'
+    # sslmode + niski timeout połączenia
+    qs.setdefault('sslmode', 'require')
+    qs.setdefault('connect_timeout', '5')
     return urlunparse(p._replace(query=urlencode(qs)))
 
-def _db_url():
+def _db_url_and_args():
     url = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
-    if url:
-        url = _enrich_supabase(url)
     if not url:
         Path("/app/data").mkdir(parents=True, exist_ok=True)
         return "sqlite:////app/data/app.db", {"check_same_thread": False}
-    if url.startswith("sqlite"):
-        return url, {"check_same_thread": False}
-    return url, {}
 
-db_url, connect_args = _db_url()
+    url = _sanitize_host_brackets(url)
+    url = _ensure_ssl_and_timeout(url)
+
+    p = urlparse(url)
+    hostname = (p.hostname or '').lower()
+    connect_args = {}
+
+    # Jeśli Supabase i port 5432 — rozwiąż na IPv4 i daj go jako hostaddr (libpq)
+    if hostname.endswith('supabase.co') or hostname.endswith('supabase.net'):
+        try:
+            ipv4 = socket.getaddrinfo(hostname, p.port or 5432, family=socket.AF_INET)[0][4][0]
+            # przekazuj hostaddr via connect_args — działa pewniej z SQLAlchemy+psycopg2
+            connect_args['hostaddr'] = ipv4
+        except Exception:
+            pass
+
+    if url.startswith("sqlite"):
+        connect_args = {"check_same_thread": False}
+
+    return url, connect_args
+
+db_url, connect_args = _db_url_and_args()
 engine = create_engine(db_url, pool_pre_ping=True, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
