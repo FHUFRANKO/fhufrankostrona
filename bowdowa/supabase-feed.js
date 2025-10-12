@@ -8,22 +8,23 @@ async function fetchListings(){
 function money(v, wal="PLN"){ if(v==null) return ""; try{ return new Intl.NumberFormat("pl-PL",{style:"currency",currency:wal}).format(Number(v)); } catch { return `${v} ${wal}`; } }
 function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
 
-/* Znajdź kontener kart (heurystyki) */
+/* Znajdź największy grid/listę kart w obrębie strony */
 function findGrid(ctx=document){
-  // 1) gdy istnieje sekcja z nagłówkiem "Busy i samochody dostawcze"
-  const h = Array.from(ctx.querySelectorAll("h2,h3")).find(h=>/busy|samochody|ogłoszenia|ogloszenia/i.test(h.textContent||""));
-  if(h){
-    let n=h.parentElement;
-    for(let i=0;i<6&&n;i++){ n=n.parentElement; if(!n)break; const cs=getComputedStyle(n); if(cs.display==="grid"||cs.display==="flex") return n; }
+  const main = ctx.querySelector("main") || ctx;
+  // najpierw sekcja z nagłówkiem „Busy i samochody…” lub „Ogłoszenia”
+  const hint = Array.from(main.querySelectorAll("h1,h2,h3")).find(h=>/busy|samochody|ogłoszenia|ogloszenia/i.test(h.textContent||""));
+  if(hint){
+    let n=hint; for(let i=0;i<7&&n;i++){ n=n.parentElement; if(!n) break;
+      const cs=getComputedStyle(n);
+      if(cs.display==="grid"||cs.display==="flex") return n;
+    }
   }
-  // 2) weź największy grid/flex w main
-  const main = ctx.querySelector("main")||ctx;
+  // fallback: największy grid/flex
   const grids = Array.from(main.querySelectorAll("section,div,ul"))
     .filter(x=>["grid","flex"].includes(getComputedStyle(x).display));
-  return grids.sort((a,b)=>b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight)[0]||null;
+  return grids.sort((a,b)=>b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight)[0] || null;
 }
 
-/* Wygeneruj prostą kartę (neutralne style, nie psują layoutu) */
 function renderCards(list){
   return list.map(x=>{
     const img = Array.isArray(x.zdjecia)&&x.zdjecia[0]?x.zdjecia[0]:"https://placehold.co/640x360?text=Brak+zdjecia";
@@ -42,16 +43,27 @@ function renderCards(list){
   });
 }
 
-async function replaceOnPage(ctx=document){
-  const data = await fetchListings();
-  const grid = findGrid(ctx);
+async function replaceOnPage(){
+  // czekaj aż pojawi się grid (SPA może dociągać HTML)
+  const start = Date.now();
+  let grid = findGrid();
+  if(!grid){
+    await new Promise(resolve=>{
+      const obs = new MutationObserver(()=>{
+        grid = findGrid();
+        if(grid){ obs.disconnect(); resolve(); }
+        if(Date.now()-start>5000){ obs.disconnect(); resolve(); }
+      });
+      obs.observe(document, {childList:true, subtree:true});
+      setTimeout(()=>{obs.disconnect(); resolve();}, 5000);
+    });
+    grid = findGrid();
+  }
   if(!grid) return;
 
-  // ukryj stare mocki
-  grid.setAttribute("data-static-cards","true");
-  while(grid.firstChild) grid.removeChild(grid.firstChild);
-
-  // wstaw nowe
+  // wyczyść mocki i wstaw prawdziwe dane
+  const data = await fetchListings();
+  grid.innerHTML = "";
   if(Array.isArray(data) && data.length){
     renderCards(data).forEach(card=>grid.appendChild(card));
   }else{
@@ -59,7 +71,35 @@ async function replaceOnPage(ctx=document){
   }
 }
 
-(async ()=>{
-  // działa na stronie głównej i na /ogloszenia – ten sam skrypt
-  await replaceOnPage(document);
+/* Obsługa SPA: reaguj na każdą zmianę adresu i klik w link */
+function onRoute(){
+  const p = location.pathname;
+  if (p === "/" || /^\/ogloszenia(\/|$)/.test(p)) replaceOnPage();
+}
+
+(function(){
+  // patch pushState/replaceState -> custom event
+  ["pushState","replaceState"].forEach(fn=>{
+    const orig = history[fn];
+    history[fn] = function(){ const r = orig.apply(this, arguments); window.dispatchEvent(new Event("locationchange")); return r; };
+  });
+  window.addEventListener("popstate", ()=>window.dispatchEvent(new Event("locationchange")));
+  window.addEventListener("locationchange", ()=>setTimeout(onRoute, 0));
+
+  // klik w dowolny link tego samego originu
+  document.addEventListener("click", e=>{
+    const a = e.target && e.target.closest && e.target.closest("a[href]");
+    if(!a) return;
+    try{
+      const u = new URL(a.getAttribute("href"), location.href);
+      if(u.origin === location.origin) setTimeout(onRoute, 50);
+    }catch(_){}
+  });
+
+  // pierwsze uruchomienie
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", onRoute);
+  } else {
+    onRoute();
+  }
 })();
