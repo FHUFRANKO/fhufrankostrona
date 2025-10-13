@@ -18,7 +18,7 @@ import {
   Mail,
   ChevronRight
 } from 'lucide-react';
-// import { mockBuses, mockOpinie, mockPrzewagi, mockUslugi } from '../mock';
+import { mockBuses, mockOpinie, mockPrzewagi, mockUslugi } from '../mock';
 
 export const HomePage = () => {
   const navigate = useNavigate();

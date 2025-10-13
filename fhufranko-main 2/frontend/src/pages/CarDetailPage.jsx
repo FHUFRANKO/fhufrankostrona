@@ -27,7 +27,7 @@ import {
   Car,
   Wrench
 } from 'lucide-react';
-// import { mockBuses } from '../mock';
+import { mockBuses } from '../mock';
 
 export const CarDetailPage = () => {
   const { id } = useParams();
