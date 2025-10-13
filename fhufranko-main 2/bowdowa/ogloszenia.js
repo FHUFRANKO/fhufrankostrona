@@ -1,23 +1,20 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const mount = document.getElementById("ogloszenia-root") || (() => {
-    const el = document.createElement("section"); el.id = "ogloszenia-root"; document.body.appendChild(el); return el;
-  })();
-  const empty = "nie ma jeszcze żadnych ogłoszeń";
-  try {
-    const r = await fetch("ogloszenia.json",{cache:"no-store"});
-    const data = r.ok ? await r.json() : [];
-    const list = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
-    const real = list.filter(x => {
-      const yes = v => v===true || v==="true";
-      const t = (x.title||x.tytul||"").toString().toLowerCase();
-      return !(yes(x.mock)||yes(x.isMock)||yes(x.fake)||yes(x.test)||t.includes("mock"));
-    });
-    if (!real.length) { mount.textContent = empty; return; }
-    mount.innerHTML = real.map(it => `
-      <article style="border:1px solid #eee;border-radius:12px;padding:12px;margin:8px 0">
-        <h3 style="margin:0 0 6px 0">${(it.title||it.tytul||"Ogłoszenie")}</h3>
-        ${it.description||it.opis?`<p style="margin:0 0 6px 0">${(it.description||it.opis)}</p>`:""}
-        ${it.price||it.cena?`<div style="font-weight:600">${(it.price||it.cena)}</div>`:""}
-      </article>`).join("");
-  } catch { mount.textContent = empty; }
-});
+(()=>{ if(!location.pathname.toLowerCase().includes("ogloszenia")) return;
+ const main=document.querySelector("main")||document.body; main.innerHTML="";
+ const mount=document.createElement("section"); mount.id="ogloszenia-root"; main.appendChild(mount);
+ const empty="nie ma jeszcze żadnych ogłoszeń";
+ const isMock=x=>{ const yes=v=>v===true||v==="true"; const t=String((x&& (x.title||x.tytul)||"")).toLowerCase();
+   return yes(x&&x.mock)||yes(x&&x.isMock)||yes(x&&x.fake)||yes(x&&x.test)||t.includes("mock"); };
+ const render=a=>{ if(!a.length){ mount.textContent=empty; return; }
+   mount.innerHTML=a.map(it=>{ const t=(it.title||it.tytul||"Ogłoszenie"); const d=(it.description||it.opis||"");
+     const p=(it.price||it.cena||""); const img=(it.image||it.zdjecie);
+     return "<article style="border:1px solid #eee;border-radius:12px;padding:12px;margin:8px 0;display:flex;gap:12px;align-items:flex-start">"
+       +(img?("<img src=""+img+"" alt="" style="width:140px;height:100px;object-fit:cover;border-radius:8px">"):"")
+       +"<div><h3 style="margin:0 0 6px 0;font-size:1.05rem">"+t+"</h3>"
+       +(d?("<p style="margin:0 0 6px 0">"+d+"</p>"):"")
+       +(p?("<div style="font-weight:600">"+p+"</div>"):"")
+       +"</div></article>"; }).join(""); };
+ fetch("ogloszenia.json?ts="+Date.now(),{cache:"no-store"})
+  .then(r=>r.ok?r.json():[])
+  .then(d=>{ const a=Array.isArray(d)?d:(d&&Array.isArray(d.items)?d.items:[]); render(a.filter(x=>!isMock(x))); })
+  .catch(()=>render([]));
+})();
