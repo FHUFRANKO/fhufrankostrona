@@ -1,3 +1,4 @@
+const path = require("path");
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -7,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
-const STATIC_DIR = path.join(__dirname, "bowdowa");
+const STATIC_DIR = path.join(__dirname, "frontend", "build");
 
 app.use(express.json({ limit: "5mb" }));
 
@@ -76,3 +77,8 @@ app.use(express.static(STATIC_DIR));
 app.get("*", (_req, res) => res.sendFile(path.join(STATIC_DIR, "index.html")));
 
 app.listen(PORT, "0.0.0.0", () => console.log(`Serving ${STATIC_DIR} on ${PORT}`));
+
+app.use(express.static(STATIC_DIR));
+app.get(/^\/(?!api).*$/, (req, res) => {
+  res.sendFile(path.join(STATIC_DIR, "index.html"));
+});
