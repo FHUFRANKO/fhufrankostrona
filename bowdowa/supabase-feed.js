@@ -8,16 +8,16 @@ async function fetchListings(){
 function money(v, wal="PLN"){ if(v==null) return ""; try{ return new Intl.NumberFormat("pl-PL",{style:"currency",currency:wal}).format(Number(v)); } catch { return `${v} ${wal}`; } }
 function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
 
-/* ——— Lokalizacja właściwej SEKCJI z listą — tylko pod tymi nagłówkami ——— */
+/* ——— znajdź sekcję listy po nagłówku ——— */
 function findListingSection(){
-  const labels = /(wyróżnione busy|wyroznione busy|najnowsze oferty|busy i samochody dostawcze|ogłoszenia|ogloszenia)/i;
+  const RE = /(wyróżnione busy|wyroznione busy|najnowsze oferty|busy i samochody dostawcze|ogłoszenia|ogloszenia)/i;
   const heads = Array.from(document.querySelectorAll("main h1, main h2, main h3"))
-    .filter(h => labels.test(h.textContent||""));
+    .filter(h => RE.test(h.textContent||""));
   if(!heads.length) return null;
-  // najbliższy sensowny kontener (sekcja / div) – nie header/nav
+  // bierz najniższy sensowny kontener sekcji
   for(const h of heads){
     let n = h.parentElement;
-    for(let i=0;i<5 && n;i++){
+    for(let i=0;i<6 && n;i++){
       if(["HEADER","NAV"].includes(n.tagName)) break;
       const cs = getComputedStyle(n);
       if(cs.display==="block" || cs.display==="grid" || cs.display==="flex") return {section:n, heading:h};
@@ -27,39 +27,55 @@ function findListingSection(){
   return null;
 }
 
-/* ——— Znajdź mockowy GRID tylko w TEJ sekcji — nie w całej stronie ——— */
-function findMockGrid(section){
-  // grid z wieloma kartami zawierającymi przycisk "Szczegóły"
-  const grids = Array.from(section.querySelectorAll("section,div,ul"))
-    .filter(n => {
-      const cs = getComputedStyle(n);
-      if(!(cs.display==="grid" || cs.display==="flex")) return false;
-      const details = n.querySelectorAll("a,button");
-      const hasBtns = Array.from(details).some(b => /szczeg|szczegóły/i.test(b.textContent||""));
-      return hasBtns && n.children.length >= 3;
-    });
-  // największy kandydat
-  return grids.sort((a,b)=>b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight)[0] || null;
+/* ——— identyfikacja mockowego grida tylko w tej sekcji ——— */
+function hasManyDetails(node){
+  const btns = node.querySelectorAll("a,button");
+  let cnt = 0;
+  for(const b of btns){ if(/szczeg|szczegóły/i.test(b.textContent||"")) cnt++; if(cnt>=3) return true; }
+  return false;
+}
+function findMockContainers(section, heading){
+  const out=[];
+  const candidates = Array.from(section.querySelectorAll("section,div,ul"));
+  for(const c of candidates){
+    if(c.id==="supabase-feed-root") continue;
+    // tylko elementy ZA nagłówkiem w DOM
+    if(heading.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING){
+      const cs = getComputedStyle(c);
+      const looksLikeGrid = cs.display==="grid" || cs.display==="flex";
+      const manyItems = c.children && c.children.length>=3;
+      if(looksLikeGrid && manyItems && hasManyDetails(c)) out.push(c);
+    }
+  }
+  // największe (zwykle właściwy grid idzie pierwszy)
+  out.sort((a,b)=> b.clientWidth*b.clientHeight - a.clientWidth*a.clientHeight);
+  return out;
 }
 
-/* ——— Licznik „N busów” tylko przy właściwym nagłówku ——— */
+/* ——— licznik „N busów” tylko przy właściwym nagłówku ——— */
 function pluralizeBus(n){
   const m10=n%10, m100=n%100;
   if(n===1) return "1 bus";
   if(m10>=2 && m10<=4 && !(m100>=12 && m100<=14)) return `${n} busy`;
   return `${n} busów`;
 }
-function ensureCounter(heading){
-  // usuń nasze stare badge, jeśli były
-  heading.parentElement.querySelectorAll(".supabase-count-badge").forEach(x=>x.remove());
+function setCounterNear(heading, n){
+  // usuń nasze stare badge, ukryj też statyczne "50 busów" obok nagłówka
+  const row = heading.parentElement;
+  row.querySelectorAll(".supabase-count-badge").forEach(n=>n.remove());
+  Array.from(row.querySelectorAll("span,div,small,strong,b"))
+    .forEach(x=>{
+      const t=(x.textContent||"").trim();
+      if(/\d+\s*bus(ów|y)?/i.test(t)) x.style.display="none"; // ukryj „50 busów”
+    });
   const badge = document.createElement("span");
-  badge.className = "supabase-count-badge";
-  badge.style.cssText = "margin-left:8px;padding:2px 8px;border-radius:999px;background:#f2f3f5;color:#111;font-size:12px;";
+  badge.className="supabase-count-badge";
+  badge.style.cssText="margin-left:8px;padding:2px 8px;border-radius:999px;background:#f2f3f5;color:#111;font-size:12px;";
+  badge.textContent = pluralizeBus(n);
   heading.after(badge);
-  return badge;
 }
 
-/* ——— Render kart ——— */
+/* ——— render kart Supabase ——— */
 function renderCards(list){
   return list.map(x=>{
     const img = Array.isArray(x.zdjecia)&&x.zdjecia[0] ? x.zdjecia[0] : "https://placehold.co/640x360?text=Brak+zdjecia";
@@ -78,16 +94,13 @@ function renderCards(list){
   });
 }
 
-/* ——— Główna podmiana w obrębie SEKCJI ——— */
+/* ——— główna podmiana ——— */
 async function replaceInSection(){
-  // usuń stare artefakty (nasze) gdziekolwiek, żeby zniknęło „0 busów” w złym miejscu
-  document.querySelectorAll(".supabase-count-badge,#supabase-feed-root").forEach(n=>n.remove());
-
   const ctx = findListingSection();
   if(!ctx) return;
   const { section, heading } = ctx;
 
-  // utwórz własny root pod listę zaraz pod nagłówkiem
+  // root na nasze karty (tuż pod nagłówkiem)
   let root = section.querySelector("#supabase-feed-root");
   if(!root){
     root = document.createElement("div");
@@ -96,19 +109,16 @@ async function replaceInSection(){
     heading.after(root);
   }
 
-  // ukryj mockowy grid TYLKO w tej sekcji
-  const mock = findMockGrid(section);
-  if(mock){ mock.style.display = "none"; mock.setAttribute("data-hidden-by-supabase","true"); }
+  // ukryj WSZYSTKIE mock-grids w tej sekcji
+  const mocks = findMockContainers(section, heading);
+  mocks.forEach(m=>{ m.style.display="none"; m.setAttribute("data-hidden-by-supabase","true"); });
 
-  // pobierz dane i wyrenderuj
+  // pobierz i wstaw
   const data = await fetchListings();
-  const count = Array.isArray(data) ? data.length : 0;
-
-  const badge = ensureCounter(heading);
-  badge.textContent = pluralizeBus(count);
+  setCounterNear(heading, Array.isArray(data)?data.length:0);
 
   root.innerHTML = "";
-  if(count){
+  if(Array.isArray(data) && data.length){
     const grid = el(`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>`);
     renderCards(data).forEach(card=>grid.appendChild(card));
     root.appendChild(grid);
@@ -117,14 +127,14 @@ async function replaceInSection(){
   }
 }
 
-/* ——— SPA: odśwież po każdej zmianie trasy / załadowaniu ——— */
+/* ——— SPA i reload ——— */
 function onRoute(){
   const p = location.pathname;
   if (p === "/" || /^\/ogloszenia(\/|$)/.test(p)) {
     setTimeout(replaceInSection, 50);
     const obs = new MutationObserver((m,o)=>{
-      const hit = findListingSection();
-      if(hit){ replaceInSection(); o.disconnect(); }
+      const ctx = findListingSection();
+      if(ctx){ replaceInSection(); o.disconnect(); }
     });
     obs.observe(document, {childList:true, subtree:true});
     setTimeout(()=>obs.disconnect(), 5000);
