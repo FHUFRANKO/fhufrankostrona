@@ -1,3 +1,6 @@
 
 /* FIX: ukryj wstrzykiwany placeholder Supa, który pojawia się nad treścią */
 #supa-ads-root,.supa-ads-root{display:none !important;}
+
+/* FIX: ukryj wstrzykiwany placeholder Supa */
+#supa-ads-root,.supa-ads-root,[id^="supa-ads"]{display:none !important;}
