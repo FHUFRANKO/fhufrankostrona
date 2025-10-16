@@ -290,6 +290,99 @@ async def get_stats():
     }
 
 
+# Opinion Models
+class Opinion(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    imie: str  # Imię klienta
+    typDzialalnosci: str  # np. "Firma kurierska", "Budownictwo"
+    komentarz: str  # Pozytywny komentarz
+    ocena: int = 5  # Ocena 1-5
+    zakupionyPojazd: Optional[str] = None  # np. "Mercedes Sprinter 2020"
+    dataPublikacji: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    wyswietlaj: bool = True  # Czy wyświetlać na stronie
+
+
+class OpinionCreate(BaseModel):
+    imie: str
+    typDzialalnosci: str
+    komentarz: str
+    ocena: int = 5
+    zakupionyPojazd: Optional[str] = None
+    wyswietlaj: bool = True
+
+
+class OpinionUpdate(BaseModel):
+    imie: Optional[str] = None
+    typDzialalnosci: Optional[str] = None
+    komentarz: Optional[str] = None
+    ocena: Optional[int] = None
+    zakupionyPojazd: Optional[str] = None
+    wyswietlaj: Optional[bool] = None
+
+
+# Opinion Routes
+@api_router.post("/opinie", response_model=Opinion)
+async def create_opinion(opinion_data: OpinionCreate):
+    """Create a new opinion"""
+    opinion_dict = opinion_data.dict()
+    opinion_obj = Opinion(**opinion_dict)
+    await db.opinions.insert_one(opinion_obj.dict())
+    return opinion_obj
+
+
+@api_router.get("/opinie", response_model=List[Opinion])
+async def get_all_opinions():
+    """Get all opinions (for admin)"""
+    opinions = await db.opinions.find().to_list(1000)
+    return [Opinion(**opinion) for opinion in opinions]
+
+
+@api_router.get("/opinie/public", response_model=List[Opinion])
+async def get_public_opinions():
+    """Get only visible opinions (for public page)"""
+    opinions = await db.opinions.find({"wyswietlaj": True}).to_list(1000)
+    # Sort by date, newest first
+    return sorted([Opinion(**opinion) for opinion in opinions], 
+                  key=lambda x: x.dataPublikacji, reverse=True)
+
+
+@api_router.get("/opinie/{opinion_id}", response_model=Opinion)
+async def get_opinion_by_id(opinion_id: str):
+    """Get a single opinion by ID"""
+    opinion = await db.opinions.find_one({"id": opinion_id})
+    if not opinion:
+        raise HTTPException(status_code=404, detail="Opinion not found")
+    return Opinion(**opinion)
+
+
+@api_router.put("/opinie/{opinion_id}", response_model=Opinion)
+async def update_opinion(opinion_id: str, opinion_update: OpinionUpdate):
+    """Update an opinion"""
+    existing_opinion = await db.opinions.find_one({"id": opinion_id})
+    if not existing_opinion:
+        raise HTTPException(status_code=404, detail="Opinion not found")
+    
+    update_data = {k: v for k, v in opinion_update.dict().items() if v is not None}
+    
+    if update_data:
+        await db.opinions.update_one(
+            {"id": opinion_id},
+            {"$set": update_data}
+        )
+    
+    updated_opinion = await db.opinions.find_one({"id": opinion_id})
+    return Opinion(**updated_opinion)
+
+
+@api_router.delete("/opinie/{opinion_id}")
+async def delete_opinion(opinion_id: str):
+    """Delete an opinion"""
+    result = await db.opinions.delete_one({"id": opinion_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Opinion not found")
+    return {"success": True, "message": "Opinion deleted successfully"}
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
