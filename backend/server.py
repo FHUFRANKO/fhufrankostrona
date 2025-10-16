@@ -382,7 +382,7 @@ class OpinionUpdate(BaseModel):
 
 
 # Opinion Routes
-@api_router.post("/opinie", response_model=Opinion)
+@api_router.post("/opinie", response_model=Opinion, dependencies=[Depends(admin_required)])
 async def create_opinion(opinion_data: OpinionCreate):
     """Create a new opinion"""
     opinion_dict = opinion_data.dict()
