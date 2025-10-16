@@ -18,17 +18,19 @@ import {
   Mail,
   ChevronRight
 } from 'lucide-react';
-import { mockOpinie, mockPrzewagi, mockUslugi } from '../mock';
+import { mockPrzewagi, mockUslugi } from '../mock';
 import { busApi } from '../api/busApi';
 
 export const HomePage = () => {
   const navigate = useNavigate();
   const [featuredBuses, setFeaturedBuses] = useState([]);
+  const [opinions, setOpinions] = useState([]);
   const [savedBuses, setSavedBuses] = useState(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchFeaturedBuses();
+    fetchOpinions();
   }, []);
 
   const fetchFeaturedBuses = async () => {
@@ -42,6 +44,16 @@ export const HomePage = () => {
       console.error('Error fetching buses:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOpinions = async () => {
+    try {
+      const data = await busApi.getPublicOpinions();
+      // Get only first 3 opinions for homepage
+      setOpinions(data.slice(0, 3));
+    } catch (error) {
+      console.error('Error fetching opinions:', error);
     }
   };
 
