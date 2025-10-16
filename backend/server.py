@@ -288,7 +288,7 @@ async def create_bus(bus_data: BusCreate):
     return bus_obj
 
 
-@api_router.get("/ogloszenia", response_model=List[Bus])
+@api_router.get("/ogloszenia", response_model=List[Bus], dependencies=[Depends(admin_required)])
 async def get_all_buses():
     """Get all bus listings"""
     buses = await db.buses.find().to_list(1000)
