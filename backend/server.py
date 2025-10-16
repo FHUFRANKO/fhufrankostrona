@@ -326,7 +326,7 @@ async def update_bus(bus_id: str, bus_update: BusUpdate):
     return Bus(**updated_bus)
 
 
-@api_router.delete("/ogloszenia/{bus_id}")
+@api_router.delete("/ogloszenia/{bus_id}", dependencies=[Depends(admin_required)])
 async def delete_bus(bus_id: str):
     """Delete a bus listing"""
     result = await db.buses.delete_one({"id": bus_id})
