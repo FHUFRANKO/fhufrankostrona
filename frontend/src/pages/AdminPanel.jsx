@@ -12,18 +12,23 @@ import {
   Truck,
   Star,
   Eye,
-  BarChart3
+  BarChart3,
+  MessageSquare
 } from 'lucide-react';
 import { busApi } from '../api/busApi';
 import { BusForm } from '../components/BusForm';
+import { OpinionForm } from '../components/OpinionForm';
 import { toast } from 'sonner';
 
 export const AdminPanel = () => {
   const navigate = useNavigate();
   const [buses, setBuses] = useState([]);
+  const [opinions, setOpinions] = useState([]);
   const [stats, setStats] = useState({ total: 0, wyrozniowane: 0, nowe: 0, flotowe: 0 });
   const [showForm, setShowForm] = useState(false);
+  const [showOpinionForm, setShowOpinionForm] = useState(false);
   const [editingBus, setEditingBus] = useState(null);
+  const [editingOpinion, setEditingOpinion] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
