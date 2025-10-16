@@ -127,37 +127,6 @@ export const CarListingPage = () => {
     setFilters({});
   };
 
-  const handleQuickFilter = (filterValue) => {
-    let newFilters = { ...filters };
-    
-    switch(filterValue) {
-      case 'dmc_do_3_5t':
-        newFilters.dmcKategoria = 'do 3.5t';
-        break;
-      case 'z_winda':
-        newFilters.winda = true;
-        break;
-      case 'chlodnia':
-        newFilters.typNadwozia = 'Chłodnia';
-        break;
-      case 'l3h2':
-        newFilters.wymiarL = 'L3';
-        newFilters.wymiarH = 'H2';
-        break;
-      case 'brygadowy':
-        newFilters.typNadwozia = 'Brygadowy (5-7 miejsc)';
-        break;
-      case 'euro6':
-        newFilters.normaEmisji = 'Euro 6';
-        break;
-      case '4x4':
-        newFilters.czterykola = true;
-        break;
-    }
-    
-    setFilters(newFilters);
-  };
-
   // Pagination
   const totalPages = Math.ceil(filteredBuses.length / busesPerPage);
   const startIndex = (currentPage - 1) * busesPerPage;
