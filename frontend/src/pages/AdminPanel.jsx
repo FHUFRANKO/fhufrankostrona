@@ -171,6 +171,29 @@ export const AdminPanel = () => {
     setEditingBus(null);
   };
 
+  if (showOpinionForm) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <Button
+            variant="ghost"
+            onClick={handleCancelOpinionForm}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Powrót do listy
+          </Button>
+          <OpinionForm
+            initialData={editingOpinion}
+            onSubmit={handleSubmitOpinion}
+            onCancel={handleCancelOpinionForm}
+            loading={loading}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (showForm) {
     return (
       <div className="min-h-screen bg-gray-50">
