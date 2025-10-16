@@ -63,7 +63,7 @@ function App() {
           <Route path="/opinie" element={
             <>
               <Header />
-              <main><PlaceholderPage title="Opinie Klientów" /></main>
+              <main><OpiniePage /></main>
               <Footer />
             </>
           } />
