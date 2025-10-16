@@ -416,7 +416,7 @@ async def get_opinion_by_id(opinion_id: str):
     return Opinion(**opinion)
 
 
-@api_router.put("/opinie/{opinion_id}", response_model=Opinion)
+@api_router.put("/opinie/{opinion_id}", response_model=Opinion, dependencies=[Depends(admin_required)])
 async def update_opinion(opinion_id: str, opinion_update: OpinionUpdate):
     """Update an opinion"""
     existing_opinion = await db.opinions.find_one({"id": opinion_id})
