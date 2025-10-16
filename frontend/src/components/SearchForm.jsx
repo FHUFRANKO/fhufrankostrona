@@ -90,32 +90,6 @@ export const SearchForm = ({ onSearch, initialFilters = {}, compact = false }) =
     });
   };
 
-  const handleQuickFilter = (filterValue) => {
-    switch(filterValue) {
-      case 'dmc_do_3_5t':
-        setFilters(prev => ({ ...prev, dmcKategoria: 'do 3.5t' }));
-        break;
-      case 'z_winda':
-        setFilters(prev => ({ ...prev, winda: true }));
-        break;
-      case 'chlodnia':
-        setFilters(prev => ({ ...prev, typNadwozia: 'Chłodnia' }));
-        break;
-      case 'l3h2':
-        setFilters(prev => ({ ...prev, wymiarL: 'L3', wymiarH: 'H2' }));
-        break;
-      case 'brygadowy':
-        setFilters(prev => ({ ...prev, typNadwozia: 'Brygadowy (5-7 miejsc)' }));
-        break;
-      case 'euro6':
-        setFilters(prev => ({ ...prev, normaEmisji: 'Euro 6' }));
-        break;
-      case '4x4':
-        setFilters(prev => ({ ...prev, czterykola: true }));
-        break;
-    }
-  };
-
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 15 }, (_, i) => currentYear - i); // 2010-2024
 
