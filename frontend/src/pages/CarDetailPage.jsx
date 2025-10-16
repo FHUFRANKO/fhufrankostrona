@@ -27,7 +27,7 @@ import {
   Car,
   Wrench
 } from 'lucide-react';
-import { mockBuses } from '../mock';
+import { busApi } from '../api/busApi';
 
 export const CarDetailPage = () => {
   const { id } = useParams();
@@ -36,6 +36,7 @@ export const CarDetailPage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [contactForm, setContactForm] = useState({
     nazwa: '',
     telefon: '',
@@ -44,10 +45,43 @@ export const CarDetailPage = () => {
   });
 
   useEffect(() => {
-    const foundBus = mockBuses.find(c => c.id === parseInt(id));
-    if (foundBus) {
-      setCar(foundBus);
-    } else {
+    fetchBusDetails();
+  }, [id]);
+
+  const fetchBusDetails = async () => {
+    try {
+      const data = await busApi.getBusById(id);
+      setCar(data);
+    } catch (error) {
+      console.error('Error fetching bus details:', error);
+      // If not found, redirect to listings
+      navigate('/ogloszenia');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F3BC30] mx-auto"></div>
+          <p className="mt-4 text-[#838282]">Ładowanie...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!car) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-[#222122] mb-2">Nie znaleziono ogłoszenia</h2>
+          <Button onClick={() => navigate('/ogloszenia')}>Powrót do ogłoszeń</Button>
+        </div>
+      </div>
+    );
+  }
       navigate('/ogloszenia');
     }
   }, [id, navigate]);
