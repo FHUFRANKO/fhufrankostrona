@@ -474,25 +474,6 @@ export const SearchForm = ({ onSearch, initialFilters = {}, compact = false }) =
           </div>
         </div>
 
-        {/* Szybkie filtry */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-[#222122] mb-3 block">
-            Popularne filtry:
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {szybkieFiltry.map((filter) => (
-              <Badge 
-                key={filter.value}
-                variant="outline" 
-                className="cursor-pointer hover:bg-[#F3BC30] hover:text-[#222122] transition-colors px-3 py-1"
-                onClick={() => handleQuickFilter(filter.value)}
-              >
-                {filter.label} ({filter.count})
-              </Badge>
-            ))}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div>
             <Label className="text-sm font-medium text-[#222122] mb-2 block">
