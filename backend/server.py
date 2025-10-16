@@ -241,7 +241,7 @@ async def root():
     return {"message": "FHU FRANKO API"}
 
 
-@api_router.post("/upload", response_model=dict)
+@api_router.post("/upload", response_model=dict, dependencies=[Depends(admin_required)])
 async def upload_image(file: UploadFile = File(...)):
     """Upload image to Supabase Storage"""
     try:
