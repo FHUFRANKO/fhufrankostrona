@@ -33,6 +33,7 @@ export const AdminPanel = () => {
 
   useEffect(() => {
     fetchBuses();
+    fetchOpinions();
     fetchStats();
   }, []);
 
@@ -43,6 +44,16 @@ export const AdminPanel = () => {
     } catch (error) {
       console.error('Error fetching buses:', error);
       toast.error('Błąd podczas pobierania ogłoszeń');
+    }
+  };
+
+  const fetchOpinions = async () => {
+    try {
+      const data = await busApi.getAllOpinions();
+      setOpinions(data);
+    } catch (error) {
+      console.error('Error fetching opinions:', error);
+      toast.error('Błąd podczas pobierania opinii');
     }
   };
 
