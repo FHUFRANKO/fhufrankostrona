@@ -435,7 +435,7 @@ async def update_opinion(opinion_id: str, opinion_update: OpinionUpdate):
     return Opinion(**updated_opinion)
 
 
-@api_router.delete("/opinie/{opinion_id}")
+@api_router.delete("/opinie/{opinion_id}", dependencies=[Depends(admin_required)])
 async def delete_opinion(opinion_id: str):
     """Delete an opinion"""
     result = await db.opinions.delete_one({"id": opinion_id})
