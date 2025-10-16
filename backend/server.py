@@ -84,6 +84,19 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 
+# Auth endpoint
+@api_router.get("/me")
+async def get_me(user: dict = Depends(get_current_user)):
+    """Get current user info and admin status"""
+    email = (user.get('email') or '').lower()
+    return {
+        "email": email,
+        "admin": email in ADMIN_EMAILS,
+        "user_id": user.get('sub'),
+        "authenticated": True
+    }
+
+
 # Models
 class Bus(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
