@@ -265,29 +265,49 @@ export const HomePage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {mockOpinie.map((opinia) => (
-              <Card key={opinia.id} className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    <div className="flex text-[#F3BC30]">
-                      {[...Array(opinia.ocena)].map((_, i) => (
-                        <Star key={i} className="h-5 w-5 fill-current" />
-                      ))}
+          {opinions.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-[#838282]">Wkrótce pojawią się tu opinie naszych klientów</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {opinions.map((opinia) => (
+                <Card key={opinia.id} className="border-0 shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="flex text-[#F3BC30]">
+                        {[...Array(opinia.ocena || 5)].map((_, i) => (
+                          <Star key={i} className="h-5 w-5 fill-current" />
+                        ))}
+                      </div>
                     </div>
-                    <span className="ml-2 text-sm text-[#838282]">
-                      {opinia.data}
-                    </span>
-                  </div>
-                  <p className="text-[#838282] mb-4 italic">
-                    "{opinia.komentarz}"
-                  </p>
-                  <div className="font-medium text-[#222122]">
-                    {opinia.autor}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <p className="text-[#838282] mb-4 italic leading-relaxed">
+                      "{opinia.komentarz}"
+                    </p>
+                    <div>
+                      <div className="font-semibold text-[#222122]">
+                        {opinia.imie}
+                      </div>
+                      <div className="text-sm text-[#838282]">
+                        {opinia.typDzialalnosci}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-12">
+            <Button
+              onClick={() => navigate('/opinie')}
+              variant="outline"
+              className="border-[#F3BC30] text-[#222122] hover:bg-[#F3BC30]"
+            >
+              Zobacz wszystkie opinie
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
           </div>
         </div>
       </section>
