@@ -18,20 +18,32 @@ import {
   Mail,
   ChevronRight
 } from 'lucide-react';
-import { mockBuses, mockOpinie, mockPrzewagi, mockUslugi } from '../mock';
+import { mockOpinie, mockPrzewagi, mockUslugi } from '../mock';
+import { busApi } from '../api/busApi';
 
 export const HomePage = () => {
   const navigate = useNavigate();
   const [featuredBuses, setFeaturedBuses] = useState([]);
   const [savedBuses, setSavedBuses] = useState(new Set());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get featured and newest buses
-    const featured = mockBuses
-      .filter(bus => bus.wyrozniowane || bus.nowosc || bus.flotowy)
-      .slice(0, 6);
-    setFeaturedBuses(featured);
+    fetchFeaturedBuses();
   }, []);
+
+  const fetchFeaturedBuses = async () => {
+    try {
+      const allBuses = await busApi.getAllBuses();
+      const featured = allBuses
+        .filter(bus => bus.wyrozniowane || bus.nowosc || bus.flotowy)
+        .slice(0, 6);
+      setFeaturedBuses(featured);
+    } catch (error) {
+      console.error('Error fetching buses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBusClick = (bus) => {
     navigate(`/ogloszenie/${bus.id}`);
