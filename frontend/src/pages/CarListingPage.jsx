@@ -190,22 +190,6 @@ export const CarListingPage = () => {
       {/* Results Header */}
       <section className="py-6 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Quick Filters */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span className="text-sm font-medium text-[#838282] mr-2">Szybkie filtry:</span>
-            {szybkieFiltry.map((filter) => (
-              <Badge 
-                key={filter.value}
-                variant="outline" 
-                className="cursor-pointer hover:bg-[#F3BC30] hover:text-[#222122] transition-colors"
-                onClick={() => handleQuickFilter(filter.value)}
-              >
-                {filter.label} ({filter.count})
-              </Badge>
-            ))}
-          </div>
-
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             
             <div className="flex items-center gap-4">
