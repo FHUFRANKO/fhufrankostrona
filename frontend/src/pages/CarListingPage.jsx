@@ -43,7 +43,7 @@ export const CarListingPage = () => {
   };
 
   const filterAndSortBuses = () => {
-    let filtered = mockBuses.filter(bus => {
+    let filtered = allBuses.filter(bus => {
       const matchesMarka = !filters.marka || bus.marka === filters.marka;
       const matchesModel = !filters.model || bus.model === filters.model;
       const matchesRokOd = !filters.rokOd || bus.rok >= parseInt(filters.rokOd);
