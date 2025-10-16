@@ -430,6 +430,92 @@ export const AdminPanel = () => {
               </div>
             )}
           </TabsContent>
+
+          {/* Opinie Tab */}
+          <TabsContent value="opinie" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-[#222122]">Lista opinii</h2>
+              <Button
+                onClick={handleAddOpinion}
+                className="bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Dodaj Opinię
+              </Button>
+            </div>
+
+            {opinions.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <MessageSquare className="h-16 w-16 mx-auto text-[#838282] mb-4" />
+                  <h3 className="text-xl font-semibold text-[#222122] mb-2">Brak opinii</h3>
+                  <p className="text-[#838282] mb-6">Dodaj pierwszą opinię klienta</p>
+                  <Button
+                    onClick={handleAddOpinion}
+                    className="bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122]"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Dodaj Opinię
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {opinions.map((opinion) => (
+                  <Card key={opinion.id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-lg text-[#222122]">
+                              {opinion.imie}
+                            </h3>
+                            <div className="flex text-[#F3BC30]">
+                              {[...Array(opinion.ocena || 5)].map((_, i) => (
+                                <Star key={i} className="h-4 w-4 fill-current" />
+                              ))}
+                            </div>
+                            {!opinion.wyswietlaj && (
+                              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
+                                Ukryta
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#838282] mb-2">
+                            {opinion.typDzialalnosci}
+                            {opinion.zakupionyPojazd && ` • ${opinion.zakupionyPojazd}`}
+                          </p>
+                          <p className="text-sm text-[#838282] italic">
+                            "{opinion.komentarz.substring(0, 150)}
+                            {opinion.komentarz.length > 150 ? '...' : ''}"
+                          </p>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditOpinion(opinion)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edytuj
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteOpinion(opinion.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Usuń
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
