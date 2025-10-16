@@ -114,6 +114,58 @@ export const AdminPanel = () => {
     }
   };
 
+  // Opinion handlers
+  const handleAddOpinion = () => {
+    setEditingOpinion(null);
+    setShowOpinionForm(true);
+  };
+
+  const handleEditOpinion = (opinion) => {
+    setEditingOpinion(opinion);
+    setShowOpinionForm(true);
+  };
+
+  const handleDeleteOpinion = async (opinionId) => {
+    if (!window.confirm('Czy na pewno chcesz usunąć tę opinię?')) {
+      return;
+    }
+
+    try {
+      await busApi.deleteOpinion(opinionId);
+      toast.success('Opinia została usunięta');
+      fetchOpinions();
+    } catch (error) {
+      console.error('Error deleting opinion:', error);
+      toast.error('Błąd podczas usuwania opinii');
+    }
+  };
+
+  const handleSubmitOpinion = async (opinionData) => {
+    setLoading(true);
+    try {
+      if (editingOpinion) {
+        await busApi.updateOpinion(editingOpinion.id, opinionData);
+        toast.success('Opinia została zaktualizowana');
+      } else {
+        await busApi.createOpinion(opinionData);
+        toast.success('Opinia została dodana');
+      }
+      setShowOpinionForm(false);
+      setEditingOpinion(null);
+      fetchOpinions();
+    } catch (error) {
+      console.error('Error saving opinion:', error);
+      toast.error('Błąd podczas zapisywania opinii');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOpinionForm = () => {
+    setShowOpinionForm(false);
+    setEditingOpinion(null);
+  };
+
   const handleCancelForm = () => {
     setShowForm(false);
     setEditingBus(null);
