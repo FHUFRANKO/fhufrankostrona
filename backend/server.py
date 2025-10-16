@@ -391,7 +391,7 @@ async def create_opinion(opinion_data: OpinionCreate):
     return opinion_obj
 
 
-@api_router.get("/opinie", response_model=List[Opinion])
+@api_router.get("/opinie", response_model=List[Opinion], dependencies=[Depends(admin_required)])
 async def get_all_opinions():
     """Get all opinions (for admin)"""
     opinions = await db.opinions.find().to_list(1000)
