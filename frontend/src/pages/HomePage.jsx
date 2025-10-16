@@ -90,7 +90,7 @@ export const HomePage = () => {
             
             <div className="text-center lg:text-left">
               <Badge className="bg-[#F3BC30] text-[#222122] hover:bg-[#E0AA2B] mb-6 text-sm font-medium px-4 py-2">
-                🚐 Nowe busy w ofercie co tydzień
+                🚐 Nowe busy w ofercie
               </Badge>
               
               <h1 className="text-4xl lg:text-6xl font-bold text-[#222122] mb-6 leading-tight">
