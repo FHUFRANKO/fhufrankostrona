@@ -64,13 +64,13 @@ export const OpinionForm = ({ initialData, onSubmit, onCancel, loading }) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="imie">Imię klienta *</Label>
+              <Label htmlFor="imie">Imię *</Label>
               <Input
                 type="text"
                 id="imie"
                 value={formData.imie}
                 onChange={(e) => handleChange('imie', e.target.value)}
-                placeholder="np. Jan Kowalski"
+                placeholder="np. Jan"
                 required
               />
             </div>
