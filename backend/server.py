@@ -273,7 +273,7 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
-@api_router.post("/ogloszenia", response_model=Bus)
+@api_router.post("/ogloszenia", response_model=Bus, dependencies=[Depends(admin_required)])
 async def create_bus(bus_data: BusCreate):
     """Create a new bus listing"""
     bus_dict = bus_data.dict()
