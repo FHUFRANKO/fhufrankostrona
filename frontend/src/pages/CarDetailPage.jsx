@@ -111,10 +111,7 @@ export const CarDetailPage = () => {
     return new Intl.NumberFormat('pl-PL').format(przebieg) + ' km';
   };
 
-  if (!car) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+  return (
           <div className="text-4xl mb-4">🚗</div>
           <h2 className="text-xl font-semibold text-[#222122] mb-2">
             Ładowanie...
