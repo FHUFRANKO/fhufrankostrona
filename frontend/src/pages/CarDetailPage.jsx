@@ -82,9 +82,6 @@ export const CarDetailPage = () => {
       </div>
     );
   }
-      navigate('/ogloszenia');
-    }
-  }, [id, navigate]);
 
   const handlePrevImage = () => {
     setCurrentImageIndex(prev => 
