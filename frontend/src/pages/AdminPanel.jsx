@@ -254,6 +254,10 @@ export const AdminPanel = () => {
               <Truck className="h-4 w-4 mr-2" />
               Ogłoszenia
             </TabsTrigger>
+            <TabsTrigger value="opinie">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Opinie
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
