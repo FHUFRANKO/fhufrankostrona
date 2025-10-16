@@ -9,6 +9,7 @@ import { CarDetailPage } from "./pages/CarDetailPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { KontaktPage } from "./pages/KontaktPage";
 import { ONasPage } from "./pages/ONasPage";
+import { Toaster } from "./components/ui/sonner";
 
 // Placeholder components for other pages
 const PlaceholderPage = ({ title }) => (
