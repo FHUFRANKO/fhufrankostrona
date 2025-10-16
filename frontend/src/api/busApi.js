@@ -50,4 +50,35 @@ export const busApi = {
     const response = await axios.get(`${API_URL}/api/stats`);
     return response.data;
   },
+
+  // Opinions API
+  async getAllOpinions() {
+    const response = await axios.get(`${API_URL}/api/opinie`);
+    return response.data;
+  },
+
+  async getPublicOpinions() {
+    const response = await axios.get(`${API_URL}/api/opinie/public`);
+    return response.data;
+  },
+
+  async getOpinionById(id) {
+    const response = await axios.get(`${API_URL}/api/opinie/${id}`);
+    return response.data;
+  },
+
+  async createOpinion(opinionData) {
+    const response = await axios.post(`${API_URL}/api/opinie`, opinionData);
+    return response.data;
+  },
+
+  async updateOpinion(id, opinionData) {
+    const response = await axios.put(`${API_URL}/api/opinie/${id}`, opinionData);
+    return response.data;
+  },
+
+  async deleteOpinion(id) {
+    const response = await axios.delete(`${API_URL}/api/opinie/${id}`);
+    return response.data;
+  },
 };
