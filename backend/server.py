@@ -304,7 +304,7 @@ async def get_bus_by_id(bus_id: str):
     return Bus(**bus)
 
 
-@api_router.put("/ogloszenia/{bus_id}", response_model=Bus)
+@api_router.put("/ogloszenia/{bus_id}", response_model=Bus, dependencies=[Depends(admin_required)])
 async def update_bus(bus_id: str, bus_update: BusUpdate):
     """Update a bus listing"""
     # Get existing bus
