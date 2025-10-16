@@ -29,6 +29,54 @@ supabase_bucket = os.environ.get('SUPABASE_BUCKET', 'bus-images')
 
 supabase: Client = create_client(supabase_url, supabase_key)
 
+# --- AUTH START ---
+import jwt
+from fastapi import Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+oauth2_scheme = HTTPBearer(auto_error=False)
+JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET', '')
+ADMIN_EMAILS = set(e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip())
+
+def verify_supabase_token(token: str) -> dict:
+    """Verify Supabase JWT token"""
+    if not JWT_SECRET:
+        raise HTTPException(status_code=500, detail="SUPABASE_JWT_SECRET not configured")
+    try:
+        payload = jwt.decode(
+            token, 
+            JWT_SECRET, 
+            algorithms=["HS256"], 
+            options={"verify_aud": False}
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+
+async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(oauth2_scheme)):
+    """Get current authenticated user from JWT token"""
+    if not creds:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    if not JWT_SECRET:
+        raise HTTPException(status_code=500, detail="SUPABASE_JWT_SECRET not configured")
+    
+    payload = verify_supabase_token(creds.credentials)
+    return payload
+
+def admin_required(user: dict = Depends(get_current_user)):
+    """Dependency to require admin privileges"""
+    email = (user.get('email') or '').lower()
+    if email not in ADMIN_EMAILS:
+        raise HTTPException(
+            status_code=403, 
+            detail=f"Admin access required. Email '{email}' is not in admin list."
+        )
+    return user
+# --- AUTH END ---
+
 # Create the main app without a prefix
 app = FastAPI()
 
