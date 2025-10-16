@@ -112,19 +112,6 @@ export const CarDetailPage = () => {
   };
 
   return (
-          <div className="text-4xl mb-4">🚗</div>
-          <h2 className="text-xl font-semibold text-[#222122] mb-2">
-            Ładowanie...
-          </h2>
-          <p className="text-[#838282]">
-            Pobieramy szczegóły samochodu
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white py-4 border-b">
