@@ -6,23 +6,41 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Grid3X3, List, SlidersHorizontal } from 'lucide-react';
-import { mockBuses, szybkieFiltry } from '../mock';
+import { szybkieFiltry } from '../mock';
+import { busApi } from '../api/busApi';
 
 export const CarListingPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
   const [filters, setFilters] = useState(location.state?.filters || {});
+  const [allBuses, setAllBuses] = useState([]);
   const [filteredBuses, setFilteredBuses] = useState([]);
   const [sortBy, setSortBy] = useState('data-desc');
   const [viewMode, setViewMode] = useState('grid');
   const [savedBuses, setSavedBuses] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const busesPerPage = 12;
 
   useEffect(() => {
+    fetchBuses();
+  }, []);
+
+  useEffect(() => {
     filterAndSortBuses();
-  }, [filters, sortBy]);
+  }, [filters, sortBy, allBuses]);
+
+  const fetchBuses = async () => {
+    try {
+      const data = await busApi.getAllBuses();
+      setAllBuses(data);
+    } catch (error) {
+      console.error('Error fetching buses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filterAndSortBuses = () => {
     let filtered = mockBuses.filter(bus => {
