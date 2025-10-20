@@ -50,19 +50,13 @@ export const Header = () => {
               className="flex items-center cursor-pointer group"
               onClick={() => handleNavigation('/')}
             >
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-[#F3BC30] rounded-lg flex items-center justify-center mr-3">
-                  <span className="font-bold text-[#222122] text-xl">F</span>
-                </div>
-                <div>
-                  <div className="font-bold text-[#222122] text-lg leading-tight">
-                    FHU FRANKO
-                  </div>
-                  <div className="text-xs text-[#838282] leading-tight">
-                    Autohandel BUSY/LCV
-                  </div>
-                </div>
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="FHU FRANKO Autohandel" 
+                className={`transition-all duration-300 ${
+                  isScrolled ? 'h-10' : 'h-14'
+                } w-auto object-contain`}
+              />
             </div>
 
             {/* Desktop Navigation */}
