@@ -29,8 +29,8 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          {/* Hidden Admin Login - redirect to backend */}
-          <Route path="/admin-:adminPath" element={<AdminLoginRedirect />} />
+          {/* Hidden Admin Login - exact match */}
+          <Route path={`/admin-${process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374'}`} element={<AdminLoginRedirect />} />
           
           {/* Admin Panel - bez Header/Footer */}
           <Route path="/admin" element={<AdminPanel />} />
