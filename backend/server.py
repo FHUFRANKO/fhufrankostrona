@@ -647,22 +647,31 @@ async def admin_gate_post(password: str = Form(...)):
     return resp
 
 
-# JSON-based admin login endpoint
+# JSON-based admin login endpoint (for frontend React form)
 class AdminLoginRequest(BaseModel):
     password: str
 
-@api_router.post("/admin/login")
-async def admin_login_json(login_data: AdminLoginRequest):
-    """Handle admin login via JSON API"""
+@api_router.post(f"/admin-{ADMIN_PATH}")
+async def admin_login_json(request: Request, login_data: AdminLoginRequest):
+    """Handle admin login via JSON API (from React frontend)"""
     if (login_data.password or "").strip() != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Invalid password")
     
-    # Return success response with token info
-    return {
+    # Set cookie in response
+    response = JSONResponse({
         "success": True,
-        "message": "Login successful",
-        "token": _sign("ok")
-    }
+        "message": "Login successful"
+    })
+    response.set_cookie(
+        key=ADMIN_COOKIE_NAME,
+        value=_sign("ok"),
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60 * 60 * 8  # 8 hours
+    )
+    return response
+
 
 # Include the router in the main app
 app.include_router(api_router)
