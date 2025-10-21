@@ -388,10 +388,10 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* Mockowy przycisk dostępu do panelu admina */}
+      {/* Admin panel access button */}
       <div className="fixed bottom-4 left-4 z-50">
         <Button
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate(`/admin-${process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374'}`)}
           className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
           size="sm"
         >
