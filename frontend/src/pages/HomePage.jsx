@@ -387,20 +387,6 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* Admin panel access button */}
-      <div className="fixed bottom-4 left-4 z-50">
-        <Button
-          onClick={() => {
-            const adminPath = process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374';
-            window.location.href = `/admin-${adminPath}`;
-          }}
-          className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
-          size="sm"
-        >
-          🔧 Panel Admina
-        </Button>
-      </div>
     </div>
   );
 };
