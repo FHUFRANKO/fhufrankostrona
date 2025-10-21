@@ -4,8 +4,13 @@ export const AdminLoginRedirect = () => {
   useEffect(() => {
     // Redirect to backend admin login page
     const adminPath = process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374';
-    const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
-    const loginUrl = `${backendUrl}/admin-${adminPath}`;
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+    
+    // Remove /api suffix if present
+    const baseUrl = backendUrl.replace(/\/api\/?$/, '');
+    const loginUrl = `${baseUrl}/admin-${adminPath}`;
+    
+    console.log('Redirecting to:', loginUrl);
     
     // Full page redirect to backend
     window.location.replace(loginUrl);
