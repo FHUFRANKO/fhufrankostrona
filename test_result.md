@@ -204,9 +204,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Admin panel bus CRUD operations"
-    - "Admin panel opinions error fix"
-    - "Image upload functionality"
+    - "Admin panel opinions frontend timing fix"
   stuck_tasks:
     - "Admin panel opinions management"
   test_all: false
@@ -215,3 +213,5 @@ test_plan:
 agent_communication:
     - agent: "main"
       message: "Fixed critical 401 error on public bus listings by removing admin authentication. CORS configured for cookie-based auth. Homepage and listings page now working. Admin panel bus tab working but opinions tab has 401 error. Ready for comprehensive testing of admin CRUD operations."
+    - agent: "testing"
+      message: "✅ BACKEND TESTING COMPLETE - ALL APIs WORKING: Public endpoints (GET /api/ogloszenia, /api/opinie/public, /api/stats) work without auth. Admin endpoints (POST/PUT/DELETE buses & opinions, image upload) work with cookie auth. ❌ FRONTEND ISSUE FOUND: AdminPanel.jsx calls fetchOpinions() before login (line 36 useEffect). Backend auth is perfect - issue is frontend timing. SOLUTION: Add auth check before fetchOpinions() or delay until after login."
