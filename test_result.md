@@ -101,3 +101,111 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Fix the 401 Unauthorized error preventing bus listings from displaying on the public homepage. The GET /api/ogloszenia endpoint was incorrectly protected with admin authentication middleware."
+
+backend:
+  - task: "Remove admin authentication from public bus listings endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Fixed by removing `dependencies=[Depends(admin_required)]` from GET /api/ogloszenia endpoint. Public users can now view bus listings."
+  
+  - task: "Configure CORS for cookie-based authentication"
+    implemented: true
+    working: true
+    file: "/app/backend/.env"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Updated CORS_ORIGINS from '*' to specific origins (localhost:3000 and production URL) to support withCredentials requests."
+
+frontend:
+  - task: "Enable cookie sending with API requests"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/api/busApi.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Added axios.defaults.withCredentials = true to send admin session cookies with API requests."
+
+  - task: "Display buses on homepage"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/HomePage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Buses now display correctly on homepage after fixing the 401 authentication error."
+
+  - task: "Display buses on listings page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/CarListingPage.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Listings page showing buses correctly with search and filter functionality."
+
+  - task: "Admin panel bus management"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/AdminPanel.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Admin panel accessible and displaying buses. Edit/Delete buttons visible. Need to test full CRUD operations including adding new bus with image upload."
+
+  - task: "Admin panel opinions management"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/pages/AdminPanel.jsx"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: false
+          agent: "main"
+          comment: "Admin panel showing 'Błąd podczas pobierania opinii' error. The /api/opinie endpoint returns 401 even with cookie authentication. Opinions display correctly on public pages."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Admin panel bus CRUD operations"
+    - "Admin panel opinions error fix"
+    - "Image upload functionality"
+  stuck_tasks:
+    - "Admin panel opinions management"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: "Fixed critical 401 error on public bus listings by removing admin authentication. CORS configured for cookie-based auth. Homepage and listings page now working. Admin panel bus tab working but opinions tab has 401 error. Ready for comprehensive testing of admin CRUD operations."
