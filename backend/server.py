@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,6 +19,10 @@ import base64
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Create uploads directory
+UPLOADS_DIR = ROOT_DIR / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # Admin Panel Configuration
 ADMIN_PATH = os.getenv("ADMIN_PATH", "moj-tajny-panel-82374")
