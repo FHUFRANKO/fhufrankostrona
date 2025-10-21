@@ -148,13 +148,22 @@ api_router = APIRouter(prefix="/api")
 
 # Auth endpoint
 @api_router.get("/me")
-async def get_me(user: dict = Depends(get_current_user)):
+async def get_me(user: dict = Depends(get_current_user_optional)):
     """Get current user info and admin status"""
+    if user.get("auth_method") == "cookie":
+        return {
+            "email": "admin (cookie-based)",
+            "admin": True,
+            "auth_method": "cookie",
+            "authenticated": True
+        }
+    
     email = (user.get('email') or '').lower()
     return {
         "email": email,
-        "admin": email in ADMIN_EMAILS,
+        "admin": email in ADMIN_EMAILS if ADMIN_EMAILS else False,
         "user_id": user.get('sub'),
+        "auth_method": "jwt",
         "authenticated": True
     }
 
