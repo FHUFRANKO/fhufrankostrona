@@ -710,6 +710,9 @@ async def admin_login_json(request: Request, login_data: AdminLoginRequest):
 # Include the router in the main app
 app.include_router(api_router)
 
+# Mount static files for local uploads
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
