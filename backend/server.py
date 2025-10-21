@@ -651,6 +651,12 @@ async def admin_gate_post(password: str = Form(...)):
 class AdminLoginRequest(BaseModel):
     password: str
 
+@api_router.get(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
+async def admin_login_get_api():
+    """Handle GET request to API endpoint - redirect to frontend login page"""
+    # Redirect to frontend React login form
+    return RedirectResponse(url=f"/admin-{ADMIN_PATH}", status_code=303)
+
 @api_router.post(f"/admin-{ADMIN_PATH}")
 async def admin_login_json(request: Request, login_data: AdminLoginRequest):
     """Handle admin login via JSON API (from React frontend)"""
