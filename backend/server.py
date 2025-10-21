@@ -83,15 +83,43 @@ async def get_current_user(creds: HTTPAuthorizationCredentials = Depends(oauth2_
     payload = verify_supabase_token(creds.credentials)
     return payload
 
-def admin_required(user: dict = Depends(get_current_user)):
-    """Dependency to require admin privileges"""
-    email = (user.get('email') or '').lower()
-    if email not in ADMIN_EMAILS:
-        raise HTTPException(
-            status_code=403, 
-            detail=f"Admin access required. Email '{email}' is not in admin list."
-        )
-    return user
+async def get_current_user_optional(
+    request: Request,
+    creds: HTTPAuthorizationCredentials = Depends(oauth2_scheme)
+):
+    """Get current user from JWT or cookie session"""
+    # Try cookie first (password-based admin access)
+    cookie_token = request.cookies.get(ADMIN_COOKIE_NAME)
+    if cookie_token == _sign("ok"):
+        return {"email": "admin@cookie", "auth_method": "cookie"}
+    
+    # Try JWT token
+    if creds and JWT_SECRET:
+        try:
+            payload = verify_supabase_token(creds.credentials)
+            return {**payload, "auth_method": "jwt"}
+        except:
+            pass
+    
+    raise HTTPException(status_code=401, detail="Authentication required")
+
+def admin_required(user: dict = Depends(get_current_user_optional)):
+    """Dependency to require admin privileges (cookie or JWT)"""
+    # Cookie-based access is always admin
+    if user.get("auth_method") == "cookie":
+        return user
+    
+    # JWT-based access requires email in whitelist
+    if user.get("auth_method") == "jwt":
+        email = (user.get('email') or '').lower()
+        if email not in ADMIN_EMAILS:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Admin access required. Email '{email}' is not in admin list."
+            )
+        return user
+    
+    raise HTTPException(status_code=403, detail="Admin access required")
 # --- AUTH END ---
 
 # Create the main app without a prefix
