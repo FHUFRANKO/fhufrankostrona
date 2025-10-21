@@ -42,8 +42,11 @@ export const AdminPanel = () => {
       const data = await busApi.getAllBuses();
       setBuses(data);
     } catch (error) {
-      console.error('Error fetching buses:', error);
-      toast.error('Błąd podczas pobierania ogłoszeń');
+      // Silently fail if not authenticated yet
+      if (error.response?.status !== 401) {
+        console.error('Error fetching buses:', error);
+        toast.error('Błąd podczas pobierania ogłoszeń');
+      }
     }
   };
 
