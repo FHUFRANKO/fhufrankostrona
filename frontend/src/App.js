@@ -10,6 +10,7 @@ import { AdminPanel } from "./pages/AdminPanel";
 import { KontaktPage } from "./pages/KontaktPage";
 import { ONasPage } from "./pages/ONasPage";
 import { OpiniePage } from "./pages/OpiniePage";
+import { AdminLoginRedirect } from "./pages/AdminLoginRedirect";
 import { Toaster } from "./components/ui/sonner";
 
 // Placeholder components for other pages
