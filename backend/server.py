@@ -1,9 +1,11 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Request
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import hmac
+import hashlib
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -16,6 +18,16 @@ import base64
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Admin Panel Configuration
+ADMIN_PATH = os.getenv("ADMIN_PATH", "moj-tajny-panel-82374")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ZmienMnieTeraz123!")
+ADMIN_COOKIE_SECRET = os.getenv("ADMIN_COOKIE_SECRET", "ZmienTenSekret123!")
+ADMIN_COOKIE_NAME = "admin_session"
+
+def _sign(value: str) -> str:
+    """Sign a value with HMAC-SHA256"""
+    return hmac.new(ADMIN_COOKIE_SECRET.encode(), value.encode(), hashlib.sha256).hexdigest()
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
