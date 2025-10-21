@@ -52,8 +52,11 @@ export const AdminPanel = () => {
       const data = await busApi.getAllOpinions();
       setOpinions(data);
     } catch (error) {
-      console.error('Error fetching opinions:', error);
-      toast.error('Błąd podczas pobierania opinii');
+      // Silently fail if not authenticated yet - admin might not be logged in
+      if (error.response?.status !== 401) {
+        console.error('Error fetching opinions:', error);
+        toast.error('Błąd podczas pobierania opinii');
+      }
     }
   };
 
