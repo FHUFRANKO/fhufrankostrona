@@ -473,6 +473,180 @@ async def delete_opinion(opinion_id: str):
     return {"success": True, "message": "Opinion deleted successfully"}
 
 
+# Hidden Admin Login Gate
+@app.get(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
+async def admin_gate_get():
+    """Hidden admin login page"""
+    return """
+    <!DOCTYPE html>
+    <html lang="pl">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Admin Access</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+                color: #c9d1d9;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 20px;
+            }
+            .container {
+                background: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+                padding: 40px;
+                max-width: 400px;
+                width: 100%;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            }
+            h2 {
+                color: #58a6ff;
+                margin-bottom: 24px;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            input {
+                padding: 12px 16px;
+                border: 1px solid #30363d;
+                border-radius: 8px;
+                background: #0d1117;
+                color: #c9d1d9;
+                font-size: 14px;
+                transition: all 0.2s;
+            }
+            input:focus {
+                outline: none;
+                border-color: #58a6ff;
+                box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+            }
+            button {
+                padding: 12px 16px;
+                border: none;
+                border-radius: 8px;
+                background: #238636;
+                color: white;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            button:hover {
+                background: #2ea043;
+            }
+            button:active {
+                transform: scale(0.98);
+            }
+            .warning {
+                font-size: 12px;
+                color: #8b949e;
+                text-align: center;
+                margin-top: 16px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h2>🔒 Panel Administratora</h2>
+            <form method="post">
+                <input 
+                    type="password" 
+                    name="password" 
+                    placeholder="Wprowadź hasło dostępu" 
+                    required 
+                    autofocus
+                    autocomplete="current-password"
+                />
+                <button type="submit">Zaloguj się</button>
+            </form>
+            <p class="warning">⚠️ Tylko dla upoważnionych użytkowników</p>
+        </div>
+    </body>
+    </html>
+    """
+
+
+@app.post(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
+async def admin_gate_post(password: str = Form(...)):
+    """Handle admin login form submission"""
+    if (password or "").strip() != ADMIN_PASSWORD:
+        return """
+        <!DOCTYPE html>
+        <html lang="pl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Access Denied</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+                    color: #c9d1d9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                }
+                .container {
+                    background: #161b22;
+                    border: 1px solid #30363d;
+                    border-radius: 12px;
+                    padding: 40px;
+                    text-align: center;
+                    max-width: 400px;
+                }
+                h3 {
+                    color: #f85149;
+                    margin-bottom: 16px;
+                    font-size: 20px;
+                }
+                a {
+                    color: #58a6ff;
+                    text-decoration: none;
+                    font-weight: 500;
+                }
+                a:hover {
+                    text-decoration: underline;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h3>❌ Błędne hasło</h3>
+                <p>Dostęp zabroniony</p>
+                <br>
+                <a href="">← Spróbuj ponownie</a>
+            </div>
+        </body>
+        </html>
+        """
+    
+    # Correct password - set secure cookie and redirect
+    resp = RedirectResponse(url="/admin", status_code=303)
+    resp.set_cookie(
+        key=ADMIN_COOKIE_NAME,
+        value=_sign("ok"),
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=60 * 60 * 8  # 8 hours
+    )
+    return resp
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
