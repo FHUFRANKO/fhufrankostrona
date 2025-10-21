@@ -357,6 +357,64 @@ A: Wywołaj `GET /api/me` - jeśli zwróci 200, token jest ważny
 **Q: Jak długo token jest ważny?**  
 A: Domyślnie 1 godzina (konfigurowane w Supabase)
 
+**Q: Jak zmienić ukryty URL panelu?**  
+A: Zmień `ADMIN_PATH` w `.env` i zrestartuj backend. Pamiętaj też zaktualizować `REACT_APP_ADMIN_PATH` w frontend/.env
+
+**Q: Zapomniałem hasła dostępu do panelu**  
+A: Hasło jest w pliku `/app/backend/.env` pod kluczem `ADMIN_PASSWORD`
+
+**Q: Czy hasło dostępu jest bezpieczne?**  
+A: Tak - używamy HMAC-SHA256 do podpisywania cookies. Cookie nie zawiera hasła, tylko podpis. Ale ZAWSZE zmień domyślne hasło!
+
+**Q: Jak wylogować się z panelu?**  
+A: Usuń cookie `admin_session` w przeglądarce lub poczekaj 8h (wygaśnie automatycznie)
+
+## Bezpieczeństwo warstwy hasłowej
+
+### Zalecenia
+
+1. **ADMIN_PATH**: Użyj losowego ciągu (min. 16 znaków):
+   ```bash
+   # Przykład generowania:
+   python3 -c "import secrets; print(secrets.token_urlsafe(16))"
+   ```
+
+2. **ADMIN_PASSWORD**: Silne hasło (min. 16 znaków, mix wielkich/małych liter, cyfr, znaków specjalnych)
+
+3. **ADMIN_COOKIE_SECRET**: Losowy sekret (min. 32 znaki):
+   ```bash
+   # Przykład generowania:
+   python3 -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+4. **Regularnie zmieniaj** te wartości (np. co 3 miesiące)
+
+5. **Nie commituj** pliku `.env` do repozytorium!
+
+### Architektura bezpieczeństwa
+
+```
+┌──────────────────┐
+│  Użytkownik      │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────────────────┐
+│ Warstwa 1: Ukryty URL + Hasło│ ← Podstawowa ochrona
+│ - /admin-{ADMIN_PATH}        │
+│ - Formularz hasła            │
+│ - HMAC-signed cookie (8h)    │
+└────────┬─────────────────────┘
+         │
+         ▼
+┌──────────────────────────────┐
+│ Warstwa 2: Supabase JWT      │ ← API protection
+│ - JWT token verification     │
+│ - ADMIN_EMAILS whitelist     │
+│ - Per-endpoint authorization │
+└──────────────────────────────┘
+```
+
 ## Kontakt
 
 W razie problemów sprawdź logi backendu:
@@ -368,5 +426,5 @@ tail -f /var/log/supervisor/backend.out.log
 ---
 
 **Autor:** E1 Agent  
-**Data:** 2025-10-16  
-**Wersja:** 1.0.0
+**Data:** 2025-10-21  
+**Wersja:** 2.0.0 (z ukrytym URL + hasłem)
