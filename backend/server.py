@@ -272,7 +272,7 @@ async def root():
 
 @api_router.post("/upload", response_model=dict, dependencies=[Depends(admin_required)])
 async def upload_image(file: UploadFile = File(...)):
-    """Upload image to Supabase Storage"""
+    """Upload image to Supabase Storage or local fallback"""
     try:
         # Read file content
         contents = await file.read()
@@ -280,23 +280,46 @@ async def upload_image(file: UploadFile = File(...)):
         # Generate unique filename
         file_extension = file.filename.split('.')[-1]
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        file_path = f"buses/{unique_filename}"
         
-        # Upload to Supabase
-        result = supabase.storage.from_(supabase_bucket).upload(
-            file_path,
-            contents,
-            file_options={"content-type": file.content_type}
-        )
-        
-        # Get public URL
-        public_url = supabase.storage.from_(supabase_bucket).get_public_url(file_path)
-        
-        return {
-            "success": True,
-            "url": public_url,
-            "filename": unique_filename
-        }
+        # Try Supabase first
+        try:
+            file_path = f"buses/{unique_filename}"
+            result = supabase.storage.from_(supabase_bucket).upload(
+                file_path,
+                contents,
+                file_options={"content-type": file.content_type}
+            )
+            
+            # Get public URL
+            public_url = supabase.storage.from_(supabase_bucket).get_public_url(file_path)
+            
+            return {
+                "success": True,
+                "url": public_url,
+                "filename": unique_filename,
+                "storage": "supabase"
+            }
+        except Exception as supabase_error:
+            logger.warning(f"Supabase upload failed, using local storage: {str(supabase_error)}")
+            
+            # Fallback to local storage
+            upload_dir = ROOT_DIR / "uploads" / "buses"
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            file_path = upload_dir / unique_filename
+            with open(file_path, "wb") as f:
+                f.write(contents)
+            
+            # Return relative URL
+            public_url = f"/uploads/buses/{unique_filename}"
+            
+            return {
+                "success": True,
+                "url": public_url,
+                "filename": unique_filename,
+                "storage": "local"
+            }
+            
     except Exception as e:
         logger.error(f"Upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
