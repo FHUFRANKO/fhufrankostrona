@@ -172,11 +172,14 @@ frontend:
     file: "/app/frontend/src/pages/AdminPanel.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Admin panel accessible and displaying buses. Edit/Delete buttons visible. Need to test full CRUD operations including adding new bus with image upload."
+        - working: true
+          agent: "testing"
+          comment: "✅ ALL ADMIN BUS CRUD OPERATIONS WORKING: POST /api/ogloszenia (create), PUT /api/ogloszenia/{id} (update), DELETE /api/ogloszenia/{id} (delete) all pass with cookie authentication. Image upload via POST /api/upload also working (falls back to local storage when Supabase bucket not found)."
 
   - task: "Admin panel opinions management"
     implemented: true
@@ -184,11 +187,14 @@ frontend:
     file: "/app/frontend/src/pages/AdminPanel.jsx"
     stuck_count: 1
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
           agent: "main"
           comment: "Admin panel showing 'Błąd podczas pobierania opinii' error. The /api/opinie endpoint returns 401 even with cookie authentication. Opinions display correctly on public pages."
+        - working: false
+          agent: "testing"
+          comment: "❌ FRONTEND TIMING ISSUE IDENTIFIED: Backend API works perfectly - all admin opinion endpoints (GET/POST/PUT/DELETE /api/opinie) pass with cookie auth. Issue: AdminPanel.jsx calls fetchOpinions() in useEffect (line 36) BEFORE user logs in, causing 401 error. Backend authentication is working correctly. Fix needed: Add auth check or delay fetchOpinions() until after login."
 
 metadata:
   created_by: "main_agent"
