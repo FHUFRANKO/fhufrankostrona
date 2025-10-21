@@ -1,6 +1,55 @@
 # Panel Admina - FHU FRANKO
 
-System autoryzacji oparty na Supabase Authentication z zabezpieczeniem endpointów przez JWT.
+System autoryzacji z **dwuwarstwową ochroną**:
+1. **Ukryty URL + hasło** - podstawowa ochrona przed nieautoryzowanym dostępem
+2. **Supabase JWT** - zaawansowana autoryzacja API dla adminów
+
+## 🔐 Ukryty URL + Hasło (Warstwa 1)
+
+Panel admina jest chroniony przez:
+- **Ukryty URL**: `/admin-{ADMIN_PATH}` zamiast publicznego `/admin`
+- **Hasło dostępu**: prosty formularz z hasłem
+- **Cookie sesyjny**: HMAC-podpisane cookie ważne 8h
+
+### Konfiguracja ukrytego dostępu
+
+W pliku `/app/backend/.env` ustaw:
+
+```env
+# Zmień na unikalną, losową wartość (np. uuid bez kresek)
+ADMIN_PATH="moj-tajny-panel-82374"
+
+# Silne hasło dostępu do panelu
+ADMIN_PASSWORD="ZmienMnieTeraz123!"
+
+# Sekret do podpisywania cookies (min. 32 znaki)
+ADMIN_COOKIE_SECRET="ZmienTenSekret123!"
+```
+
+**WAŻNE:**
+- `ADMIN_PATH` - zmień na unikalną wartość (np. `a8f3k2m9p1x7q5w4`)
+- `ADMIN_PASSWORD` - użyj silnego hasła (min. 12 znaków)
+- `ADMIN_COOKIE_SECRET` - wygeneruj losowy ciąg (min. 32 znaki)
+
+### Jak działa ochrona?
+
+1. Użytkownik klika "Panel Admina" na stronie → przekierowanie na `/admin-{ADMIN_PATH}`
+2. Wyświetla się formularz z hasłem
+3. Po wpisaniu poprawnego hasła → ustawiane jest cookie i przekierowanie na `/admin`
+4. Wszystkie `/admin/*` są chronione middleware - bez cookie → redirect na login
+5. Cookie ważne 8h, potem trzeba się zalogować ponownie
+
+### Test ochrony
+
+```bash
+# Próba dostępu bez cookie → 303 redirect
+curl -i http://localhost:8001/admin
+
+# Ukryta strona logowania
+curl http://localhost:8001/admin-moj-tajny-panel-82374
+```
+
+---
 
 ## 📋 Spis treści
 
