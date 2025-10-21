@@ -92,6 +92,23 @@ def admin_required(user: dict = Depends(get_current_user)):
 # Create the main app without a prefix
 app = FastAPI()
 
+# Admin Panel Guard Middleware
+@app.middleware("http")
+async def _admin_guard(request: Request, call_next):
+    """Protect all /admin* routes with cookie-based authentication"""
+    path = request.url.path
+    
+    # Check if accessing admin area (but not the login gate itself)
+    if path.startswith("/admin") and not path.startswith(f"/admin-{ADMIN_PATH}"):
+        token = request.cookies.get(ADMIN_COOKIE_NAME)
+        
+        # If no valid session, redirect to hidden login page
+        if token != _sign("ok"):
+            return RedirectResponse(url=f"/admin-{ADMIN_PATH}", status_code=303)
+    
+    response = await call_next(request)
+    return response
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
