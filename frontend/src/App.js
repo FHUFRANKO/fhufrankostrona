@@ -29,6 +29,9 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
+          {/* Hidden Admin Login - redirect to backend */}
+          <Route path="/admin-:adminPath" element={<AdminLoginRedirect />} />
+          
           {/* Admin Panel - bez Header/Footer */}
           <Route path="/admin" element={<AdminPanel />} />
           
