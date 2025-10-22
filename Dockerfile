@@ -4,22 +4,18 @@ FROM node:18-alpine AS frontend-builder
 # Build frontend
 WORKDIR /app/frontend
 
-# Copy package files
-COPY frontend/package.json ./
-# Copy yarn.lock if exists (optional)
-COPY frontend/yarn.loc[k] ./ 2>/dev/null || true
+# Copy all frontend files
+COPY frontend/ ./
 
 # Install dependencies
 RUN yarn install
-
-# Copy frontend source and build
-COPY frontend/ ./
 
 # Set production environment for build
 ENV NODE_ENV=production
 ENV REACT_APP_BACKEND_URL=""
 ENV REACT_APP_ADMIN_PATH=X9T4G7QJ2MZP8L1W3R5C6VDHY
 
+# Build frontend
 RUN yarn build
 
 # Python backend stage
