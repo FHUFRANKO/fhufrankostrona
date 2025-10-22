@@ -2,22 +2,20 @@
 
 ## ⚡ W 5 krokach:
 
-### 1️⃣ MongoDB (2 minuty)
-- Utwórz darmowe konto: [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
-- Utwórz klaster (M0 Free)
-- Dodaj użytkownika bazy danych
-- Allow access from anywhere (0.0.0.0/0)
-- Skopiuj connection string
+### 1️⃣ Supabase - WYMAGANE! (15 minut)
+**Supabase zapewnia bazę danych (PostgreSQL) + storage dla zdjęć**
 
-### 2️⃣ Supabase - WYMAGANE dla zdjęć! (3 minuty)
 - Utwórz konto: [Supabase](https://supabase.com)
 - Nowy projekt
+- SQL Editor → wklej `SUPABASE_SCHEMA.sql` → Run
 - Storage → Create bucket:
   - Nazwa: **bus-images**
   - ✅ **Public bucket** (zaznacz!)
-- Skopiuj: Project URL i anon key
+- Skopiuj: Project URL, anon key, JWT secret
 
-### 3️⃣ Railway (2 minuty)
+📖 **Szczegóły:** [SUPABASE_COMPLETE_SETUP.md](./SUPABASE_COMPLETE_SETUP.md)
+
+### 2️⃣ Railway (2 minuty)
 - Zaloguj: [Railway](https://railway.app)
 - New Project → Deploy from GitHub
 - Wybierz swoje repo
