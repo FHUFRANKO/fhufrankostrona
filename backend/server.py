@@ -1,21 +1,20 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Request
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Request, Depends
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from pathlib import Path
+from datetime import datetime, date
 import os
 import hmac
 import hashlib
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List, Optional
 import uuid
-from datetime import datetime
+import jwt
 from supabase import create_client, Client
-import base64
-
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -34,23 +33,17 @@ def _sign(value: str) -> str:
     """Sign a value with HMAC-SHA256"""
     return hmac.new(ADMIN_COOKIE_SECRET.encode(), value.encode(), hashlib.sha256).hexdigest()
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Supabase client
+# Supabase client (database + storage)
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_ANON_KEY')
 supabase_bucket = os.environ.get('SUPABASE_BUCKET', 'bus-images')
 
+if not supabase_url or not supabase_key:
+    raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
+
 supabase: Client = create_client(supabase_url, supabase_key)
 
 # --- AUTH START ---
-import jwt
-from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 oauth2_scheme = HTTPBearer(auto_error=False)
 JWT_SECRET = os.environ.get('SUPABASE_JWT_SECRET', '')
 ADMIN_EMAILS = set(e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip())
@@ -145,7 +138,6 @@ async def _admin_guard(request: Request, call_next):
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-
 # Auth endpoint
 @api_router.get("/me")
 async def get_me(user: dict = Depends(get_current_user_optional)):
@@ -167,64 +159,47 @@ async def get_me(user: dict = Depends(get_current_user_optional)):
         "authenticated": True
     }
 
-
-# Models
+# --- MODELS ---
 class Bus(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    # Podstawowe informacje
     marka: str
     model: str
     rok: int
-    przebieg: int  # km
+    przebieg: int
     paliwo: str
     skrzynia: str
     naped: Optional[str] = None
-    
-    # Cena
-    cenaBrutto: int  # PLN
+    cenaBrutto: int
     cenaNetto: Optional[int] = None
     vat: bool = True
-    
-    # Specyfikacja techniczna
     typNadwozia: str
-    moc: int  # KM
-    kubatura: Optional[int] = None  # cm3
-    normaSpalania: Optional[str] = None  # np. "8.5 l/100km"
-    normaEmisji: str  # Euro 5, Euro 6
-    
-    # DMC i ładowność
-    dmcKategoria: str  # 'do 3.5t', '3.5-7.5t', 'powyżej 7.5t'
-    ladownosc: int  # kg
-    
-    # Wymiary
-    wymiarL: Optional[str] = None  # L1, L2, L3, L4
-    wymiarH: Optional[str] = None  # H1, H2, H3
-    pojemnoscSkrzyni: Optional[int] = None  # m3
-    
-    # Wyposażenie dodatkowe
-    winda: bool = False
-    hak: bool = False
-    czterykola: bool = False
-    klimatyzacja: bool = False
+    moc: int
+    kubatura: Optional[int] = None
+    normaSpalania: Optional[str] = None
+    normaEmisji: str
+    dmcKategoria: str
+    ladownosc: int
+    wymiarL: Optional[str] = None
+    wymiarH: Optional[str] = None
+    liczbaMiejsc: Optional[int] = None
+    liczbaPalet: Optional[int] = None
+    klima: bool = False
     tempomat: bool = False
     kamera: bool = False
     czujnikiParkowania: bool = False
-    
-    # Status i oznaczenia
+    hak: bool = False
+    asystentPasa: bool = False
+    bluetooth: bool = False
+    opis: Optional[str] = None
+    wyposazenie: List[str] = []
+    zdjecia: List[str] = []
+    zdjecieGlowne: Optional[str] = None
     wyrozniowane: bool = False
     nowosc: bool = False
     flotowy: bool = False
     gwarancja: bool = False
-    
-    # Pozostałe
-    kolor: Optional[str] = None
-    pierwszaRejestracja: Optional[str] = None
-    miasto: str
-    opis: Optional[str] = None
-    zdjecia: List[str] = []  # URLs zdjęć
     numerOgloszenia: Optional[str] = None
-    dataPublikacji: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-
+    dataPublikacji: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 class BusCreate(BaseModel):
     marka: str
@@ -246,25 +221,24 @@ class BusCreate(BaseModel):
     ladownosc: int
     wymiarL: Optional[str] = None
     wymiarH: Optional[str] = None
-    pojemnoscSkrzyni: Optional[int] = None
-    winda: bool = False
-    hak: bool = False
-    czterykola: bool = False
-    klimatyzacja: bool = False
+    liczbaMiejsc: Optional[int] = None
+    liczbaPalet: Optional[int] = None
+    klima: bool = False
     tempomat: bool = False
     kamera: bool = False
     czujnikiParkowania: bool = False
+    hak: bool = False
+    asystentPasa: bool = False
+    bluetooth: bool = False
+    opis: Optional[str] = None
+    wyposazenie: List[str] = []
+    zdjecia: List[str] = []
+    zdjecieGlowne: Optional[str] = None
     wyrozniowane: bool = False
     nowosc: bool = False
     flotowy: bool = False
     gwarancja: bool = False
-    kolor: Optional[str] = None
-    pierwszaRejestracja: Optional[str] = None
-    miasto: str
-    opis: Optional[str] = None
-    zdjecia: List[str] = []
     numerOgloszenia: Optional[str] = None
-
 
 class BusUpdate(BaseModel):
     marka: Optional[str] = None
@@ -286,32 +260,64 @@ class BusUpdate(BaseModel):
     ladownosc: Optional[int] = None
     wymiarL: Optional[str] = None
     wymiarH: Optional[str] = None
-    pojemnoscSkrzyni: Optional[int] = None
-    winda: Optional[bool] = None
-    hak: Optional[bool] = None
-    czterykola: Optional[bool] = None
-    klimatyzacja: Optional[bool] = None
+    liczbaMiejsc: Optional[int] = None
+    liczbaPalet: Optional[int] = None
+    klima: Optional[bool] = None
     tempomat: Optional[bool] = None
     kamera: Optional[bool] = None
     czujnikiParkowania: Optional[bool] = None
+    hak: Optional[bool] = None
+    asystentPasa: Optional[bool] = None
+    bluetooth: Optional[bool] = None
+    opis: Optional[str] = None
+    wyposazenie: Optional[List[str]] = None
+    zdjecia: Optional[List[str]] = None
+    zdjecieGlowne: Optional[str] = None
     wyrozniowane: Optional[bool] = None
     nowosc: Optional[bool] = None
     flotowy: Optional[bool] = None
     gwarancja: Optional[bool] = None
-    kolor: Optional[str] = None
-    pierwszaRejestracja: Optional[str] = None
-    miasto: Optional[str] = None
-    opis: Optional[str] = None
-    zdjecia: Optional[List[str]] = None
-    numerOgloszenia: Optional[str] = None
 
+class Opinion(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    imie: str
+    nazwisko: str
+    rodzajFirmy: str
+    opinia: str
+    zakupionyPojazd: str
+    ocena: int = 5
+    wyswietlaj: bool = True
+    dataPublikacji: str = Field(default_factory=lambda: datetime.now().isoformat())
 
-# API Routes
+class OpinionCreate(BaseModel):
+    imie: str
+    nazwisko: str
+    rodzajFirmy: str
+    opinia: str
+    zakupionyPojazd: str
+    ocena: int = 5
+    wyswietlaj: bool = True
+
+class OpinionUpdate(BaseModel):
+    imie: Optional[str] = None
+    nazwisko: Optional[str] = None
+    rodzajFirmy: Optional[str] = None
+    opinia: Optional[str] = None
+    zakupionyPojazd: Optional[str] = None
+    ocena: Optional[int] = None
+    wyswietlaj: Optional[bool] = None
+
+class AdminLoginRequest(BaseModel):
+    password: str
+
+# --- API ENDPOINTS ---
+
 @api_router.get("/")
-async def root():
-    return {"message": "FHU FRANKO API"}
+async def read_root():
+    """Health check endpoint"""
+    return {"status": "ok", "message": "FHU FRANKO API"}
 
-
+# Upload image endpoint
 @api_router.post("/upload", response_model=dict, dependencies=[Depends(admin_required)])
 async def upload_image(file: UploadFile = File(...)):
     """Upload image to Supabase Storage or local fallback"""
@@ -366,76 +372,90 @@ async def upload_image(file: UploadFile = File(...)):
         logger.error(f"Upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-
+# Bus CRUD endpoints
 @api_router.post("/ogloszenia", response_model=Bus, dependencies=[Depends(admin_required)])
 async def create_bus(bus_data: BusCreate):
     """Create a new bus listing"""
     bus_dict = bus_data.dict()
-    bus_obj = Bus(**bus_dict)
+    bus_id = str(uuid.uuid4())
+    bus_dict['id'] = bus_id
+    bus_dict['dataPublikacji'] = datetime.now().isoformat()
     
-    # Generate unique listing number
-    if not bus_obj.numerOgloszenia:
-        count = await db.buses.count_documents({})
-        bus_obj.numerOgloszenia = f"FKBUS{str(count + 1).zfill(6)}"
+    # Generate unique listing number if not provided
+    if not bus_dict.get('numerOgloszenia'):
+        # Count existing buses
+        response = supabase.table('buses').select('id', count='exact').execute()
+        count = response.count if hasattr(response, 'count') else len(response.data)
+        bus_dict['numerOgloszenia'] = f"FKBUS{str(count + 1).zfill(6)}"
     
-    await db.buses.insert_one(bus_obj.dict())
-    return bus_obj
-
+    # Insert into Supabase
+    response = supabase.table('buses').insert(bus_dict).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to create bus")
+    
+    return Bus(**response.data[0])
 
 @api_router.get("/ogloszenia", response_model=List[Bus])
 async def get_all_buses():
     """Get all bus listings (public endpoint)"""
-    buses = await db.buses.find().to_list(1000)
-    return [Bus(**bus) for bus in buses]
-
+    response = supabase.table('buses').select('*').execute()
+    return [Bus(**bus) for bus in response.data]
 
 @api_router.get("/ogloszenia/{bus_id}", response_model=Bus)
 async def get_bus_by_id(bus_id: str):
     """Get a single bus listing by ID"""
-    bus = await db.buses.find_one({"id": bus_id})
-    if not bus:
+    response = supabase.table('buses').select('*').eq('id', bus_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
-    return Bus(**bus)
-
+    
+    return Bus(**response.data[0])
 
 @api_router.put("/ogloszenia/{bus_id}", response_model=Bus, dependencies=[Depends(admin_required)])
 async def update_bus(bus_id: str, bus_update: BusUpdate):
     """Update a bus listing"""
     # Get existing bus
-    existing_bus = await db.buses.find_one({"id": bus_id})
-    if not existing_bus:
+    response = supabase.table('buses').select('*').eq('id', bus_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
     
     # Update only provided fields
     update_data = {k: v for k, v in bus_update.dict().items() if v is not None}
     
     if update_data:
-        await db.buses.update_one(
-            {"id": bus_id},
-            {"$set": update_data}
-        )
+        response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to update bus")
+        
+        return Bus(**response.data[0])
     
-    # Get updated bus
-    updated_bus = await db.buses.find_one({"id": bus_id})
-    return Bus(**updated_bus)
-
+    # No updates, return existing
+    return Bus(**response.data[0])
 
 @api_router.delete("/ogloszenia/{bus_id}", dependencies=[Depends(admin_required)])
 async def delete_bus(bus_id: str):
     """Delete a bus listing"""
-    result = await db.buses.delete_one({"id": bus_id})
-    if result.deleted_count == 0:
+    response = supabase.table('buses').delete().eq('id', bus_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
+    
     return {"success": True, "message": "Bus deleted successfully"}
-
 
 @api_router.get("/stats")
 async def get_stats():
     """Get statistics for admin dashboard"""
-    total = await db.buses.count_documents({})
-    wyrozniowane = await db.buses.count_documents({"wyrozniowane": True})
-    nowe = await db.buses.count_documents({"nowosc": True})
-    flotowe = await db.buses.count_documents({"flotowy": True})
+    # Get all buses
+    response = supabase.table('buses').select('*').execute()
+    buses = response.data
+    
+    total = len(buses)
+    wyrozniowane = sum(1 for b in buses if b.get('wyrozniowane'))
+    nowe = sum(1 for b in buses if b.get('nowosc'))
+    flotowe = sum(1 for b in buses if b.get('flotowy'))
     
     return {
         "total": total,
@@ -444,282 +464,80 @@ async def get_stats():
         "flotowe": flotowe
     }
 
-
-# Opinion Models
-class Opinion(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    imie: str  # Imię klienta
-    typDzialalnosci: str  # np. "Firma kurierska", "Budownictwo"
-    komentarz: str  # Pozytywny komentarz
-    ocena: int = 5  # Ocena 1-5
-    zakupionyPojazd: Optional[str] = None  # np. "Mercedes Sprinter 2020"
-    dataPublikacji: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
-    wyswietlaj: bool = True  # Czy wyświetlać na stronie
-
-
-class OpinionCreate(BaseModel):
-    imie: str
-    typDzialalnosci: str
-    komentarz: str
-    ocena: int = 5
-    zakupionyPojazd: Optional[str] = None
-    wyswietlaj: bool = True
-
-
-class OpinionUpdate(BaseModel):
-    imie: Optional[str] = None
-    typDzialalnosci: Optional[str] = None
-    komentarz: Optional[str] = None
-    ocena: Optional[int] = None
-    zakupionyPojazd: Optional[str] = None
-    wyswietlaj: Optional[bool] = None
-
-
-# Opinion Routes
+# Opinion CRUD endpoints
 @api_router.post("/opinie", response_model=Opinion, dependencies=[Depends(admin_required)])
 async def create_opinion(opinion_data: OpinionCreate):
     """Create a new opinion"""
     opinion_dict = opinion_data.dict()
-    opinion_obj = Opinion(**opinion_dict)
-    await db.opinions.insert_one(opinion_obj.dict())
-    return opinion_obj
-
+    opinion_id = str(uuid.uuid4())
+    opinion_dict['id'] = opinion_id
+    opinion_dict['dataPublikacji'] = datetime.now().isoformat()
+    
+    response = supabase.table('opinions').insert(opinion_dict).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to create opinion")
+    
+    return Opinion(**response.data[0])
 
 @api_router.get("/opinie", response_model=List[Opinion], dependencies=[Depends(admin_required)])
 async def get_all_opinions():
     """Get all opinions (for admin)"""
-    opinions = await db.opinions.find().to_list(1000)
-    return [Opinion(**opinion) for opinion in opinions]
-
+    response = supabase.table('opinions').select('*').execute()
+    return [Opinion(**opinion) for opinion in response.data]
 
 @api_router.get("/opinie/public", response_model=List[Opinion])
 async def get_public_opinions():
     """Get only visible opinions (for public page)"""
-    opinions = await db.opinions.find({"wyswietlaj": True}).to_list(1000)
+    response = supabase.table('opinions').select('*').eq('wyswietlaj', True).execute()
     # Sort by date, newest first
-    return sorted([Opinion(**opinion) for opinion in opinions], 
-                  key=lambda x: x.dataPublikacji, reverse=True)
-
+    opinions = [Opinion(**opinion) for opinion in response.data]
+    return sorted(opinions, key=lambda x: x.dataPublikacji, reverse=True)
 
 @api_router.get("/opinie/{opinion_id}", response_model=Opinion)
 async def get_opinion_by_id(opinion_id: str):
     """Get a single opinion by ID"""
-    opinion = await db.opinions.find_one({"id": opinion_id})
-    if not opinion:
+    response = supabase.table('opinions').select('*').eq('id', opinion_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Opinion not found")
-    return Opinion(**opinion)
-
+    
+    return Opinion(**response.data[0])
 
 @api_router.put("/opinie/{opinion_id}", response_model=Opinion, dependencies=[Depends(admin_required)])
 async def update_opinion(opinion_id: str, opinion_update: OpinionUpdate):
     """Update an opinion"""
-    existing_opinion = await db.opinions.find_one({"id": opinion_id})
-    if not existing_opinion:
+    response = supabase.table('opinions').select('*').eq('id', opinion_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Opinion not found")
     
     update_data = {k: v for k, v in opinion_update.dict().items() if v is not None}
     
     if update_data:
-        await db.opinions.update_one(
-            {"id": opinion_id},
-            {"$set": update_data}
-        )
+        response = supabase.table('opinions').update(update_data).eq('id', opinion_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to update opinion")
+        
+        return Opinion(**response.data[0])
     
-    updated_opinion = await db.opinions.find_one({"id": opinion_id})
-    return Opinion(**updated_opinion)
-
+    return Opinion(**response.data[0])
 
 @api_router.delete("/opinie/{opinion_id}", dependencies=[Depends(admin_required)])
 async def delete_opinion(opinion_id: str):
     """Delete an opinion"""
-    result = await db.opinions.delete_one({"id": opinion_id})
-    if result.deleted_count == 0:
+    response = supabase.table('opinions').delete().eq('id', opinion_id).execute()
+    
+    if not response.data:
         raise HTTPException(status_code=404, detail="Opinion not found")
+    
     return {"success": True, "message": "Opinion deleted successfully"}
 
-
-# Hidden Admin Login Gate
-@app.get(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
-async def admin_gate_get():
-    """Hidden admin login page"""
-    return """
-    <!DOCTYPE html>
-    <html lang="pl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Admin Access</title>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-                color: #c9d1d9;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 100vh;
-                padding: 20px;
-            }
-            .container {
-                background: #161b22;
-                border: 1px solid #30363d;
-                border-radius: 12px;
-                padding: 40px;
-                max-width: 400px;
-                width: 100%;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            }
-            h2 {
-                color: #58a6ff;
-                margin-bottom: 24px;
-                font-size: 24px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            form {
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-            }
-            input {
-                padding: 12px 16px;
-                border: 1px solid #30363d;
-                border-radius: 8px;
-                background: #0d1117;
-                color: #c9d1d9;
-                font-size: 14px;
-                transition: all 0.2s;
-            }
-            input:focus {
-                outline: none;
-                border-color: #58a6ff;
-                box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
-            }
-            button {
-                padding: 12px 16px;
-                border: none;
-                border-radius: 8px;
-                background: #238636;
-                color: white;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
-            }
-            button:hover {
-                background: #2ea043;
-            }
-            button:active {
-                transform: scale(0.98);
-            }
-            .warning {
-                font-size: 12px;
-                color: #8b949e;
-                text-align: center;
-                margin-top: 16px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>🔒 Panel Administratora</h2>
-            <form method="post">
-                <input 
-                    type="password" 
-                    name="password" 
-                    placeholder="Wprowadź hasło dostępu" 
-                    required 
-                    autofocus
-                    autocomplete="current-password"
-                />
-                <button type="submit">Zaloguj się</button>
-            </form>
-            <p class="warning">⚠️ Tylko dla upoważnionych użytkowników</p>
-        </div>
-    </body>
-    </html>
-    """
-
-
-@app.post(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
-async def admin_gate_post(password: str = Form(...)):
-    """Handle admin login form submission"""
-    if (password or "").strip() != ADMIN_PASSWORD:
-        return """
-        <!DOCTYPE html>
-        <html lang="pl">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Access Denied</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-                    color: #c9d1d9;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 100vh;
-                }
-                .container {
-                    background: #161b22;
-                    border: 1px solid #30363d;
-                    border-radius: 12px;
-                    padding: 40px;
-                    text-align: center;
-                    max-width: 400px;
-                }
-                h3 {
-                    color: #f85149;
-                    margin-bottom: 16px;
-                    font-size: 20px;
-                }
-                a {
-                    color: #58a6ff;
-                    text-decoration: none;
-                    font-weight: 500;
-                }
-                a:hover {
-                    text-decoration: underline;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h3>❌ Błędne hasło</h3>
-                <p>Dostęp zabroniony</p>
-                <br>
-                <a href="">← Spróbuj ponownie</a>
-            </div>
-        </body>
-        </html>
-        """
-    
-    # Correct password - set secure cookie and redirect
-    resp = RedirectResponse(url="/admin", status_code=303)
-    resp.set_cookie(
-        key=ADMIN_COOKIE_NAME,
-        value=_sign("ok"),
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=60 * 60 * 8  # 8 hours
-    )
-    return resp
-
-
-# JSON-based admin login endpoint (for frontend React form)
-class AdminLoginRequest(BaseModel):
-    password: str
-
+# Admin login endpoints
 @api_router.get(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
 async def admin_login_get_api():
     """Handle GET request to API endpoint - redirect to frontend login page"""
-    # Redirect to frontend React login form
     return RedirectResponse(url=f"/admin-{ADMIN_PATH}", status_code=303)
 
 @api_router.post(f"/admin-{ADMIN_PATH}")
@@ -743,7 +561,6 @@ async def admin_login_json(request: Request, login_data: AdminLoginRequest):
     )
     return response
 
-
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -753,6 +570,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 # Serve frontend build (for production on Railway)
 FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
 if FRONTEND_BUILD_DIR.exists():
+    logger = logging.getLogger(__name__)
     logger.info(f"Frontend build directory found: {FRONTEND_BUILD_DIR}")
     
     # Mount static files from React build
@@ -777,6 +595,7 @@ if FRONTEND_BUILD_DIR.exists():
         # Default to index.html for React routing (SPA)
         return FileResponse(FRONTEND_BUILD_DIR / "index.html")
 else:
+    logger = logging.getLogger(__name__)
     logger.warning(f"Frontend build directory not found: {FRONTEND_BUILD_DIR}")
 
 app.add_middleware(
@@ -793,7 +612,3 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
