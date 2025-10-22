@@ -51,7 +51,9 @@
 2. Kliknij **New Project**
 3. Wybierz **Deploy from GitHub repo**
 4. Połącz swoje repozytorium GitHub
-5. Railway automatycznie rozpocznie budowanie
+5. Railway automatycznie wykryje Dockerfile i rozpocznie budowanie
+   - Aplikacja używa Dockerfile dla pełnej kontroli nad buildem
+   - Frontend jest budowany i serwowany przez backend FastAPI
 
 ### 3.2 Konfiguracja zmiennych środowiskowych
 
