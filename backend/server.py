@@ -750,6 +750,27 @@ app.include_router(api_router)
 # Mount static files for local uploads
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
+# Serve frontend build (for production on Railway)
+FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
+if FRONTEND_BUILD_DIR.exists():
+    # Serve static files from React build
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve React frontend for all non-API routes"""
+        # Don't interfere with API routes
+        if full_path.startswith("api/") or full_path.startswith("uploads/"):
+            raise HTTPException(status_code=404)
+        
+        # Try to serve the requested file
+        file_path = FRONTEND_BUILD_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        
+        # Default to index.html for React routing
+        return FileResponse(FRONTEND_BUILD_DIR / "index.html")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
