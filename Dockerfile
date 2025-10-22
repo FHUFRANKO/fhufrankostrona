@@ -1,5 +1,5 @@
 # Multi-stage build for FHU FRANKO application
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 
 # Build frontend
 WORKDIR /app/frontend
