@@ -25,11 +25,7 @@
 Wklej w Variables (zakładka):
 
 ```bash
-# MongoDB
-MONGO_URL=twój-connection-string-z-mongodb-atlas
-DB_NAME=busfleet_prod
-
-# Supabase (WYMAGANE!)
+# Supabase (WSZYSTKIE WYMAGANE!)
 SUPABASE_URL=https://twojprojekt.supabase.co
 SUPABASE_ANON_KEY=twój-anon-key
 SUPABASE_JWT_SECRET=twój-jwt-secret
