@@ -1,10 +1,144 @@
-# 🔧 Rozwiązanie Problemu: Nixpacks Build Failed
+# 🔧 Rozwiązanie Problemu: yarn.lock not found
 
 ## Problem
-Railway wyświetlił błąd: "Nixpacks was unable to generate a build plan for this app"
+Railway wyświetlił błąd: `"/frontend/yarn.lock": not found`
 
 ## ✅ Rozwiązanie
-Dodałem **Dockerfile**, który daje pełną kontrolę nad procesem budowania.
+Uproszczony Dockerfile, który nie wymaga yarn.lock w pierwszym kroku.
+
+---
+
+## Co zostało zmienione:
+
+### Zaktualizowany Dockerfile
+Zamiast kopiować `package.json` i `yarn.lock` osobno, teraz:
+1. Kopiujemy całe `/frontend` na raz
+2. Instalujemy zależności (`yarn install` bez `--frozen-lockfile`)
+3. Budujemy aplikację
+
+Jest to mniej optymalne dla Docker cache, ale działa niezawodnie na Railway.
+
+---
+
+## 🚀 Push i Deploy
+
+### 1. Zatwierdź zmiany:
+```bash
+git add Dockerfile
+git commit -m "Fix Dockerfile yarn.lock issue"
+git push
+```
+
+### 2. Railway automatycznie zrobi redeploy
+- Monitoruj logi w Railway Dashboard
+- Build powinien teraz działać
+
+### 3. Jeśli nie uruchomił się automatycznie:
+- Railway Dashboard → Settings → Redeploy
+
+---
+
+## 📋 Pełna lista zmiennych dla Railway
+
+Upewnij się że wszystkie są ustawione:
+
+```bash
+# MongoDB (WYMAGANE)
+MONGO_URL=mongodb+srv://user:pass@cluster.mongodb.net/
+DB_NAME=busfleet_prod
+
+# Supabase (WYMAGANE dla zdjęć!)
+SUPABASE_URL=https://projekt.supabase.co
+SUPABASE_ANON_KEY=eyJhbGc...
+SUPABASE_JWT_SECRET=twoj-jwt-secret
+SUPABASE_BUCKET=bus-images
+
+# Admin Panel
+ADMIN_PATH=X9T4G7QJ2MZP8L1W3R5C6VDHY
+ADMIN_PASSWORD=FHUfranko!%Nbzw
+ADMIN_COOKIE_SECRET=wygeneruj-losowy-32char-string
+ADMIN_EMAILS=twoj@email.com
+```
+
+### Po pierwszym udanym deploy:
+```bash
+# Zaktualizuj z prawdziwym URL Railway
+CORS_ORIGINS=https://twoja-app.up.railway.app
+REACT_APP_BACKEND_URL=https://twoja-app.up.railway.app
+```
+
+---
+
+## ⏱️ Oczekiwany czas budowania:
+- Frontend build: 3-5 minut
+- Backend install: 1-2 minuty
+- **Łącznie: ~6-8 minut**
+
+---
+
+## ✅ Sprawdzenie po deploy:
+
+1. **Homepage:** `https://twoja-app.up.railway.app/`
+2. **API Health:** `https://twoja-app.up.railway.app/api/`
+3. **Stats:** `https://twoja-app.up.railway.app/api/stats`
+4. **Admin Login:** `https://twoja-app.up.railway.app/admin-X9T4G7QJ2MZP8L1W3R5C6VDHY`
+
+---
+
+## 🐛 Jeśli nadal są problemy:
+
+### Build nadal failuje?
+**Sprawdź Railway logs:**
+1. Railway Dashboard → Deployments
+2. Kliknij na aktualny deployment
+3. Zobacz "Build Logs" i "Deploy Logs"
+
+### Częste problemy:
+
+**1. Frontend build failed - "Cannot find module"**
+- Sprawdź czy `package.json` zawiera wszystkie wymagane pakiety
+- Zobacz pełny log błędu w Railway
+
+**2. Backend failed - "ModuleNotFoundError"**
+- Sprawdź `requirements.txt`
+- Upewnij się że wszystkie pakiety są zainstalowane
+
+**3. Application crashed - 503**
+- Sprawdź czy `MONGO_URL` jest poprawny
+- Zweryfikuj wszystkie zmienne środowiskowe
+- Zobacz "Deploy Logs" w Railway
+
+**4. Zdjęcia nie działają**
+- Utwórz bucket "bus-images" w Supabase jako **PUBLIC**
+- Sprawdź `SUPABASE_URL` i `SUPABASE_ANON_KEY`
+- Przetestuj dodanie busa ze zdjęciem
+
+---
+
+## 💡 Wskazówki
+
+**Logi Railway:**
+```
+Railway Dashboard → Deployments → [twój deploy] → Logs
+```
+
+**Restart aplikacji:**
+```
+Railway Dashboard → Settings → Restart
+```
+
+**Redeploy z czystym cache:**
+```
+Railway Dashboard → Settings → Redeploy (usuń cache)
+```
+
+---
+
+## ✅ Gotowe!
+
+Aplikacja powinna się teraz zbudować i uruchomić poprawnie! 🚀
+
+Po pierwszym udanym deploy nie zapomnij zaktualizować `CORS_ORIGINS` i `REACT_APP_BACKEND_URL` z prawdziwym URL Railway.
 
 ---
 
