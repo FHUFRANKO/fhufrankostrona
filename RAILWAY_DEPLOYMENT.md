@@ -3,47 +3,31 @@
 ## Wymagania
 
 1. Konto na [Railway.app](https://railway.app)
-2. Konto MongoDB Atlas (darmowe) - [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-3. Konto Supabase (darmowe) - [supabase.com](https://supabase.com) - **WYMAGANE dla przechowywania zdjęć**
+2. Konto Supabase (darmowe) - [supabase.com](https://supabase.com) - **WYMAGANE dla bazy danych i zdjęć**
 
 ---
 
-## Krok 1: Przygotowanie MongoDB
+## Krok 1: Przygotowanie Supabase
 
-### Opcja A: MongoDB Atlas (zalecane)
-1. Zaloguj się do [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Utwórz nowy klaster (Free tier - M0)
-3. Utwórz użytkownika bazy danych:
-   - Database Access → Add New Database User
-   - Zapisz username i hasło
-4. Dodaj dostęp z dowolnego IP:
-   - Network Access → Add IP Address → Allow Access from Anywhere (0.0.0.0/0)
-5. Skopiuj Connection String:
-   - Clusters → Connect → Connect your application
-   - Format: `mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/`
+⚠️ **KRYTYCZNE:** Aplikacja wymaga Supabase do działania!
 
-### Opcja B: Railway MongoDB Plugin
-1. W Railway, dodaj MongoDB plugin do projektu
-2. Railway automatycznie utworzy `MONGO_URL`
+Supabase zapewnia:
+- **PostgreSQL Database** - przechowuje busy i opinie  
+- **Storage** - przechowuje zdjęcia busów
 
----
+### Szybka konfiguracja (15 minut):
 
-## Krok 2: Konfiguracja Supabase Storage
+Szczegółowa instrukcja: **[SUPABASE_COMPLETE_SETUP.md](./SUPABASE_COMPLETE_SETUP.md)**
 
-⚠️ **WAŻNE:** Zdjęcia busów MUSZĄ być przechowywane w Supabase Storage!
-
-1. Zaloguj się do [Supabase](https://supabase.com)
-2. Utwórz nowy projekt (lub użyj istniejącego)
-3. Przejdź do **Storage** → **Create bucket**:
-   - Nazwa: `bus-images`
-   - Typ: **Public bucket** (zaznacz "Public bucket")
-4. Skopiuj dane z **Settings → API**:
-   - Project URL: `https://twojprojekt.supabase.co`
-   - anon/public key: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+**TL;DR:**
+1. Utwórz projekt na [supabase.com](https://supabase.com)
+2. Wykonaj SQL z pliku `SUPABASE_SCHEMA.sql` (SQL Editor)
+3. Utwórz bucket `bus-images` jako **PUBLIC** (Storage)
+4. Skopiuj klucze API (Settings → API)
 
 ---
 
-## Krok 3: Wdrożenie na Railway
+## Krok 2: Wdrożenie na Railway
 
 ### 3.1 Utworzenie projektu
 
