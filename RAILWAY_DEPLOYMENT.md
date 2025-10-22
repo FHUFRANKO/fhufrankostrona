@@ -46,11 +46,7 @@ W Railway Dashboard → twój projekt → **Variables**, dodaj:
 #### Backend Variables (wszystkie wymagane):
 
 ```bash
-# MongoDB
-MONGO_URL=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/
-DB_NAME=busfleet_prod
-
-# Supabase Storage (WYMAGANE dla zdjęć!)
+# Supabase (WSZYSTKIE WYMAGANE!)
 SUPABASE_URL=https://twojprojekt.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_JWT_SECRET=twoj-jwt-secret-z-supabase
