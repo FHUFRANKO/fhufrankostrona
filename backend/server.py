@@ -753,23 +753,31 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 # Serve frontend build (for production on Railway)
 FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
 if FRONTEND_BUILD_DIR.exists():
-    # Serve static files from React build
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static")
+    logger.info(f"Frontend build directory found: {FRONTEND_BUILD_DIR}")
     
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
+    # Mount static files from React build
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static-frontend")
+    
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str, request: Request):
         """Serve React frontend for all non-API routes"""
-        # Don't interfere with API routes
-        if full_path.startswith("api/") or full_path.startswith("uploads/"):
-            raise HTTPException(status_code=404)
+        # Don't interfere with API routes or uploads
+        if full_path.startswith("api") or full_path.startswith("uploads"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Handle root
+        if not full_path or full_path == "/":
+            return FileResponse(FRONTEND_BUILD_DIR / "index.html")
         
         # Try to serve the requested file
         file_path = FRONTEND_BUILD_DIR / full_path
-        if file_path.is_file():
+        if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
         
-        # Default to index.html for React routing
+        # Default to index.html for React routing (SPA)
         return FileResponse(FRONTEND_BUILD_DIR / "index.html")
+else:
+    logger.warning(f"Frontend build directory not found: {FRONTEND_BUILD_DIR}")
 
 app.add_middleware(
     CORSMiddleware,
