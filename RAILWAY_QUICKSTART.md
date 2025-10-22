@@ -21,6 +21,7 @@
 - Zaloguj: [Railway](https://railway.app)
 - New Project → Deploy from GitHub
 - Wybierz swoje repo
+- Railway użyje Dockerfile do zbudowania aplikacji
 
 ### 4️⃣ Zmienne środowiskowe w Railway
 Wklej w Variables (zakładka):
