@@ -98,6 +98,44 @@ export const BusForm = ({ initialData, onSubmit, onCancel, loading }) => {
     }));
   };
 
+  const handleImportFromOtomoto = async () => {
+    if (!otomotoUrl || !otomotoUrl.includes('otomoto.pl')) {
+      toast.error('Podaj prawidłowy URL z Otomoto');
+      return;
+    }
+
+    setImportingFromOtomoto(true);
+    try {
+      const result = await busApi.scrapeOtomoto(otomotoUrl);
+      
+      if (result.success && result.data) {
+        // Merge imported data with current form data
+        setFormData(prev => ({
+          ...prev,
+          ...result.data,
+          // Keep manually filled fields if they exist
+          zdjecia: prev.zdjecia || []
+        }));
+        
+        toast.success(result.message || 'Dane pobrane z Otomoto');
+        
+        // Show missing fields
+        if (result.missing_fields && result.missing_fields.length > 0) {
+          setTimeout(() => {
+            toast.info(`Uzupełnij ręcznie: ${result.missing_fields.slice(0, 5).join(', ')}${result.missing_fields.length > 5 ? '...' : ''}`, {
+              duration: 8000
+            });
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error('Error importing from Otomoto:', error);
+      toast.error(error.response?.data?.detail || 'Błąd podczas importu z Otomoto');
+    } finally {
+      setImportingFromOtomoto(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
