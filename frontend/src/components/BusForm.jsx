@@ -270,6 +270,59 @@ export const BusForm = ({ initialData, onSubmit, onCancel, loading }) => {
               </div>
 
               <div>
+                <Label htmlFor="kolor">Kolor</Label>
+                <Select value={formData.kolor || ''} onValueChange={(val) => handleChange('kolor', val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz kolor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kolory.map(kolor => (
+                      <SelectItem key={kolor} value={kolor}>{kolor}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="krajPochodzenia">Kraj pochodzenia</Label>
+                <Select value={formData.krajPochodzenia || ''} onValueChange={(val) => handleChange('krajPochodzenia', val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz kraj" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {krajePochodzenia.map(kraj => (
+                      <SelectItem key={kraj} value={kraj}>{kraj}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="stan">Stan pojazdu</Label>
+                <Select value={formData.stan || 'Używany'} onValueChange={(val) => handleChange('stan', val)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stany.map(stan => (
+                      <SelectItem key={stan} value={stan}>{stan}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="bezwypadkowy"
+                  checked={formData.bezwypadkowy || false}
+                  onChange={(e) => handleChange('bezwypadkowy', e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="bezwypadkowy" className="cursor-pointer">Bezwypadkowy</Label>
+              </div>
+
+              <div>
                 <Label htmlFor="miasto">Lokalizacja</Label>
                 <Select value={formData.miasto} onValueChange={(val) => handleChange('miasto', val)}>
                   <SelectTrigger>
