@@ -50,7 +50,7 @@ export const kolory = [
   'Biały', 'Czarny', 'Szary', 'Srebrny', 'Niebieski', 'Czerwony', 
   'Żółty', 'Zielony', 'Pomarańczowy', 'Brązowy', 'Beżowy', 'Fioletowy', 'Inny'
 ];
-export const krajePocho dzenia = [
+export const krajePochodzenia = [
   'Polska', 'Niemcy', 'Holandia', 'Francja', 'Włochy', 'Belgia', 
   'Hiszpania', 'Austria', 'Czechy', 'Dania', 'Szwecja', 'Inny'
 ];
