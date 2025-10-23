@@ -792,20 +792,74 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Opis ogłoszenia (HTML) <span className="text-red-500">*</span>
+              Opis ogłoszenia <span className="text-red-500">*</span>
             </label>
-            <ReactQuill
+            <div className="mb-2 flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.getElementById('description-textarea');
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const text = textarea.value;
+                  const selectedText = text.substring(start, end);
+                  const newText = text.substring(0, start) + '<p>' + selectedText + '</p>' + text.substring(end);
+                  setDescriptionHtml(newText);
+                }}
+                className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+              >
+                + Paragraf
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.getElementById('description-textarea');
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const text = textarea.value;
+                  const selectedText = text.substring(start, end);
+                  const newText = text.substring(0, start) + '<strong>' + selectedText + '</strong>' + text.substring(end);
+                  setDescriptionHtml(newText);
+                }}
+                className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm font-bold"
+              >
+                B
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const textarea = document.getElementById('description-textarea');
+                  const start = textarea.selectionStart;
+                  const end = textarea.selectionEnd;
+                  const text = textarea.value;
+                  const selectedText = text.substring(start, end);
+                  const newText = text.substring(0, start) + '<ul><li>' + selectedText + '</li></ul>' + text.substring(end);
+                  setDescriptionHtml(newText);
+                }}
+                className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+              >
+                • Lista
+              </button>
+            </div>
+            <textarea
+              id="description-textarea"
               value={descriptionHtml}
-              onChange={setDescriptionHtml}
-              modules={quillModules}
-              formats={quillFormats}
-              placeholder="Wpisz szczegółowy opis pojazdu..."
-              className={`bg-white ${errors.descriptionHtml ? 'border-2 border-red-500 rounded-lg' : ''}`}
+              onChange={(e) => setDescriptionHtml(e.target.value)}
+              placeholder="Wpisz szczegółowy opis pojazdu. Możesz używać tagów HTML: <p>, <strong>, <ul><li>, <br>"
+              rows={10}
+              className={`w-full px-4 py-2 border rounded-lg font-mono text-sm ${errors.descriptionHtml ? 'border-red-500' : 'border-gray-300'}`}
             />
             {errors.descriptionHtml && <p className="text-red-500 text-sm mt-1">{errors.descriptionHtml}</p>}
             <p className="text-gray-500 text-sm mt-1">
-              {descriptionHtml.replace(/<[^>]*>/g, '').length}/10000 znaków
+              {descriptionHtml.replace(/<[^>]*>/g, '').length}/10000 znaków (HTML dozwolony)
             </p>
+            <div className="mt-2 p-3 bg-gray-50 rounded border">
+              <p className="text-xs font-semibold text-gray-600 mb-1">Podgląd:</p>
+              <div 
+                className="text-sm text-gray-800"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            </div>
           </div>
 
           <div>
