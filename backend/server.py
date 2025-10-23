@@ -14,6 +14,9 @@ import hashlib
 import logging
 import uuid
 import jwt
+import requests
+from bs4 import BeautifulSoup
+import re
 from supabase import create_client, Client
 
 ROOT_DIR = Path(__file__).parent
