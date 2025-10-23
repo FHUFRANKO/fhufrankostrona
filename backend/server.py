@@ -1100,8 +1100,10 @@ if FRONTEND_BUILD_DIR.exists():
     logger = logging.getLogger(__name__)
     logger.info(f"Frontend build directory found: {FRONTEND_BUILD_DIR}")
     
-    # Mount static files from React build
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "static")), name="static-frontend")
+    # Mount static files from React build (only if static directory exists)
+    static_dir = FRONTEND_BUILD_DIR / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static-frontend")
     
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str, request: Request):
