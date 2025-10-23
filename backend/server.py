@@ -584,6 +584,48 @@ async def scrape_otomoto(request: OtomotoScrapeRequest):
         
         data['wyposazenie'] = wyposazenie
         
+        # === NOWE POLA ===
+        
+        # Kolor
+        kolor = get_param('Kolor')
+        if kolor:
+            data['kolor'] = kolor
+        else:
+            missing_fields.append('kolor')
+        
+        # Kraj pochodzenia
+        kraj = get_param('Kraj pochodzenia') or get_param('Pochodzenie')
+        if kraj:
+            data['krajPochodzenia'] = kraj
+        elif 'pierwsza rejestracja w polsce' in str(soup).lower() or 'zarejestrowany w polsce' in str(soup).lower():
+            data['krajPochodzenia'] = 'Polska'
+        else:
+            missing_fields.append('krajPochodzenia')
+        
+        # Stan (Nowy/Używany)
+        stan_text = get_param('Stan')
+        if stan_text:
+            if 'now' in stan_text.lower():
+                data['stan'] = 'Nowy'
+            elif 'uży' in stan_text.lower() or 'używan' in stan_text.lower():
+                data['stan'] = 'Używany'
+            else:
+                data['stan'] = stan_text
+        else:
+            # Try to guess from mileage
+            if data.get('przebieg', 0) < 100:
+                data['stan'] = 'Nowy'
+            else:
+                data['stan'] = 'Używany'
+        
+        # Bezwypadkowy
+        if 'bezwypadkowy' in str(soup).lower():
+            data['bezwypadkowy'] = True
+        elif 'powypadkowy' in str(soup).lower() or 'uszkodzony' in str(soup).lower():
+            data['bezwypadkowy'] = False
+        else:
+            missing_fields.append('bezwypadkowy (sprawdź w opisie)')
+        
         # Fields that should be filled manually
         manual_fields = [
             'wymiarL (np. L2, L3)',
