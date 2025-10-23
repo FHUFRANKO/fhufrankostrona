@@ -46,5 +46,13 @@ export const dmcKategorie = [
 ];
 
 export const normyEmisji = ['Euro 4', 'Euro 5', 'Euro 6'];
-export const kolory = ['Biały', 'Czarny', 'Szary', 'Srebrny', 'Niebieski', 'Czerwony', 'Żółty'];
+export const kolory = [
+  'Biały', 'Czarny', 'Szary', 'Srebrny', 'Niebieski', 'Czerwony', 
+  'Żółty', 'Zielony', 'Pomarańczowy', 'Brązowy', 'Beżowy', 'Fioletowy', 'Inny'
+];
+export const krajePocho dzenia = [
+  'Polska', 'Niemcy', 'Holandia', 'Francja', 'Włochy', 'Belgia', 
+  'Hiszpania', 'Austria', 'Czechy', 'Dania', 'Szwecja', 'Inny'
+];
+export const stany = ['Nowy', 'Używany'];
 export const miasta = ['Warszawa', 'Kraków', 'Wrocław', 'Poznań', 'Gdańsk', 'Katowice', 'Lublin'];
