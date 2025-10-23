@@ -215,11 +215,14 @@ export const AdminPanel = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Powrót do listy
           </Button>
-          <BusForm
-            initialData={editingBus}
-            onSubmit={handleSubmitBus}
+          <BusFormNew
+            editData={editingBus}
+            onSuccess={() => {
+              setShowForm(false);
+              fetchBuses();
+              fetchStats();
+            }}
             onCancel={handleCancelForm}
-            loading={loading}
           />
         </div>
       </div>
