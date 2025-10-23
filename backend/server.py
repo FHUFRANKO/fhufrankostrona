@@ -237,6 +237,12 @@ class BusCreate(BaseModel):
     wymiarH: Optional[str] = None
     liczbaMiejsc: Optional[int] = None
     liczbaPalet: Optional[int] = None
+    # Nowe pola
+    kolor: Optional[str] = None
+    krajPochodzenia: Optional[str] = None
+    stan: Optional[str] = None
+    bezwypadkowy: Optional[bool] = None
+    # Wyposażenie
     klima: bool = False
     tempomat: bool = False
     kamera: bool = False
