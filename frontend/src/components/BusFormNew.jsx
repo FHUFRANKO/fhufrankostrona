@@ -71,6 +71,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
   const [nowosc, setNowosc] = useState(false);
   const [flotowy, setFlotowy] = useState(false);
   const [gwarancja, setGwarancja] = useState(false);
+  const [sold, setSold] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   // Auto-generate title when make/model change
