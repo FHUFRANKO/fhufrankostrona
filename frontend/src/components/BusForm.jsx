@@ -169,6 +169,40 @@ export const BusForm = ({ initialData, onSubmit, onCancel, loading }) => {
         </CardHeader>
         <CardContent className="space-y-6">
           
+          {/* Import z Otomoto */}
+          <div className="space-y-4 border-b pb-6">
+            <h3 className="text-lg font-semibold text-[#F3BC30]">⚡ Import z Otomoto</h3>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  type="url"
+                  placeholder="Wklej URL ogłoszenia z Otomoto.pl"
+                  value={otomotoUrl}
+                  onChange={(e) => setOtomotoUrl(e.target.value)}
+                  disabled={importingFromOtomoto}
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={handleImportFromOtomoto}
+                disabled={importingFromOtomoto || !otomotoUrl}
+                className="bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122]"
+              >
+                {importingFromOtomoto ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importuję...
+                  </>
+                ) : (
+                  'Pobierz dane'
+                )}
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500">
+              Wklej link do swojego ogłoszenia z Otomoto, aby automatycznie wypełnić formularz. Zdjęcia i niektóre pola będziesz musiał uzupełnić ręcznie.
+            </p>
+          </div>
+
           {/* Podstawowe informacje */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Podstawowe informacje</h3>
