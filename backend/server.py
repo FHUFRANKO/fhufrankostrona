@@ -378,6 +378,220 @@ async def upload_image(file: UploadFile = File(...)):
         logger.error(f"Upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
+# Scrape Otomoto endpoint
+@api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
+async def scrape_otomoto(request: OtomotoScrapeRequest):
+    """Scrape vehicle data from Otomoto URL"""
+    try:
+        url = request.url.strip()
+        
+        # Validate URL
+        if 'otomoto.pl' not in url:
+            raise HTTPException(status_code=400, detail="Nieprawidłowy URL Otomoto")
+        
+        # Fetch page
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        # Parse HTML
+        soup = BeautifulSoup(response.content, 'lxml')
+        
+        # Extract data
+        data = {}
+        missing_fields = []
+        
+        # Helper function to extract text
+        def get_text(selector, default=""):
+            elem = soup.select_one(selector)
+            return elem.get_text(strip=True) if elem else default
+        
+        # Helper to extract from parameters list
+        def get_param(label):
+            params = soup.select('li.offer-params__item')
+            for param in params:
+                label_elem = param.select_one('.offer-params__label')
+                value_elem = param.select_one('.offer-params__value, a')
+                if label_elem and label in label_elem.get_text():
+                    return value_elem.get_text(strip=True) if value_elem else None
+            return None
+        
+        # Title (usually contains brand and model)
+        title = get_text('h1.offer-title')
+        if title:
+            # Try to split brand and model
+            parts = title.split()
+            data['marka'] = parts[0] if parts else ""
+            data['model'] = ' '.join(parts[1:]) if len(parts) > 1 else ""
+        else:
+            missing_fields.extend(['marka', 'model'])
+        
+        # Price
+        price_text = get_text('.offer-price__number')
+        if price_text:
+            price_clean = re.sub(r'[^\d]', '', price_text)
+            data['cenaBrutto'] = int(price_clean) if price_clean else None
+        else:
+            missing_fields.append('cenaBrutto')
+        
+        # Year
+        year = get_param('Rok produkcji')
+        data['rok'] = int(year) if year and year.isdigit() else None
+        if not data.get('rok'):
+            missing_fields.append('rok')
+        
+        # Mileage
+        mileage = get_param('Przebieg')
+        if mileage:
+            mileage_clean = re.sub(r'[^\d]', '', mileage)
+            data['przebieg'] = int(mileage_clean) if mileage_clean else None
+        else:
+            missing_fields.append('przebieg')
+        
+        # Fuel type
+        fuel = get_param('Rodzaj paliwa')
+        data['paliwo'] = fuel or ""
+        if not fuel:
+            missing_fields.append('paliwo')
+        
+        # Transmission
+        transmission = get_param('Skrzynia biegów')
+        data['skrzynia'] = transmission or ""
+        if not transmission:
+            missing_fields.append('skrzynia')
+        
+        # Power
+        power = get_param('Moc')
+        if power:
+            power_match = re.search(r'(\d+)', power)
+            data['moc'] = int(power_match.group(1)) if power_match else None
+        else:
+            missing_fields.append('moc')
+        
+        # Engine capacity
+        capacity = get_param('Pojemność skokowa')
+        if capacity:
+            capacity_clean = re.sub(r'[^\d]', '', capacity)
+            data['kubatura'] = int(capacity_clean) if capacity_clean else None
+        
+        # Emission standard
+        emission = get_param('Emisja CO2')
+        # Try to determine Euro standard
+        if 'Euro 6' in str(soup) or 'EURO 6' in str(soup):
+            data['normaEmisji'] = 'Euro 6'
+        elif 'Euro 5' in str(soup) or 'EURO 5' in str(soup):
+            data['normaEmisji'] = 'Euro 5'
+        else:
+            data['normaEmisji'] = 'Euro 6'  # Default
+        
+        # Body type - look for common terms
+        body_type = get_param('Typ')
+        if body_type:
+            body_lower = body_type.lower()
+            if 'furg' in body_lower:
+                data['typNadwozia'] = 'Furgon'
+            elif 'bus' in body_lower or 'mini' in body_lower:
+                data['typNadwozia'] = 'Minibus'
+            elif 'pod' in body_lower or 'skrzy' in body_lower:
+                data['typNadwozia'] = 'Podwozie'
+            else:
+                data['typNadwozia'] = body_type
+        else:
+            data['typNadwozia'] = 'Furgon'  # Default
+        
+        # DMC category
+        dmc = get_param('Dopuszczalna masa')
+        if dmc:
+            dmc_clean = re.sub(r'[^\d]', '', dmc)
+            dmc_val = int(dmc_clean) if dmc_clean else 3500
+            if dmc_val <= 3500:
+                data['dmcKategoria'] = 'do 3.5t'
+            else:
+                data['dmcKategoria'] = 'powyżej 3.5t'
+        else:
+            data['dmcKategoria'] = 'do 3.5t'
+        
+        # Payload capacity (estimate)
+        if data.get('dmcKategoria') == 'do 3.5t':
+            data['ladownosc'] = 1000  # Default estimate
+        else:
+            data['ladownosc'] = 1500
+        missing_fields.append('ladownosc (sprawdź dokładną wartość)')
+        
+        # Drive type
+        drive = get_param('Napęd')
+        if drive:
+            if 'przód' in drive.lower() or 'FWD' in drive:
+                data['naped'] = 'Przedni (FWD)'
+            elif '4x4' in drive or 'AWD' in drive or 'wszystkie' in drive.lower():
+                data['naped'] = '4x4 (AWD)'
+            elif 'tył' in drive.lower() or 'RWD' in drive:
+                data['naped'] = 'Tylni (RWD)'
+        
+        # Description
+        desc = get_text('.offer-description__description')
+        if desc and len(desc) > 50:
+            data['opis'] = desc[:500]  # Limit to 500 chars
+        
+        # Features/Equipment
+        wyposazenie = []
+        
+        # Check for common features in params
+        if get_param('Klimatyzacja') or 'klimatyzacja' in str(soup).lower():
+            wyposazenie.append('Klimatyzacja')
+            data['klima'] = True
+        
+        if get_param('Tempomat') or 'tempomat' in str(soup).lower():
+            wyposazenie.append('Tempomat')
+            data['tempomat'] = True
+        
+        if 'kamera' in str(soup).lower() or 'camera' in str(soup).lower():
+            wyposazenie.append('Kamera cofania')
+            data['kamera'] = True
+        
+        if 'czujnik' in str(soup).lower() and 'park' in str(soup).lower():
+            wyposazenie.append('Czujniki parkowania')
+            data['czujnikiParkowania'] = True
+        
+        if 'hak' in str(soup).lower():
+            wyposazenie.append('Hak holowniczy')
+            data['hak'] = True
+        
+        data['wyposazenie'] = wyposazenie
+        
+        # Fields that should be filled manually
+        manual_fields = [
+            'wymiarL (np. L2, L3)',
+            'wymiarH (np. H2, H3)',
+            'cenaNetto (jeśli dotyczy)',
+            'liczbaMiejsc (jeśli dotyczy)',
+            'liczbaPalet (jeśli dotyczy)',
+            'normaSpalania',
+            'gwarancja (ustaw checkbox)',
+            'wyrozniowane (ustaw checkbox)',
+            'nowosc (ustaw checkbox)',
+            'flotowy (ustaw checkbox)'
+        ]
+        
+        missing_fields.extend(manual_fields)
+        
+        return {
+            "success": True,
+            "data": data,
+            "missing_fields": missing_fields,
+            "message": "Dane pobrane z Otomoto. Sprawdź i uzupełnij brakujące pola."
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Otomoto scrape error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Nie udało się pobrać danych z Otomoto: {str(e)}")
+    except Exception as e:
+        logger.error(f"Otomoto parse error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd parsowania danych: {str(e)}")
+
+
 # Bus CRUD endpoints
 @api_router.post("/ogloszenia", response_model=Bus, dependencies=[Depends(admin_required)])
 async def create_bus(bus_data: BusCreate):
