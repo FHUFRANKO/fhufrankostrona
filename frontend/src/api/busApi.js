@@ -105,6 +105,8 @@ export const busApi = {
     const response = await axios.get(`${API_URL}/api/admin/listings/${id}`);
     return response.data;
   },
+};
+
 export const getAllBuses = busApi.getAllBuses;
 export const getBusById = busApi.getBusById;
 export const createBus = busApi.createBus;
