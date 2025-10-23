@@ -355,7 +355,7 @@ export const CarDetailPage = () => {
                 <div className="space-y-3">
                   <Button
                     className="w-full bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122] font-semibold"
-                    onClick={() => window.open(`tel:${car.kontakt.telefon}`)}
+                    onClick={() => window.open(`tel:+48123456789`)}
                   >
                     <Phone className="mr-2 h-4 w-4" />
                     Zadzwoń teraz
