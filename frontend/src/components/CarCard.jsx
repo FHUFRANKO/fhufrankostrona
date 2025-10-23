@@ -33,6 +33,15 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
           />
         </div>
         
+        {/* SPRZEDANE overlay */}
+        {bus.sold && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-t-lg">
+            <div className="bg-red-600 text-white px-8 py-4 rounded-lg shadow-2xl transform -rotate-12">
+              <span className="text-4xl font-black tracking-wider">SPRZEDANE</span>
+            </div>
+          </div>
+        )}
+        
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
           {bus.wyroznialone && (
