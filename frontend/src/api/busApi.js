@@ -105,4 +105,21 @@ export const busApi = {
     const response = await axios.get(`${API_URL}/api/admin/listings/${id}`);
     return response.data;
   },
-};
+export const getAllBuses = busApi.getAllBuses;
+export const getBusById = busApi.getBusById;
+export const createBus = busApi.createBus;
+export const updateBus = busApi.updateBus;
+export const deleteBus = busApi.deleteBus;
+export const uploadImage = busApi.uploadImage;
+export const getStats = busApi.getStats;
+export const getAllOpinions = busApi.getAllOpinions;
+export const getPublicOpinions = busApi.getPublicOpinions;
+export const getOpinionById = busApi.getOpinionById;
+export const createOpinion = busApi.createOpinion;
+export const updateOpinion = busApi.updateOpinion;
+export const deleteOpinion = busApi.deleteOpinion;
+export const scrapeOtomoto = busApi.scrapeOtomoto;
+export const createListing = busApi.createListing;
+export const updateListing = busApi.updateListing;
+export const getListing = busApi.getListing;
+
