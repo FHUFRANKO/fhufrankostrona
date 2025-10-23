@@ -188,6 +188,15 @@ export const CarDetailPage = () => {
                   className="w-full h-[500px] object-cover"
                 />
                 
+                {/* SPRZEDANE overlay */}
+                {car.sold && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
+                      <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+                    </div>
+                  </div>
+                )}
+                
                 {car.zdjecia.length > 1 && (
                   <>
                     <Button
