@@ -4,6 +4,12 @@ FROM node:20-alpine AS frontend-builder
 # Build frontend
 WORKDIR /app/frontend
 
+# Copy package files first (for better caching)
+COPY frontend/package.json frontend/yarn.lock* ./
+
+# Install ALL dependencies (including devDependencies needed for build)
+RUN yarn install --frozen-lockfile || yarn install
+
 # Copy all frontend files
 COPY frontend/ ./
 
@@ -16,8 +22,7 @@ ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
 ENV REACT_APP_ADMIN_PATH=${REACT_APP_ADMIN_PATH}
 ENV NODE_ENV=production
 
-# Install dependencies and build
-RUN yarn install
+# Build frontend
 RUN yarn build
 
 # Python backend stage
