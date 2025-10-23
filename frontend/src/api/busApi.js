@@ -89,4 +89,20 @@ export const busApi = {
     const response = await axios.post(`${API_URL}/api/scrape-otomoto`, { url });
     return response.data;
   },
+
+  // New Listing System API
+  async createListing(listingData) {
+    const response = await axios.post(`${API_URL}/api/admin/listings`, listingData);
+    return response.data;
+  },
+
+  async updateListing(id, listingData) {
+    const response = await axios.put(`${API_URL}/api/admin/listings/${id}`, listingData);
+    return response.data;
+  },
+
+  async getListing(id) {
+    const response = await axios.get(`${API_URL}/api/admin/listings/${id}`);
+    return response.data;
+  },
 };
