@@ -7,15 +7,17 @@ WORKDIR /app/frontend
 # Copy all frontend files
 COPY frontend/ ./
 
-# Install dependencies
-RUN yarn install
+# Build arguments from Railway
+ARG REACT_APP_BACKEND_URL
+ARG REACT_APP_ADMIN_PATH
 
-# Set production environment for build
+# Set environment variables for build
+ENV REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+ENV REACT_APP_ADMIN_PATH=${REACT_APP_ADMIN_PATH}
 ENV NODE_ENV=production
-ENV REACT_APP_BACKEND_URL=""
-ENV REACT_APP_ADMIN_PATH=X9T4G7QJ2MZP8L1W3R5C6VDHY
 
-# Build frontend
+# Install dependencies and build
+RUN yarn install
 RUN yarn build
 
 # Python backend stage
