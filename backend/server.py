@@ -282,6 +282,12 @@ class BusUpdate(BaseModel):
     wymiarH: Optional[str] = None
     liczbaMiejsc: Optional[int] = None
     liczbaPalet: Optional[int] = None
+    # Nowe pola
+    kolor: Optional[str] = None
+    krajPochodzenia: Optional[str] = None
+    stan: Optional[str] = None
+    bezwypadkowy: Optional[bool] = None
+    # Wyposażenie
     klima: Optional[bool] = None
     tempomat: Optional[bool] = None
     kamera: Optional[bool] = None
