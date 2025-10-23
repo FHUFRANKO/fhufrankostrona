@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { busApi } from '../api/busApi';
-import { marki, modele, paliwa, skrzynie, napedy, typyNadwozi, dmcKategorie, normyEmisji, kolory, miasta } from '../constants/formOptions';
+import { marki, modele, paliwa, skrzynie, napedy, typyNadwozi, dmcKategorie, normyEmisji, kolory, krajePochodzenia, stany, miasta } from '../constants/formOptions';
 import { toast } from 'sonner';
 
 export const BusForm = ({ initialData, onSubmit, onCancel, loading }) => {
