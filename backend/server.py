@@ -876,6 +876,7 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
         'gwarancja': listing_data.get('gwarancja', False),
+        'sold': listing_data.get('sold', False),
         
         # Required fields with defaults for backward compatibility
         'normaEmisji': 'Euro 6',
