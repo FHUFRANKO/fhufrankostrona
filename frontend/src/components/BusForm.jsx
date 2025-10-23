@@ -54,6 +54,8 @@ export const BusForm = ({ initialData, onSubmit, onCancel, loading }) => {
 
   const [availableModels, setAvailableModels] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [otomotoUrl, setOtomotoUrl] = useState('');
+  const [importingFromOtomoto, setImportingFromOtomoto] = useState(false);
 
   useEffect(() => {
     if (formData.marka) {
