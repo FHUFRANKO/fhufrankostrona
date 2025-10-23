@@ -16,7 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { busApi } from '../api/busApi';
-import { BusForm } from '../components/BusForm';
+import BusFormNew from '../components/BusFormNew';
 import { OpinionForm } from '../components/OpinionForm';
 import { toast } from 'sonner';
 
