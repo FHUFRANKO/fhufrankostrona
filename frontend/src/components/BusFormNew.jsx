@@ -337,19 +337,6 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
     }
   };
 
-  // Quill modules for rich text
-  const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ]
-  }), []);
-
-  const quillFormats = ['header', 'bold', 'italic', 'underline', 'list', 'bullet', 'link'];
-
   return (
     <form onSubmit={handleSubmit} className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-3xl font-bold mb-6 text-gray-800">
