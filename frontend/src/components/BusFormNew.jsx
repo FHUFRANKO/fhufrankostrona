@@ -310,7 +310,8 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         wyrozniowane,
         nowosc,
         flotowy,
-        gwarancja
+        gwarancja,
+        sold
       };
 
       let result;
