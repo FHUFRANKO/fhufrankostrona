@@ -20,6 +20,10 @@ def validate_vin(v: Optional[str]) -> Optional[str]:
     
     v = v.strip().upper()
     
+    # After stripping, check if empty
+    if v == "":
+        return None
+    
     if len(v) != 17:
         raise ValueError(f"VIN musi mieć dokładnie 17 znaków (podano: {len(v)})")
     
