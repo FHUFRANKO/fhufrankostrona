@@ -84,4 +84,9 @@ export const busApi = {
     const response = await axios.delete(`${API_URL}/api/opinie/${id}`);
     return response.data;
   },
+
+  async scrapeOtomoto(url) {
+    const response = await axios.post(`${API_URL}/api/scrape-otomoto`, { url });
+    return response.data;
+  },
 };
