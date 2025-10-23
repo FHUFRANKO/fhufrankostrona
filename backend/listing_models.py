@@ -181,6 +181,7 @@ class ListingUpdate(BaseModel):
     nowosc: Optional[bool] = None
     flotowy: Optional[bool] = None
     gwarancja: Optional[bool] = None
+    sold: Optional[bool] = None
     
     # Validators - same as base
     _validate_vin = validator('vin', allow_reuse=True)(validate_vin)
