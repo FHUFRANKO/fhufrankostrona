@@ -101,6 +101,18 @@ export const AdminPanel = () => {
     }
   };
 
+  const handleToggleSold = async (bus) => {
+    try {
+      const newSoldStatus = !bus.sold;
+      await busApi.updateListing(bus.id, { sold: newSoldStatus });
+      toast.success(newSoldStatus ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
+      fetchBuses();
+    } catch (error) {
+      console.error('Error toggling sold status:', error);
+      toast.error('Błąd podczas zmiany statusu');
+    }
+  };
+
   const handleSubmitBus = async (busData) => {
     setLoading(true);
     try {
