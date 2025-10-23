@@ -1051,6 +1051,19 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
                 Gwarancja
               </label>
             </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="sold"
+                checked={sold}
+                onChange={(e) => setSold(e.target.checked)}
+                className="w-4 h-4 text-red-600 border-gray-300 rounded"
+              />
+              <label htmlFor="sold" className="ml-2 text-sm font-medium text-red-700">
+                🔴 SPRZEDANE
+              </label>
+            </div>
           </div>
         </div>
       )}
