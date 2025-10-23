@@ -92,6 +92,7 @@ class ListingBase(BaseModel):
     nowosc: bool = Field(False, description="Nowość")
     flotowy: bool = Field(False, description="Pojazd flotowy")
     gwarancja: bool = Field(False, description="Gwarancja")
+    sold: bool = Field(False, description="Sprzedane")
     
     # Validators
     _validate_vin = validator('vin', allow_reuse=True)(validate_vin)
