@@ -443,17 +443,17 @@ export const CarDetailPage = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="font-medium text-[#222122]">
-                    {car.kontakt.nazwa}
+                    FHU FRANKO
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-[#838282]">
                     <MapPin className="h-4 w-4" />
-                    {car.lokalizacja}
+                    Polska
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-[#838282]">
                     <Clock className="h-4 w-4" />
-                    {car.kontakt.godziny}
+                    Pon-Pt: 9:00-17:00
                   </div>
                 </div>
               </CardContent>
