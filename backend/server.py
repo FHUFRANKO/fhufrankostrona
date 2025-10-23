@@ -313,6 +313,9 @@ class OpinionUpdate(BaseModel):
 class AdminLoginRequest(BaseModel):
     password: str
 
+class OtomotoScrapeRequest(BaseModel):
+    url: str
+
 # --- API ENDPOINTS ---
 
 @api_router.get("/")
