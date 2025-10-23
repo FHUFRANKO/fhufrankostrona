@@ -128,6 +128,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
       setNowosc(editData.nowosc || false);
       setFlotowy(editData.flotowy || false);
       setGwarancja(editData.gwarancja || false);
+      setSold(editData.sold || false);
     }
   }, [editData]);
 
