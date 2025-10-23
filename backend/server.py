@@ -186,6 +186,17 @@ class Bus(BaseModel):
     wymiarH: Optional[str] = None
     liczbaMiejsc: Optional[int] = None
     liczbaPalet: Optional[int] = None
+    # Nowe pola z Otomoto
+    kolor: Optional[str] = None
+    podwojneTylneKola: bool = False
+    krajPochodzenia: Optional[str] = None
+    numerRejestracyjny: Optional[str] = None
+    stan: Optional[str] = None  # "Nowy" / "Używany"
+    dataPierwszejRejestracji: Optional[str] = None
+    bezwypadkowy: Optional[bool] = None
+    maNumerRejestracyjny: Optional[bool] = None
+    serwisowanyWAso: Optional[bool] = None
+    # Wyposażenie
     klima: bool = False
     tempomat: bool = False
     kamera: bool = False
