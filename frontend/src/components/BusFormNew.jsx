@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import ReactQuill from 'react-quill';
+import React, { useState, useEffect } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import pl from 'date-fns/locale/pl';
-import 'react-quill/dist/quill.snow.css';
 import 'react-datepicker/dist/react-datepicker.css';
 import { marki, modele, paliwa, skrzynie, typyNadwozi, normyEmisji, dmcKategorie, kolory, krajePochodzenia, stany } from '../constants/formOptions';
 import * as busApi from '../api/busApi';
