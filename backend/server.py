@@ -819,6 +819,248 @@ async def delete_opinion(opinion_id: str):
     
     return {"success": True, "message": "Opinion deleted successfully"}
 
+# ========== NEW LISTING SYSTEM ENDPOINTS ==========
+# Import new listing models
+from listing_models import Listing, ListingCreate, ListingUpdate, FuelType, GearboxType, ConditionStatus
+from pydantic import ValidationError
+
+def map_listing_to_bus_db(listing_data: dict) -> dict:
+    """Map new listing model fields to existing database schema"""
+    bus_data = {
+        # Map title explicitly
+        'title': listing_data.get('title'),
+        
+        # SEKCJA 1: Informacje podstawowe
+        'marka': listing_data.get('make'),
+        'model': listing_data.get('model'),
+        'color': listing_data.get('color'),
+        'liczbaMiejsc': listing_data.get('seats'),
+        'rok': listing_data.get('production_year'),
+        'vin': listing_data.get('vin'),
+        'installments_available': listing_data.get('installments_available', False),
+        'cenaBrutto': listing_data.get('price_pln'),
+        
+        # SEKCJA 2: Specyfikacja techniczna
+        'paliwo': listing_data.get('fuel_type'),
+        'kubatura': listing_data.get('engine_displacement_cc'),
+        'moc': listing_data.get('power_hp'),
+        'typNadwozia': listing_data.get('body_type'),
+        'skrzynia': listing_data.get('gearbox'),
+        'gvw_kg': listing_data.get('gvw_kg'),
+        'twin_rear_wheels': listing_data.get('twin_rear_wheels', False),
+        
+        # SEKCJA 3: Stan i historia pojazdu
+        'origin_country': listing_data.get('origin_country'),
+        'przebieg': listing_data.get('mileage_km'),
+        'registration_number': listing_data.get('registration_number'),
+        'condition_status': listing_data.get('condition_status'),
+        'first_registration_date': listing_data.get('first_registration_date').isoformat() if listing_data.get('first_registration_date') else None,
+        'accident_free': listing_data.get('accident_free', False),
+        'has_registration_number': listing_data.get('has_registration_number', False),
+        'serviced_in_aso': listing_data.get('serviced_in_aso', False),
+        
+        # SEKCJA 4: Opis sprzedawcy
+        'description_html': listing_data.get('description_html'),
+        'opis': listing_data.get('description_html'),  # Keep both for backward compatibility
+        'home_delivery': listing_data.get('home_delivery', False),
+        'tech_visual_short': listing_data.get('tech_visual_short'),
+        'seller_profile_url': listing_data.get('seller_profile_url'),
+        'location_street': listing_data.get('location_street'),
+        'location_city': listing_data.get('location_city'),
+        'location_region': listing_data.get('location_region'),
+        
+        # Additional fields
+        'zdjecia': listing_data.get('zdjecia', []),
+        'zdjecieGlowne': listing_data.get('zdjecieGlowne'),
+        'wyrozniowane': listing_data.get('wyrozniowane', False),
+        'nowosc': listing_data.get('nowosc', False),
+        'flotowy': listing_data.get('flotowy', False),
+        'gwarancja': listing_data.get('gwarancja', False),
+        
+        # Required fields with defaults for backward compatibility
+        'normaEmisji': 'Euro 6',
+        'dmcKategoria': 'do 3.5t',
+        'ladownosc': 1000,
+        'vat': True,
+    }
+    
+    # Remove None values
+    return {k: v for k, v in bus_data.items() if v is not None}
+
+def map_bus_db_to_listing(bus_data: dict) -> dict:
+    """Map database fields to new listing model"""
+    return {
+        # SEKCJA 1
+        'title': bus_data.get('title') or f"{bus_data.get('marka', '')} {bus_data.get('model', '')}".strip(),
+        'price_pln': bus_data.get('cenaBrutto'),
+        'make': bus_data.get('marka'),
+        'model': bus_data.get('model'),
+        'color': bus_data.get('color'),
+        'seats': bus_data.get('liczbaMiejsc'),
+        'production_year': bus_data.get('rok'),
+        'vin': bus_data.get('vin'),
+        'installments_available': bus_data.get('installments_available', False),
+        
+        # SEKCJA 2
+        'fuel_type': bus_data.get('paliwo'),
+        'engine_displacement_cc': bus_data.get('kubatura'),
+        'power_hp': bus_data.get('moc'),
+        'body_type': bus_data.get('typNadwozia'),
+        'gearbox': bus_data.get('skrzynia'),
+        'gvw_kg': bus_data.get('gvw_kg'),
+        'twin_rear_wheels': bus_data.get('twin_rear_wheels', False),
+        
+        # SEKCJA 3
+        'origin_country': bus_data.get('origin_country'),
+        'mileage_km': bus_data.get('przebieg'),
+        'registration_number': bus_data.get('registration_number'),
+        'condition_status': bus_data.get('condition_status') or 'Używany',
+        'first_registration_date': bus_data.get('first_registration_date'),
+        'accident_free': bus_data.get('accident_free', False),
+        'has_registration_number': bus_data.get('has_registration_number', False),
+        'serviced_in_aso': bus_data.get('serviced_in_aso', False),
+        
+        # SEKCJA 4
+        'description_html': bus_data.get('description_html') or bus_data.get('opis') or '',
+        'home_delivery': bus_data.get('home_delivery', False),
+        'tech_visual_short': bus_data.get('tech_visual_short'),
+        'seller_profile_url': bus_data.get('seller_profile_url'),
+        'location_street': bus_data.get('location_street'),
+        'location_city': bus_data.get('location_city'),
+        'location_region': bus_data.get('location_region'),
+        
+        # System fields
+        'id': bus_data.get('id'),
+        'created_at': bus_data.get('created_at') or bus_data.get('dataPublikacji'),
+        'updated_at': bus_data.get('updated_at'),
+        
+        # Additional
+        'zdjecia': bus_data.get('zdjecia', []),
+        'zdjecieGlowne': bus_data.get('zdjecieGlowne'),
+        'wyrozniowane': bus_data.get('wyrozniowane', False),
+        'nowosc': bus_data.get('nowosc', False),
+        'flotowy': bus_data.get('flotowy', False),
+        'gwarancja': bus_data.get('gwarancja', False),
+    }
+
+@api_router.post("/admin/listings", dependencies=[Depends(admin_required)])
+async def create_listing(listing_data: ListingCreate):
+    """Create a new listing with new validation system"""
+    try:
+        # Convert listing model to database schema
+        listing_dict = listing_data.dict()
+        bus_dict = map_listing_to_bus_db(listing_dict)
+        
+        # Generate ID
+        bus_id = str(uuid.uuid4())
+        bus_dict['id'] = bus_id
+        bus_dict['dataPublikacji'] = datetime.now().isoformat()
+        bus_dict['created_at'] = datetime.now().isoformat()
+        
+        # Generate listing number
+        response = supabase.table('buses').select('id', count='exact').execute()
+        count = response.count if hasattr(response, 'count') else len(response.data)
+        bus_dict['numerOgloszenia'] = f"FKBUS{str(count + 1).zfill(6)}"
+        
+        # Insert into database
+        response = supabase.table('buses').insert(bus_dict).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Nie udało się utworzyć ogłoszenia")
+        
+        # Map back to listing format
+        listing_response = map_bus_db_to_listing(response.data[0])
+        
+        return {
+            "success": True,
+            "data": listing_response,
+            "message": "Ogłoszenie utworzone pomyślnie"
+        }
+        
+    except ValidationError as e:
+        # Return detailed validation errors in Polish
+        errors = {}
+        for error in e.errors():
+            field = error['loc'][-1]
+            message = error['msg']
+            errors[field] = message
+        
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "errors": errors,
+                "message": "Błędy walidacji"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Create listing error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd tworzenia ogłoszenia: {str(e)}")
+
+@api_router.put("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
+async def update_listing(listing_id: str, listing_update: ListingUpdate):
+    """Update an existing listing"""
+    try:
+        # Check if listing exists
+        response = supabase.table('buses').select('*').eq('id', listing_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Ogłoszenie nie znalezione")
+        
+        # Convert update to database schema
+        update_dict = {k: v for k, v in listing_update.dict().items() if v is not None}
+        if update_dict:
+            bus_update = map_listing_to_bus_db(update_dict)
+            bus_update['updated_at'] = datetime.now().isoformat()
+            
+            response = supabase.table('buses').update(bus_update).eq('id', listing_id).execute()
+            
+            if not response.data:
+                raise HTTPException(status_code=500, detail="Nie udało się zaktualizować ogłoszenia")
+        
+        # Return updated listing
+        listing_response = map_bus_db_to_listing(response.data[0])
+        
+        return {
+            "success": True,
+            "data": listing_response,
+            "message": "Ogłoszenie zaktualizowane pomyślnie"
+        }
+        
+    except ValidationError as e:
+        errors = {}
+        for error in e.errors():
+            field = error['loc'][-1]
+            message = error['msg']
+            errors[field] = message
+        
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "errors": errors,
+                "message": "Błędy walidacji"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Update listing error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd aktualizacji ogłoszenia: {str(e)}")
+
+@api_router.get("/admin/listings/{listing_id}")
+async def get_listing(listing_id: str, user: dict = Depends(get_current_user_optional)):
+    """Get a single listing by ID (admin-only for full data)"""
+    response = supabase.table('buses').select('*').eq('id', listing_id).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Ogłoszenie nie znalezione")
+    
+    listing_response = map_bus_db_to_listing(response.data[0])
+    
+    return {
+        "success": True,
+        "data": listing_response
+    }
+
 # Admin login endpoints
 @api_router.get(f"/admin-{ADMIN_PATH}", response_class=HTMLResponse)
 async def admin_login_get_api():
