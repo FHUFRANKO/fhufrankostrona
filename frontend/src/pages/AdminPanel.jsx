@@ -410,6 +410,11 @@ export const AdminPanel = () => {
                               {bus.cenaBrutto.toLocaleString()} zł
                             </p>
                             <div className="flex gap-2 mt-2">
+                              {bus.sold && (
+                                <span className="text-sm bg-red-600 text-white px-3 py-1 rounded font-bold">
+                                  🔴 SPRZEDANE
+                                </span>
+                              )}
                               {bus.wyrozniowane && (
                                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
                                   Wyróżnione
@@ -429,6 +434,14 @@ export const AdminPanel = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            variant={bus.sold ? "destructive" : "outline"}
+                            size="sm"
+                            onClick={() => handleToggleSold(bus)}
+                            className={bus.sold ? "" : "border-red-300 text-red-600 hover:bg-red-50"}
+                          >
+                            🔴 {bus.sold ? 'Odznacz' : 'SPRZEDANE'}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
