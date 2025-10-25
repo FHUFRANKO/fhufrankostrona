@@ -213,8 +213,9 @@ class Bus(BaseModel):
     flotowy: bool = False
     gwarancja: bool = False
     winda: bool = False
+    czterykola: bool = False
     sold: bool = False  # Mapped from gwarancja
-    reserved: bool = False  # Mapped from winda
+    reserved: bool = False  # Mapped from czterykola (workaround for schema cache issue)
     numerOgloszenia: Optional[str] = None
     dataPublikacji: str = Field(default_factory=lambda: datetime.now().isoformat())
 
