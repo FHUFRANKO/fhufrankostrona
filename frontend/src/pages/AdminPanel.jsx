@@ -103,12 +103,22 @@ export const AdminPanel = () => {
 
   const handleToggleSold = async (bus) => {
     try {
-      const newSoldStatus = !bus.sold;
-      await busApi.updateListing(bus.id, { sold: newSoldStatus });
-      toast.success(newSoldStatus ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
+      const result = await busApi.toggleSoldStatus(bus.id);
+      toast.success(result.sold ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
       fetchBuses();
     } catch (error) {
       console.error('Error toggling sold status:', error);
+      toast.error('Błąd podczas zmiany statusu');
+    }
+  };
+
+  const handleToggleReserved = async (bus) => {
+    try {
+      const result = await busApi.toggleReservedStatus(bus.id);
+      toast.success(result.reserved ? 'Oznaczono jako REZERWACJA' : 'Odznaczono REZERWACJA');
+      fetchBuses();
+    } catch (error) {
+      console.error('Error toggling reserved status:', error);
       toast.error('Błąd podczas zmiany statusu');
     }
   };
