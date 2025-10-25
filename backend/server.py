@@ -756,18 +756,21 @@ async def toggle_sold_status(bus_id: str):
     current_sold = bus_data.get('gwarancja', False)
     new_sold = not current_sold
     
-    # If setting to sold=True, make sure reserved=False (mutually exclusive)
-    update_data = {'gwarancja': new_sold}
-    if new_sold:
-        update_data['winda'] = False
-    
-    # Update in database
-    response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+    # First update the sold status (gwarancja)
+    response = supabase.table('buses').update({'gwarancja': new_sold}).eq('id', bus_id).execute()
     
     if not response.data:
         raise HTTPException(status_code=500, detail="Failed to update sold status")
     
-    return {"success": True, "sold": new_sold, "reserved": update_data.get('winda', bus_data.get('winda', False))}
+    # If setting to sold=True, make sure reserved=False (mutually exclusive) - separate update
+    reserved_status = bus_data.get('winda', False)
+    if new_sold and reserved_status:
+        # Need to set reserved to False
+        response2 = supabase.table('buses').update({'winda': False}).eq('id', bus_id).execute()
+        if response2.data:
+            reserved_status = False
+    
+    return {"success": True, "sold": new_sold, "reserved": reserved_status}
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved_status(bus_id: str):
