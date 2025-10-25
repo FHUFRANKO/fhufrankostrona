@@ -942,7 +942,7 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
         'nowosc': bus_data.get('nowosc', False),
         'flotowy': bus_data.get('flotowy', False),
         'gwarancja': bus_data.get('gwarancja', False),
-        'sold': bus_data.get('sold', False),
+        'sold': bus_data.get('gwarancja', False),  # SOLD mapped from gwarancja
     }
 
 @api_router.post("/admin/listings", dependencies=[Depends(admin_required)])
