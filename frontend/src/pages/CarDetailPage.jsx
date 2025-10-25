@@ -413,14 +413,16 @@ export const CarDetailPage = () => {
                   }}
                   dangerouslySetInnerHTML={{ 
                     __html: car.opis
-                      // Najpierw zamień \n na <br> jeśli nie ma już HTML
+                      // Zamień pojedyncze \n na <br>
                       .replace(/\n/g, '<br>')
-                      // Dodaj odstępy po zdaniach które kończą się kropką
-                      .replace(/\.\s+/g, '.<br>')
-                      // Dodaj więcej przestrzeni po hashtagach
-                      .replace(/#\s/g, '<br># ')
-                      // Dodaj odstęp przed sekcjami z gwiazdkami
+                      // Dodaj podwójny <br> przed sekcjami z ***
                       .replace(/\*\*\*/g, '<br><br>***')
+                      // Dodaj <br> po hashtagach na początku linii
+                      .replace(/(^|<br>)(#[^<\n]+)/g, '$1<strong>$2</strong><br>')
+                      // Dodaj <br> po kropce jeśli następne zdanie zaczyna się wielką literą
+                      .replace(/\.\s+([A-ZĄĆĘŁŃÓŚŹŻ])/g, '.<br><br>$1')
+                      // Dodaj <br> przed listami z myślnikiem
+                      .replace(/(^|<br>)-\s/g, '$1<br>- ')
                   }}
                 />
               </CardContent>
