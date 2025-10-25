@@ -231,6 +231,18 @@ frontend:
         - working: true
           agent: "main"
           comment: "✅ ENHANCED: Updated to Otomoto-style formatting. Added: hashtags (#), bullet lists (-), preserved line breaks, better spacing. Updated CarDetailPage display to use whitespace-pre-line for proper text rendering. Description now looks professional like Otomoto."
+  
+  - task: "Facebook follow popup on all pages"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/FacebookPopup.jsx, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Created FacebookPopup component with FB logo, appears after 3 seconds on all pages, links to https://www.facebook.com/profile.php?id=61578689111557. Features: close button, localStorage to hide for 7 days after closing, overlay background, smooth animations. Added to App.js for global visibility."
 
   - task: "Display buses on listings page"
     implemented: true
