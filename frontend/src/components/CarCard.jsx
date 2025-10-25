@@ -40,7 +40,7 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
           
           {/* SPRZEDANE overlay */}
           {bus.sold && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <div className="relative">
                 <div className="bg-red-600 text-white px-12 py-6 rounded-xl shadow-2xl transform -rotate-12 border-4 border-white">
                   <span className="text-5xl font-black tracking-widest drop-shadow-lg" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.5)' }}>
