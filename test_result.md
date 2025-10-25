@@ -191,7 +191,7 @@ frontend:
     implemented: true
     working: false
     file: "/app/backend/server.py, /app/frontend/src/api/busApi.js, /app/frontend/src/components/CarCard.jsx, /app/frontend/src/pages/CarDetailPage.jsx, /app/frontend/src/pages/AdminPanel.jsx"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -201,6 +201,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ BACKEND ISSUE: toggle-reserved endpoint fails due to Supabase PGRST204 schema cache error for 'winda' column. ✅ PARTIAL SUCCESS: toggle-sold endpoint works, field mapping works in GET endpoints, mutual exclusivity logic implemented correctly. ✅ Regular PUT /api/ogloszenia/{id} can update both gwarancja and winda fields successfully. Root cause: PostgREST schema cache needs refresh for winda column in toggle endpoints."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL: REZERWACJA toggle still broken after czterykola fix. POST /api/ogloszenia/{id}/toggle-reserved fails with PGRST204 schema cache error. ✅ CONFIRMED WORKING: toggle-sold endpoint, field mapping (gwarancja→sold, czterykola→reserved), regular PUT operations with both czterykola and winda fields. ✅ Frontend overlay logic implemented correctly. BLOCKER: Supabase PostgREST schema cache must be refreshed by database admin using 'NOTIFY pgrst, reload schema;' command."
 
   - task: "Display buses on listings page"
     implemented: true
