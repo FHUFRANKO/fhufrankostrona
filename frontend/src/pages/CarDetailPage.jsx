@@ -192,9 +192,15 @@ export const CarDetailPage = () => {
                     
                     {/* SPRZEDANE overlay */}
                     {car.sold && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
-                          <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-md">
+                        <div className="relative">
+                          <div className="bg-red-600 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
+                            <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
+                              SPRZEDANE
+                            </span>
+                          </div>
+                          {/* Dodatkowy efekt świetlny */}
+                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-2xl rounded-2xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
@@ -242,9 +248,15 @@ export const CarDetailPage = () => {
                     
                     {/* SPRZEDANE overlay */}
                     {car.sold && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
-                          <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-md">
+                        <div className="relative">
+                          <div className="bg-red-600 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
+                            <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
+                              SPRZEDANE
+                            </span>
+                          </div>
+                          {/* Dodatkowy efekt świetlny */}
+                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-2xl rounded-2xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
