@@ -84,3 +84,44 @@ code {
     @apply bg-background text-foreground;
     }
 }
+
+/* Rich Text Editor Styles */
+.ql-container {
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.ql-editor {
+  min-height: 200px;
+  line-height: 1.6;
+}
+
+.ql-editor p {
+  margin-bottom: 0.75rem;
+}
+
+.ql-editor strong {
+  font-weight: 700;
+}
+
+.ql-editor em {
+  font-style: italic;
+}
+
+/* Prose styles for description display */
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  margin-bottom: 0.75rem;
+}
+
+.prose strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.prose em {
+  font-style: italic;
+}
