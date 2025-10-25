@@ -103,8 +103,14 @@ export const AdminPanel = () => {
 
   const handleToggleSold = async (bus) => {
     try {
-      const result = await busApi.toggleSoldStatus(bus.id);
-      toast.success(result.sold ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
+      const newSoldStatus = !bus.sold;
+      const updateData = { gwarancja: newSoldStatus };
+      // If setting to sold=true, make sure reserved=false (mutually exclusive)
+      if (newSoldStatus) {
+        updateData.czterykola = false;
+      }
+      await busApi.updateBus(bus.id, updateData);
+      toast.success(newSoldStatus ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
       fetchBuses();
     } catch (error) {
       console.error('Error toggling sold status:', error);
@@ -114,8 +120,14 @@ export const AdminPanel = () => {
 
   const handleToggleReserved = async (bus) => {
     try {
-      const result = await busApi.toggleReservedStatus(bus.id);
-      toast.success(result.reserved ? 'Oznaczono jako REZERWACJA' : 'Odznaczono REZERWACJA');
+      const newReservedStatus = !bus.reserved;
+      const updateData = { czterykola: newReservedStatus };
+      // If setting to reserved=true, make sure sold=false (mutually exclusive)
+      if (newReservedStatus) {
+        updateData.gwarancja = false;
+      }
+      await busApi.updateBus(bus.id, updateData);
+      toast.success(newReservedStatus ? 'Oznaczono jako REZERWACJA' : 'Odznaczono REZERWACJA');
       fetchBuses();
     } catch (error) {
       console.error('Error toggling reserved status:', error);
