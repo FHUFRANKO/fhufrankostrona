@@ -243,6 +243,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "REZERWACJA feature (toggle endpoints and frontend display)"
     - "Admin panel opinions frontend timing fix"
   stuck_tasks:
     - "Admin panel opinions management"
