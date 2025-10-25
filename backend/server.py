@@ -875,7 +875,7 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'wyrozniowane': listing_data.get('wyrozniowane', False),
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
-        'gwarancja': listing_data.get('gwarancja', False),
+        'gwarancja': listing_data.get('sold', False),  # SOLD mapped to gwarancja
         'sold': listing_data.get('sold', False),
         
         # Required fields with defaults for backward compatibility
