@@ -261,7 +261,7 @@ export const CarDetailPage = () => {
                       className="w-full h-[500px] object-cover"
                     />
                     
-                    {/* SPRZEDANE overlay */}
+                    {/* SPRZEDANE overlay - highest priority */}
                     {car.sold && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
@@ -272,6 +272,21 @@ export const CarDetailPage = () => {
                           </div>
                           {/* Dodatkowy efekt świetlny */}
                           <div className="absolute inset-0 bg-red-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* REZERWACJA overlay - shows only if not sold */}
+                    {!car.sold && car.reserved && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="relative">
+                          <div className="bg-gray-600/50 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
+                            <span className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.6)' }}>
+                              REZERWACJA
+                            </span>
+                          </div>
+                          {/* Dodatkowy efekt świetlny */}
+                          <div className="absolute inset-0 bg-gray-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
