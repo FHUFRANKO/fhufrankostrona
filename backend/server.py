@@ -685,7 +685,12 @@ async def create_bus(bus_data: BusCreate):
 async def get_all_buses():
     """Get all bus listings (public endpoint)"""
     response = supabase.table('buses').select('*').execute()
-    return [Bus(**bus) for bus in response.data]
+    # Map gwarancja to sold (workaround)
+    buses = []
+    for bus_data in response.data:
+        bus_data['sold'] = bus_data.get('gwarancja', False)
+        buses.append(Bus(**bus_data))
+    return buses
 
 @api_router.get("/ogloszenia/{bus_id}", response_model=Bus)
 async def get_bus_by_id(bus_id: str):
@@ -695,7 +700,10 @@ async def get_bus_by_id(bus_id: str):
     if not response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
     
-    return Bus(**response.data[0])
+    # Map gwarancja to sold (workaround)
+    bus_data = response.data[0]
+    bus_data['sold'] = bus_data.get('gwarancja', False)
+    return Bus(**bus_data)
 
 @api_router.put("/ogloszenia/{bus_id}", response_model=Bus, dependencies=[Depends(admin_required)])
 async def update_bus(bus_id: str, bus_update: BusUpdate):
