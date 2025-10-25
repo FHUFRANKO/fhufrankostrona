@@ -212,6 +212,7 @@ class Bus(BaseModel):
     nowosc: bool = False
     flotowy: bool = False
     gwarancja: bool = False
+    sold: bool = False  # Mapped from gwarancja
     numerOgloszenia: Optional[str] = None
     dataPublikacji: str = Field(default_factory=lambda: datetime.now().isoformat())
 
