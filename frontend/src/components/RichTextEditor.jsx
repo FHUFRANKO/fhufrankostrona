@@ -275,7 +275,7 @@ export const RichTextEditor = ({ value, onChange, placeholder }) => {
         <p className="text-xs font-semibold text-gray-600 mb-2">Podgląd opisu (jak będzie wyglądać na stronie):</p>
         <div 
           className="text-sm text-gray-800 whitespace-pre-line"
-          style={{ lineHeight: '1.6' }}
+          style={{ lineHeight: '1.4' }}
           dangerouslySetInnerHTML={renderPreview()}
         />
       </div>
