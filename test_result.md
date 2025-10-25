@@ -121,7 +121,7 @@ backend:
     implemented: true
     working: false
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -131,6 +131,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL ISSUE: POST /api/ogloszenia/{id}/toggle-reserved endpoint fails with Supabase schema cache error PGRST204 'Could not find winda column'. ✅ POST /api/ogloszenia/{id}/toggle-sold works correctly with mutual exclusivity. ✅ Field mapping (gwarancja→sold, winda→reserved) works in GET endpoints. ✅ Regular PUT endpoint can update both fields. Issue: Supabase PostgREST schema cache is stale for winda field in toggle endpoint specifically."
+        - working: false
+          agent: "testing"
+          comment: "❌ STILL FAILING AFTER CZTERYKOLA FIX: Main agent switched from 'winda' to 'czterykola' field but toggle-reserved still fails with PGRST204 'Could not find czterykola column'. ✅ CONFIRMED: Both czterykola and winda fields exist in DB and work with regular PUT operations. ✅ toggle-sold works perfectly. ✅ Field mapping (gwarancja→sold, czterykola→reserved) works. ROOT CAUSE: PostgREST schema cache is stale. SOLUTION: Database admin must run 'NOTIFY pgrst, reload schema;' in Supabase SQL editor to refresh schema cache."
   
   - task: "Configure CORS for cookie-based authentication"
     implemented: true
