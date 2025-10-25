@@ -11,9 +11,9 @@ from typing import Dict, Any, Optional
 import uuid
 
 # Configuration
-BASE_URL = "https://busfleet-mgmt.preview.emergentagent.com/api"
-ADMIN_PATH = "admin-moj-tajny-panel-82374"
-ADMIN_PASSWORD = "ZmienMnieTeraz123!"
+BASE_URL = "https://fhu-vehicles.preview.emergentagent.com/api"
+ADMIN_PATH = "admin-X9T4G7QJ2MZP8L1W3R5C6VDHY"
+ADMIN_PASSWORD = "FHUfranko!%Nbzw"
 
 class BusAPITester:
     def __init__(self):
