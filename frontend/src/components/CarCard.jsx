@@ -24,23 +24,23 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
       onClick={() => onCardClick(bus)}
     >
       <div className="relative">
-        <div className="aspect-[4/3] overflow-hidden rounded-t-lg">
+        <div className="aspect-[4/3] overflow-hidden rounded-t-lg relative">
           <img
             src={bus.zdjecia[0]}
             alt={`${bus.marka} ${bus.model} ${bus.typNadwozia}`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
             loading="lazy"
           />
-        </div>
-        
-        {/* SPRZEDANE overlay */}
-        {bus.sold && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-t-lg">
-            <div className="bg-red-600 text-white px-8 py-4 rounded-lg shadow-2xl transform -rotate-12">
-              <span className="text-4xl font-black tracking-wider">SPRZEDANE</span>
+          
+          {/* SPRZEDANE overlay */}
+          {bus.sold && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="bg-red-600 text-white px-8 py-4 rounded-lg shadow-2xl transform -rotate-12">
+                <span className="text-4xl font-black tracking-wider">SPRZEDANE</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
         
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
