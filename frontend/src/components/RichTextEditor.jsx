@@ -260,7 +260,7 @@ export const RichTextEditor = ({ value, onChange, placeholder }) => {
         className="w-full px-4 py-3 border border-gray-300 rounded-b-lg font-sans text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         style={{ 
           minHeight: '300px',
-          lineHeight: '1.6',
+          lineHeight: '1.4',
           whiteSpace: 'pre-wrap'
         }}
       />
