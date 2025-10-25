@@ -249,9 +249,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "REZERWACJA feature (toggle endpoints and frontend display)"
+    - "Fix Supabase schema cache issue for toggle-reserved endpoint"
     - "Admin panel opinions frontend timing fix"
   stuck_tasks:
+    - "Toggle sold and reserved status endpoints (mutually exclusive)"
+    - "REZERWACJA overlay feature (gray color, mutually exclusive with SPRZEDANE)"
     - "Admin panel opinions management"
   test_all: false
   test_priority: "high_first"
