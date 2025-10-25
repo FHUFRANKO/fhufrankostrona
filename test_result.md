@@ -117,6 +117,18 @@ backend:
           agent: "main"
           comment: "Fixed by removing `dependencies=[Depends(admin_required)]` from GET /api/ogloszenia endpoint. Public users can now view bus listings."
   
+  - task: "Toggle sold and reserved status endpoints (mutually exclusive)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added POST /api/ogloszenia/{id}/toggle-sold and /api/ogloszenia/{id}/toggle-reserved endpoints. Implemented mutual exclusivity - when one is set to true, the other is set to false. Uses gwarancja for sold and winda for reserved as workarounds."
+  
   - task: "Configure CORS for cookie-based authentication"
     implemented: true
     working: true
