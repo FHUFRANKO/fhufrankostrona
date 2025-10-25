@@ -181,54 +181,79 @@ export const CarDetailPage = () => {
 
             {/* Image Gallery */}
             <Card className="overflow-hidden">
-              <div className="relative">
-                <img
-                  src={car.zdjecia[currentImageIndex]}
-                  alt={`${car.marka} ${car.model} - zdjęcie ${currentImageIndex + 1}`}
-                  className="w-full h-[500px] object-cover"
-                />
-                
-                {/* SPRZEDANE overlay */}
-                {car.sold && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
-                      <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+              <div className="relative bg-gray-200">
+                {car.zdjecia && car.zdjecia.length > 0 ? (
+                  <>
+                    <img
+                      src={car.zdjecia[currentImageIndex]}
+                      alt={`${car.marka} ${car.model} - zdjęcie ${currentImageIndex + 1}`}
+                      className="w-full h-[500px] object-cover"
+                    />
+                    
+                    {/* SPRZEDANE overlay */}
+                    {car.sold && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
+                          <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {car.zdjecia.length > 1 && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white"
+                          onClick={handlePrevImage}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white"
+                          onClick={handleNextImage}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                      {car.zdjecia.map((_, index) => (
+                        <button
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                          }`}
+                          onClick={() => setCurrentImageIndex(index)}
+                        />
+                      ))}
                     </div>
+                  </>
+                ) : car.zdjecieGlowne ? (
+                  <>
+                    <img
+                      src={car.zdjecieGlowne}
+                      alt={`${car.marka} ${car.model}`}
+                      className="w-full h-[500px] object-cover"
+                    />
+                    
+                    {/* SPRZEDANE overlay */}
+                    {car.sold && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <div className="bg-red-600 text-white px-16 py-8 rounded-lg shadow-2xl transform -rotate-12">
+                          <span className="text-6xl font-black tracking-wider">SPRZEDANE</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-[500px] flex items-center justify-center">
+                    <span className="text-9xl">🚐</span>
                   </div>
                 )}
-                
-                {car.zdjecia.length > 1 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white"
-                      onClick={handlePrevImage}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm hover:bg-white"
-                      onClick={handleNextImage}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {car.zdjecia.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                      }`}
-                      onClick={() => setCurrentImageIndex(index)}
-                    />
-                  ))}
-                </div>
               </div>
             </Card>
 
