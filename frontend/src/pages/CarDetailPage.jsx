@@ -192,7 +192,7 @@ export const CarDetailPage = () => {
                     
                     {/* SPRZEDANE overlay */}
                     {car.sold && (
-                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-md">
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-red-600 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
                             <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
@@ -248,7 +248,7 @@ export const CarDetailPage = () => {
                     
                     {/* SPRZEDANE overlay */}
                     {car.sold && (
-                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-md">
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-red-600 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
                             <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
