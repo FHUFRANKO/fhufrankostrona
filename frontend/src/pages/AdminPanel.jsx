@@ -453,6 +453,15 @@ export const AdminPanel = () => {
                             🔴 {bus.sold ? 'Odznacz' : 'SPRZEDANE'}
                           </Button>
                           <Button
+                            variant={bus.reserved ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleToggleReserved(bus)}
+                            className={bus.reserved ? "bg-gray-600 hover:bg-gray-700" : "border-gray-400 text-gray-600 hover:bg-gray-50"}
+                            disabled={bus.sold}
+                          >
+                            ⚪ {bus.reserved ? 'Odznacz' : 'REZERWACJA'}
+                          </Button>
+                          <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditBus(bus)}
