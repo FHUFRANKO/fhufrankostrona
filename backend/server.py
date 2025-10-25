@@ -743,6 +743,58 @@ async def delete_bus(bus_id: str):
     
     return {"success": True, "message": "Bus deleted successfully"}
 
+@api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
+async def toggle_sold_status(bus_id: str):
+    """Toggle sold status for a bus listing (using gwarancja field as workaround)"""
+    # Get current bus
+    response = supabase.table('buses').select('*').eq('id', bus_id).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Bus not found")
+    
+    bus_data = response.data[0]
+    current_sold = bus_data.get('gwarancja', False)
+    new_sold = not current_sold
+    
+    # If setting to sold=True, make sure reserved=False (mutually exclusive)
+    update_data = {'gwarancja': new_sold}
+    if new_sold:
+        update_data['winda'] = False
+    
+    # Update in database
+    response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to update sold status")
+    
+    return {"success": True, "sold": new_sold, "reserved": update_data.get('winda', bus_data.get('winda', False))}
+
+@api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
+async def toggle_reserved_status(bus_id: str):
+    """Toggle reserved status for a bus listing (using winda field as workaround)"""
+    # Get current bus
+    response = supabase.table('buses').select('*').eq('id', bus_id).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Bus not found")
+    
+    bus_data = response.data[0]
+    current_reserved = bus_data.get('winda', False)
+    new_reserved = not current_reserved
+    
+    # If setting to reserved=True, make sure sold=False (mutually exclusive)
+    update_data = {'winda': new_reserved}
+    if new_reserved:
+        update_data['gwarancja'] = False
+    
+    # Update in database
+    response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+    
+    if not response.data:
+        raise HTTPException(status_code=500, detail="Failed to update reserved status")
+    
+    return {"success": True, "reserved": new_reserved, "sold": update_data.get('gwarancja', bus_data.get('gwarancja', False))}
+
 @api_router.get("/stats")
 async def get_stats():
     """Get statistics for admin dashboard"""
