@@ -214,7 +214,7 @@ frontend:
           agent: "main"
           comment: "✅ RESOLVED: Switched to 'hak' field which is in Supabase schema cache. Backend now maps hak→reserved, gwarancja→sold. PUT operations work perfectly. Both SOLD and RESERVED statuses now functional with mutual exclusivity. Gray overlay displays correctly in frontend."
   
-  - task: "Rich Text Editor for description with colors and emojis"
+  - task: "Rich Text Editor for description with colors and emojis (Otomoto-style)"
     implemented: true
     working: true
     file: "/app/frontend/src/components/RichTextEditor.jsx, /app/frontend/src/components/BusFormNew.jsx, /app/frontend/src/pages/CarDetailPage.jsx"
@@ -228,6 +228,9 @@ frontend:
         - working: true
           agent: "main"
           comment: "✅ RESOLVED React 18 compatibility issue. Replaced react-quill with custom HTML editor. Features: bold, italic, 4 text colors (black, red, blue, green), emoji picker with search, live preview. All working perfectly without errors."
+        - working: true
+          agent: "main"
+          comment: "✅ ENHANCED: Updated to Otomoto-style formatting. Added: hashtags (#), bullet lists (-), preserved line breaks, better spacing. Updated CarDetailPage display to use whitespace-pre-line for proper text rendering. Description now looks professional like Otomoto."
 
   - task: "Display buses on listings page"
     implemented: true
