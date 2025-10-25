@@ -42,13 +42,13 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
           {bus.sold && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <div className="relative">
-                <div className="bg-red-600/50 text-white px-6 py-3 sm:px-8 sm:py-4 md:px-12 md:py-6 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
-                  <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-widest drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+                <div className="bg-red-600/50 text-white px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-md sm:rounded-lg shadow-2xl transform -rotate-12 border border-white">
+                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-widest drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
                     SPRZEDANE
                   </span>
                 </div>
                 {/* Dodatkowy efekt świetlny */}
-                <div className="absolute inset-0 bg-red-500 opacity-20 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
+                <div className="absolute inset-0 bg-red-500 opacity-20 blur-md sm:blur-lg rounded-md sm:rounded-lg transform -rotate-12"></div>
               </div>
             </div>
           )}
