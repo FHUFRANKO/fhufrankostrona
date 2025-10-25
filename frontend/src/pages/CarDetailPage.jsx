@@ -194,13 +194,13 @@ export const CarDetailPage = () => {
                     {car.sold && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
-                          <div className="bg-red-600/50 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
-                            <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
+                          <div className="bg-red-600/50 text-white px-8 py-4 sm:px-12 sm:py-6 md:px-16 md:py-8 lg:px-20 lg:py-10 rounded-xl sm:rounded-2xl shadow-2xl transform -rotate-12 border-4 sm:border-6 md:border-8 border-white">
+                            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.6)' }}>
                               SPRZEDANE
                             </span>
                           </div>
                           {/* Dodatkowy efekt świetlny */}
-                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-2xl rounded-2xl transform -rotate-12"></div>
+                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-xl sm:blur-2xl rounded-xl sm:rounded-2xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
@@ -250,13 +250,13 @@ export const CarDetailPage = () => {
                     {car.sold && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
-                          <div className="bg-red-600/50 text-white px-20 py-10 rounded-2xl shadow-2xl transform -rotate-12 border-8 border-white">
-                            <span className="text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '4px 4px 8px rgba(0,0,0,0.6)' }}>
+                          <div className="bg-red-600/50 text-white px-8 py-4 sm:px-12 sm:py-6 md:px-16 md:py-8 lg:px-20 lg:py-10 rounded-xl sm:rounded-2xl shadow-2xl transform -rotate-12 border-4 sm:border-6 md:border-8 border-white">
+                            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-widest drop-shadow-2xl" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.6)' }}>
                               SPRZEDANE
                             </span>
                           </div>
                           {/* Dodatkowy efekt świetlny */}
-                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-2xl rounded-2xl transform -rotate-12"></div>
+                          <div className="absolute inset-0 bg-red-500 opacity-30 blur-xl sm:blur-2xl rounded-xl sm:rounded-2xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
