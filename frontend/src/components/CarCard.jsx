@@ -38,7 +38,7 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
             </div>
           )}
           
-          {/* SPRZEDANE overlay */}
+          {/* SPRZEDANE overlay - highest priority */}
           {bus.sold && (
             <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
               <div className="relative">
@@ -49,6 +49,21 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
                 </div>
                 {/* Dodatkowy efekt świetlny */}
                 <div className="absolute inset-0 bg-red-500 opacity-20 blur-md sm:blur-lg rounded-md sm:rounded-lg transform -rotate-12"></div>
+              </div>
+            </div>
+          )}
+          
+          {/* REZERWACJA overlay - shows only if not sold */}
+          {!bus.sold && bus.reserved && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              <div className="relative">
+                <div className="bg-gray-600/50 text-white px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-md sm:rounded-lg shadow-2xl transform -rotate-12 border border-white">
+                  <span className="text-xs sm:text-sm md:text-base lg:text-lg font-black tracking-widest drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+                    REZERWACJA
+                  </span>
+                </div>
+                {/* Dodatkowy efekt świetlny */}
+                <div className="absolute inset-0 bg-gray-500 opacity-20 blur-md sm:blur-lg rounded-md sm:rounded-lg transform -rotate-12"></div>
               </div>
             </div>
           )}
