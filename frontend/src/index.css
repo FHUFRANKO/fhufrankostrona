@@ -86,21 +86,33 @@ code {
 }
 
 /* Description display styles - Otomoto-like formatting */
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
 .whitespace-pre-line {
   white-space: pre-line;
 }
 
-.whitespace-pre-line strong {
+/* Better text rendering for descriptions */
+div[style*="white-space: pre-wrap"] {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+div[style*="white-space: pre-wrap"] strong {
   font-weight: 700;
   color: #222122;
 }
 
-.whitespace-pre-line em {
+div[style*="white-space: pre-wrap"] em {
   font-style: italic;
 }
 
-.whitespace-pre-line p {
-  margin-bottom: 0.5rem;
+div[style*="white-space: pre-wrap"] br {
+  display: block;
+  content: "";
+  margin: 0.5em 0;
 }
 
 /* Preserve line breaks and spacing */
