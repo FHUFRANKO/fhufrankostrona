@@ -307,6 +307,7 @@ class BusUpdate(BaseModel):
     nowosc: Optional[bool] = None
     flotowy: Optional[bool] = None
     gwarancja: Optional[bool] = None
+    czterykola: Optional[bool] = None
 
 class Opinion(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
