@@ -5,6 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { marki, modele, paliwa, skrzynie, typyNadwozi, normyEmisji, dmcKategorie, kolory, krajePochodzenia, stany } from '../constants/formOptions';
 import * as busApi from '../api/busApi';
 import { toast } from 'sonner';
+import { RichTextEditor } from './RichTextEditor';
 
 // Register Polish locale for date picker
 registerLocale('pl', pl);
