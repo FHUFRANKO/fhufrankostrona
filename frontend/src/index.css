@@ -85,24 +85,27 @@ code {
     }
 }
 
-/* Prose styles for description display */
-.prose {
-  max-width: none;
+/* Description display styles - Otomoto-like formatting */
+.whitespace-pre-line {
+  white-space: pre-line;
 }
 
-.prose p {
-  margin-bottom: 0.75rem;
-}
-
-.prose strong {
+.whitespace-pre-line strong {
   font-weight: 700;
-  color: inherit;
+  color: #222122;
 }
 
-.prose em {
+.whitespace-pre-line em {
   font-style: italic;
 }
 
-.prose span {
-  display: inline;
+.whitespace-pre-line p {
+  margin-bottom: 0.5rem;
+}
+
+/* Preserve line breaks and spacing */
+.whitespace-pre-line br {
+  display: block;
+  content: "";
+  margin-bottom: 0.5rem;
 }
