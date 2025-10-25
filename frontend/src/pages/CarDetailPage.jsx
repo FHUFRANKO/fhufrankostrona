@@ -404,7 +404,12 @@ export const CarDetailPage = () => {
               </CardHeader>
               <CardContent>
                 <div 
-                  className="text-[#838282] leading-relaxed prose prose-sm max-w-none"
+                  className="text-[#222122] leading-relaxed whitespace-pre-line"
+                  style={{ 
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    wordWrap: 'break-word'
+                  }}
                   dangerouslySetInnerHTML={{ __html: car.opis }}
                 />
               </CardContent>
