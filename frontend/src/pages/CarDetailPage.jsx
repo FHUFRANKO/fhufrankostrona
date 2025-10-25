@@ -403,7 +403,10 @@ export const CarDetailPage = () => {
                 <CardTitle>Opis</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-[#838282] leading-relaxed">{car.opis}</p>
+                <div 
+                  className="text-[#838282] leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: car.opis }}
+                />
               </CardContent>
             </Card>
           </div>
