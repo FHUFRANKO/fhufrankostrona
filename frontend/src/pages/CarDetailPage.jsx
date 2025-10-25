@@ -407,22 +407,18 @@ export const CarDetailPage = () => {
                   className="text-[#222122]"
                   style={{ 
                     fontSize: '14px',
-                    lineHeight: '1.8',
+                    lineHeight: '1.4',
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap'
                   }}
                   dangerouslySetInnerHTML={{ 
                     __html: car.opis
-                      // Zamień pojedyncze \n na <br>
+                      // Zamień pojedyncze \n na <br> bez dodatkowych odstępów
                       .replace(/\n/g, '<br>')
-                      // Dodaj podwójny <br> przed sekcjami z ***
-                      .replace(/\*\*\*/g, '<br><br>***')
-                      // Dodaj <br> po hashtagach na początku linii
-                      .replace(/(^|<br>)(#[^<\n]+)/g, '$1<strong>$2</strong><br>')
-                      // Dodaj <br> po kropce jeśli następne zdanie zaczyna się wielką literą
-                      .replace(/\.\s+([A-ZĄĆĘŁŃÓŚŹŻ])/g, '.<br><br>$1')
-                      // Dodaj <br> przed listami z myślnikiem
-                      .replace(/(^|<br>)-\s/g, '$1<br>- ')
+                      // Dodaj jeden <br> przed sekcjami z ***
+                      .replace(/\*\*\*/g, '<br>***')
+                      // Pogrub hashtagi
+                      .replace(/(^|<br>)(#[^<\n]+)/g, '$1<strong>$2</strong>')
                   }}
                 />
               </CardContent>
