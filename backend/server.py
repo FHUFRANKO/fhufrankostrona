@@ -692,11 +692,11 @@ async def create_bus(bus_data: BusCreate):
 async def get_all_buses():
     """Get all bus listings (public endpoint)"""
     response = supabase.table('buses').select('*').execute()
-    # Map gwarancja to sold and czterykola to reserved (workaround)
+    # Map gwarancja to sold and hak to reserved (workaround)
     buses = []
     for bus_data in response.data:
         bus_data['sold'] = bus_data.get('gwarancja', False)
-        bus_data['reserved'] = bus_data.get('czterykola', False)
+        bus_data['reserved'] = bus_data.get('hak', False)
         buses.append(Bus(**bus_data))
     return buses
 
