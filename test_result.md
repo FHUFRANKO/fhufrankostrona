@@ -186,15 +186,18 @@ frontend:
   
   - task: "REZERWACJA overlay feature (gray color, mutually exclusive with SPRZEDANE)"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py, /app/frontend/src/api/busApi.js, /app/frontend/src/components/CarCard.jsx, /app/frontend/src/pages/CarDetailPage.jsx, /app/frontend/src/pages/AdminPanel.jsx"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Implemented REZERWACJA feature: Backend - added reserved field (mapped from winda), toggle endpoints (toggle-sold, toggle-reserved) with mutual exclusivity. Frontend - added gray overlay, admin panel buttons. Priority logic: SPRZEDANE > REZERWACJA. Ready for testing."
+        - working: false
+          agent: "testing"
+          comment: "❌ BACKEND ISSUE: toggle-reserved endpoint fails due to Supabase PGRST204 schema cache error for 'winda' column. ✅ PARTIAL SUCCESS: toggle-sold endpoint works, field mapping works in GET endpoints, mutual exclusivity logic implemented correctly. ✅ Regular PUT /api/ogloszenia/{id} can update both gwarancja and winda fields successfully. Root cause: PostgREST schema cache needs refresh for winda column in toggle endpoints."
 
   - task: "Display buses on listings page"
     implemented: true
