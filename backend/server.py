@@ -767,10 +767,10 @@ async def toggle_sold_status(bus_id: str):
         raise HTTPException(status_code=500, detail="Failed to update sold status")
     
     # If setting to sold=True, make sure reserved=False (mutually exclusive) - separate update
-    reserved_status = bus_data.get('czterykola', False)
+    reserved_status = bus_data.get('hak', False)
     if new_sold and reserved_status:
-        # Need to set reserved to False (using czterykola)
-        response2 = supabase.table('buses').update({'czterykola': False}).eq('id', bus_id).execute()
+        # Need to set reserved to False (using hak)
+        response2 = supabase.table('buses').update({'hak': False}).eq('id', bus_id).execute()
         if response2.data:
             reserved_status = False
     
@@ -778,7 +778,7 @@ async def toggle_sold_status(bus_id: str):
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved_status(bus_id: str):
-    """Toggle reserved status for a bus listing (using czterykola field as workaround)"""
+    """Toggle reserved status for a bus listing (using hak field as workaround)"""
     # Get current bus first
     get_response = supabase.table('buses').select('*').eq('id', bus_id).execute()
     
@@ -786,11 +786,11 @@ async def toggle_reserved_status(bus_id: str):
         raise HTTPException(status_code=404, detail="Bus not found")
     
     bus_data = get_response.data[0]
-    current_reserved = bus_data.get('czterykola', False)
+    current_reserved = bus_data.get('hak', False)
     new_reserved = not current_reserved
     
     # Prepare update data
-    update_fields = {'czterykola': new_reserved}
+    update_fields = {'hak': new_reserved}
     if new_reserved:
         # If setting reserved=True, make sure sold=False (mutually exclusive)
         update_fields['gwarancja'] = False
@@ -805,14 +805,14 @@ async def toggle_reserved_status(bus_id: str):
         updated_bus = response.data[0]
         return {
             "success": True, 
-            "reserved": updated_bus.get('czterykola', False), 
+            "reserved": updated_bus.get('hak', False), 
             "sold": updated_bus.get('gwarancja', False)
         }
     except Exception as e:
         # Fallback: try updating fields separately
         try:
-            # First update czterykola
-            response1 = supabase.table('buses').update({'czterykola': new_reserved}).eq('id', bus_id).execute()
+            # First update hak
+            response1 = supabase.table('buses').update({'hak': new_reserved}).eq('id', bus_id).execute()
             if not response1.data:
                 raise HTTPException(status_code=500, detail="Failed to update reserved status")
             
