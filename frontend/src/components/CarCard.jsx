@@ -40,9 +40,15 @@ export const BusCard = ({ bus, onCardClick, onSaveToggle, isSaved = false }) => 
           
           {/* SPRZEDANE overlay */}
           {bus.sold && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <div className="bg-red-600 text-white px-8 py-4 rounded-lg shadow-2xl transform -rotate-12">
-                <span className="text-4xl font-black tracking-wider">SPRZEDANE</span>
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm">
+              <div className="relative">
+                <div className="bg-red-600 text-white px-12 py-6 rounded-xl shadow-2xl transform -rotate-12 border-4 border-white">
+                  <span className="text-5xl font-black tracking-widest drop-shadow-lg" style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.5)' }}>
+                    SPRZEDANE
+                  </span>
+                </div>
+                {/* Dodatkowy efekt świetlny */}
+                <div className="absolute inset-0 bg-red-500 opacity-20 blur-xl rounded-xl transform -rotate-12"></div>
               </div>
             </div>
           )}
