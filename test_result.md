@@ -153,6 +153,18 @@ frontend:
         - working: true
           agent: "main"
           comment: "Buses now display correctly on homepage after fixing the 401 authentication error."
+  
+  - task: "SPRZEDANE overlay text size reduction (60% smaller)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/CarCard.jsx, /app/frontend/src/pages/CarDetailPage.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Reduced SPRZEDANE overlay text size by 60%. Updated CarCard.jsx (text-xs to text-lg) and CarDetailPage.jsx (text-base to text-3xl). Also reduced padding, borders, and blur effects proportionally. Needs visual verification."
 
   - task: "Display buses on listings page"
     implemented: true
