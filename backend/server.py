@@ -775,31 +775,60 @@ async def toggle_sold_status(bus_id: str):
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved_status(bus_id: str):
     """Toggle reserved status for a bus listing (using winda field as workaround)"""
-    # Get current bus
-    response = supabase.table('buses').select('*').eq('id', bus_id).execute()
+    # Get current bus first
+    get_response = supabase.table('buses').select('*').eq('id', bus_id).execute()
     
-    if not response.data:
+    if not get_response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
     
-    bus_data = response.data[0]
+    bus_data = get_response.data[0]
     current_reserved = bus_data.get('winda', False)
     new_reserved = not current_reserved
     
-    # Use the same pattern as the regular update endpoint to avoid schema cache issues
-    update_data = {'winda': new_reserved}
+    # Create BusUpdate object and use the existing update_bus function
+    from pydantic import BaseModel
     
-    # If setting to reserved=True, make sure sold=False (mutually exclusive)
+    class ToggleUpdate(BaseModel):
+        winda: bool
+        gwarancja: bool = None
+    
+    # Prepare update data
+    update_fields = {'winda': new_reserved}
     if new_reserved:
-        update_data['gwarancja'] = False
+        # If setting reserved=True, make sure sold=False (mutually exclusive)
+        update_fields['gwarancja'] = False
     
-    # Use the same update pattern as the PUT endpoint which works
-    response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
-    
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to update reserved status")
-    
-    updated_bus = response.data[0]
-    return {"success": True, "reserved": updated_bus.get('winda', False), "sold": updated_bus.get('gwarancja', False)}
+    # Use the existing update logic that works
+    try:
+        response = supabase.table('buses').update(update_fields).eq('id', bus_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to update reserved status")
+        
+        updated_bus = response.data[0]
+        return {
+            "success": True, 
+            "reserved": updated_bus.get('winda', False), 
+            "sold": updated_bus.get('gwarancja', False)
+        }
+    except Exception as e:
+        # Fallback: try updating fields separately
+        try:
+            # First update winda
+            response1 = supabase.table('buses').update({'winda': new_reserved}).eq('id', bus_id).execute()
+            if not response1.data:
+                raise HTTPException(status_code=500, detail="Failed to update reserved status")
+            
+            # Then update gwarancja if needed
+            sold_status = bus_data.get('gwarancja', False)
+            if new_reserved and sold_status:
+                response2 = supabase.table('buses').update({'gwarancja': False}).eq('id', bus_id).execute()
+                if response2.data:
+                    sold_status = False
+            
+            return {"success": True, "reserved": new_reserved, "sold": sold_status}
+        except Exception as e2:
+            raise HTTPException(status_code=500, detail=f"Failed to update reserved status: {str(e2)}")
 
 @api_router.get("/stats")
 async def get_stats():
