@@ -204,6 +204,9 @@ frontend:
         - working: false
           agent: "testing"
           comment: "❌ CRITICAL: REZERWACJA toggle still broken after czterykola fix. POST /api/ogloszenia/{id}/toggle-reserved fails with PGRST204 schema cache error. ✅ CONFIRMED WORKING: toggle-sold endpoint, field mapping (gwarancja→sold, czterykola→reserved), regular PUT operations with both czterykola and winda fields. ✅ Frontend overlay logic implemented correctly. BLOCKER: Supabase PostgREST schema cache must be refreshed by database admin using 'NOTIFY pgrst, reload schema;' command."
+        - working: false
+          agent: "testing"
+          comment: "❌ PUT WORKAROUND PARTIALLY WORKS: Tested PUT /api/ogloszenia/{id} as workaround for toggle endpoints. ✅ SOLD STATUS: PUT with gwarancja=true/false works perfectly. ❌ RESERVED STATUS: PUT with czterykola=true/false fails with same PGRST204 schema cache error. ✅ FIELD MAPPING: gwarancja→sold mapping works correctly in GET endpoints. ❌ MUTUAL EXCLUSIVITY: Cannot test reserved→sold exclusivity due to czterykola field issue. CONCLUSION: PUT workaround only solves SOLD functionality, RESERVED still blocked by schema cache issue. Both winda and czterykola fields affected by same PGRST204 error."
 
   - task: "Display buses on listings page"
     implemented: true
