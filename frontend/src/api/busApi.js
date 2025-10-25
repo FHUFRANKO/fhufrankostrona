@@ -105,6 +105,18 @@ export const busApi = {
     const response = await axios.get(`${API_URL}/api/admin/listings/${id}`);
     return response.data;
   },
+
+  // Toggle sold status
+  async toggleSoldStatus(id) {
+    const response = await axios.post(`${API_URL}/api/ogloszenia/${id}/toggle-sold`);
+    return response.data;
+  },
+
+  // Toggle reserved status
+  async toggleReservedStatus(id) {
+    const response = await axios.post(`${API_URL}/api/ogloszenia/${id}/toggle-reserved`);
+    return response.data;
+  },
 };
 
 export const getAllBuses = busApi.getAllBuses;
