@@ -107,7 +107,7 @@ export const AdminPanel = () => {
       const updateData = { gwarancja: newSoldStatus };
       // If setting to sold=true, make sure reserved=false (mutually exclusive)
       if (newSoldStatus) {
-        updateData.czterykola = false;
+        updateData.hak = false;
       }
       await busApi.updateBus(bus.id, updateData);
       toast.success(newSoldStatus ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
@@ -121,7 +121,7 @@ export const AdminPanel = () => {
   const handleToggleReserved = async (bus) => {
     try {
       const newReservedStatus = !bus.reserved;
-      const updateData = { czterykola: newReservedStatus };
+      const updateData = { hak: newReservedStatus };
       // If setting to reserved=true, make sure sold=false (mutually exclusive)
       if (newReservedStatus) {
         updateData.gwarancja = false;
