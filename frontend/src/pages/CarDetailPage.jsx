@@ -404,13 +404,24 @@ export const CarDetailPage = () => {
               </CardHeader>
               <CardContent>
                 <div 
-                  className="text-[#222122] leading-relaxed whitespace-pre-line"
+                  className="text-[#222122]"
                   style={{ 
                     fontSize: '14px',
-                    lineHeight: '1.6',
-                    wordWrap: 'break-word'
+                    lineHeight: '1.8',
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
                   }}
-                  dangerouslySetInnerHTML={{ __html: car.opis }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: car.opis
+                      // Najpierw zamień \n na <br> jeśli nie ma już HTML
+                      .replace(/\n/g, '<br>')
+                      // Dodaj odstępy po zdaniach które kończą się kropką
+                      .replace(/\.\s+/g, '.<br>')
+                      // Dodaj więcej przestrzeni po hashtagach
+                      .replace(/#\s/g, '<br># ')
+                      // Dodaj odstęp przed sekcjami z gwiazdkami
+                      .replace(/\*\*\*/g, '<br><br>***')
+                  }}
                 />
               </CardContent>
             </Card>
