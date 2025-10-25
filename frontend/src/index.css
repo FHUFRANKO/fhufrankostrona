@@ -85,7 +85,7 @@ code {
     }
 }
 
-/* Description display styles - Otomoto-like formatting */
+/* Description display styles - compact line spacing */
 .whitespace-pre-wrap {
   white-space: pre-wrap;
 }
@@ -94,7 +94,7 @@ code {
   white-space: pre-line;
 }
 
-/* Better text rendering for descriptions */
+/* Better text rendering for descriptions with minimal spacing */
 div[style*="white-space: pre-wrap"] {
   word-break: break-word;
   overflow-wrap: break-word;
@@ -112,12 +112,14 @@ div[style*="white-space: pre-wrap"] em {
 div[style*="white-space: pre-wrap"] br {
   display: block;
   content: "";
-  margin: 0.5em 0;
+  line-height: 0;
+  margin: 0;
 }
 
-/* Preserve line breaks and spacing */
+/* No extra spacing for line breaks */
 .whitespace-pre-line br {
   display: block;
   content: "";
-  margin-bottom: 0.5rem;
+  line-height: 0;
+  margin: 0;
 }
