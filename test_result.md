@@ -119,15 +119,18 @@ backend:
   
   - task: "Toggle sold and reserved status endpoints (mutually exclusive)"
     implemented: true
-    working: "NA"
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Added POST /api/ogloszenia/{id}/toggle-sold and /api/ogloszenia/{id}/toggle-reserved endpoints. Implemented mutual exclusivity - when one is set to true, the other is set to false. Uses gwarancja for sold and winda for reserved as workarounds."
+        - working: false
+          agent: "testing"
+          comment: "❌ CRITICAL ISSUE: POST /api/ogloszenia/{id}/toggle-reserved endpoint fails with Supabase schema cache error PGRST204 'Could not find winda column'. ✅ POST /api/ogloszenia/{id}/toggle-sold works correctly with mutual exclusivity. ✅ Field mapping (gwarancja→sold, winda→reserved) works in GET endpoints. ✅ Regular PUT endpoint can update both fields. Issue: Supabase PostgREST schema cache is stale for winda field in toggle endpoint specifically."
   
   - task: "Configure CORS for cookie-based authentication"
     implemented: true
