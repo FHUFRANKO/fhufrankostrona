@@ -245,6 +245,151 @@ class BusAPITester:
         except Exception as e:
             self.log_test("POST /api/opinie (create opinion)", False, f"Exception: {str(e)}")
     
+    def test_rezerwacja_toggle_endpoints(self):
+        """Test REZERWACJA feature toggle endpoints (sold/reserved mutual exclusivity)"""
+        print("\n🔄 Testing REZERWACJA Toggle Endpoints...")
+        
+        if not self.admin_authenticated:
+            self.log_test("REZERWACJA Toggle Endpoints", False, "Admin authentication required")
+            return
+        
+        # First, get a bus to test with
+        test_bus_id = None
+        try:
+            # Get all buses to find one to test with
+            response = requests.get(f"{BASE_URL}/ogloszenia")
+            if response.status_code == 200:
+                buses = response.json()
+                if buses and len(buses) > 0:
+                    test_bus_id = buses[0].get('id')
+                    self.log_test("Get test bus for REZERWACJA", True, f"Using bus ID: {test_bus_id}")
+                else:
+                    # Create a test bus if none exist
+                    bus_data = {
+                        "marka": "Test",
+                        "model": "REZERWACJA Test Bus",
+                        "rok": 2020,
+                        "przebieg": 50000,
+                        "paliwo": "Diesel",
+                        "skrzynia": "Manualna",
+                        "cenaBrutto": 100000,
+                        "typNadwozia": "Furgon",
+                        "moc": 150,
+                        "normaEmisji": "Euro 6",
+                        "dmcKategoria": "do 3.5t",
+                        "ladownosc": 1000,
+                        "gwarancja": False,
+                        "winda": False
+                    }
+                    create_response = self.session.post(f"{BASE_URL}/ogloszenia", json=bus_data)
+                    if create_response.status_code == 200:
+                        created_bus = create_response.json()
+                        test_bus_id = created_bus.get('id')
+                        self.created_bus_id = test_bus_id  # For cleanup
+                        self.log_test("Create test bus for REZERWACJA", True, f"Created bus ID: {test_bus_id}")
+                    else:
+                        self.log_test("Create test bus for REZERWACJA", False, f"Status: {create_response.status_code}")
+                        return
+            else:
+                self.log_test("Get buses for REZERWACJA test", False, f"Status: {response.status_code}")
+                return
+        except Exception as e:
+            self.log_test("Get buses for REZERWACJA test", False, f"Exception: {str(e)}")
+            return
+        
+        if not test_bus_id:
+            self.log_test("REZERWACJA Toggle Tests", False, "No test bus available")
+            return
+        
+        # Test 1: Toggle sold status from false to true
+        try:
+            response = self.session.post(f"{BASE_URL}/ogloszenia/{test_bus_id}/toggle-sold")
+            if response.status_code == 200:
+                result = response.json()
+                expected_keys = ['success', 'sold', 'reserved']
+                if all(key in result for key in expected_keys):
+                    if result['success'] and result['sold']:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-sold (set to true)", True, f"Sold: {result['sold']}, Reserved: {result['reserved']}")
+                    else:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-sold (set to true)", False, f"Expected sold=True, got: {result}")
+                else:
+                    self.log_test("POST /api/ogloszenia/{id}/toggle-sold (set to true)", False, f"Missing expected keys in response: {result}")
+            else:
+                self.log_test("POST /api/ogloszenia/{id}/toggle-sold (set to true)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/ogloszenia/{id}/toggle-sold (set to true)", False, f"Exception: {str(e)}")
+        
+        # Test 2: Toggle reserved status from false to true (should disable sold due to mutual exclusivity)
+        try:
+            response = self.session.post(f"{BASE_URL}/ogloszenia/{test_bus_id}/toggle-reserved")
+            if response.status_code == 200:
+                result = response.json()
+                expected_keys = ['success', 'sold', 'reserved']
+                if all(key in result for key in expected_keys):
+                    if result['success'] and result['reserved'] and not result['sold']:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-reserved (mutual exclusivity)", True, f"Reserved: {result['reserved']}, Sold: {result['sold']} (mutual exclusivity working)")
+                    else:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-reserved (mutual exclusivity)", False, f"Expected reserved=True, sold=False, got: {result}")
+                else:
+                    self.log_test("POST /api/ogloszenia/{id}/toggle-reserved (mutual exclusivity)", False, f"Missing expected keys in response: {result}")
+            else:
+                self.log_test("POST /api/ogloszenia/{id}/toggle-reserved (mutual exclusivity)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/ogloszenia/{id}/toggle-reserved (mutual exclusivity)", False, f"Exception: {str(e)}")
+        
+        # Test 3: Toggle sold status again (should disable reserved due to mutual exclusivity)
+        try:
+            response = self.session.post(f"{BASE_URL}/ogloszenia/{test_bus_id}/toggle-sold")
+            if response.status_code == 200:
+                result = response.json()
+                expected_keys = ['success', 'sold', 'reserved']
+                if all(key in result for key in expected_keys):
+                    if result['success'] and result['sold'] and not result['reserved']:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-sold (reverse mutual exclusivity)", True, f"Sold: {result['sold']}, Reserved: {result['reserved']} (mutual exclusivity working)")
+                    else:
+                        self.log_test("POST /api/ogloszenia/{id}/toggle-sold (reverse mutual exclusivity)", False, f"Expected sold=True, reserved=False, got: {result}")
+                else:
+                    self.log_test("POST /api/ogloszenia/{id}/toggle-sold (reverse mutual exclusivity)", False, f"Missing expected keys in response: {result}")
+            else:
+                self.log_test("POST /api/ogloszenia/{id}/toggle-sold (reverse mutual exclusivity)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST /api/ogloszenia/{id}/toggle-sold (reverse mutual exclusivity)", False, f"Exception: {str(e)}")
+        
+        # Test 4: Verify field mapping in GET endpoints
+        try:
+            # Test GET single bus - should map gwarancja → sold, winda → reserved
+            response = requests.get(f"{BASE_URL}/ogloszenia/{test_bus_id}")
+            if response.status_code == 200:
+                bus_data = response.json()
+                if 'sold' in bus_data and 'reserved' in bus_data:
+                    self.log_test("GET /api/ogloszenia/{id} (field mapping)", True, f"Bus has sold: {bus_data['sold']}, reserved: {bus_data['reserved']}")
+                else:
+                    self.log_test("GET /api/ogloszenia/{id} (field mapping)", False, f"Missing sold/reserved fields in response")
+            else:
+                self.log_test("GET /api/ogloszenia/{id} (field mapping)", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("GET /api/ogloszenia/{id} (field mapping)", False, f"Exception: {str(e)}")
+        
+        # Test 5: Verify field mapping in GET all buses
+        try:
+            response = requests.get(f"{BASE_URL}/ogloszenia")
+            if response.status_code == 200:
+                buses = response.json()
+                if buses and len(buses) > 0:
+                    # Check if all buses have sold and reserved fields
+                    all_have_fields = all('sold' in bus and 'reserved' in bus for bus in buses)
+                    if all_have_fields:
+                        self.log_test("GET /api/ogloszenia (field mapping)", True, f"All {len(buses)} buses have sold/reserved fields")
+                    else:
+                        missing_fields = [i for i, bus in enumerate(buses) if 'sold' not in bus or 'reserved' not in bus]
+                        self.log_test("GET /api/ogloszenia (field mapping)", False, f"Buses missing sold/reserved fields at indices: {missing_fields}")
+                else:
+                    self.log_test("GET /api/ogloszenia (field mapping)", False, "No buses returned")
+            else:
+                self.log_test("GET /api/ogloszenia (field mapping)", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("GET /api/ogloszenia (field mapping)", False, f"Exception: {str(e)}")
+
     def test_image_upload(self):
         """Test image upload endpoint"""
         print("\n📷 Testing Image Upload...")
