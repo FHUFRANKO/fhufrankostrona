@@ -156,15 +156,30 @@ frontend:
   
   - task: "SPRZEDANE overlay text size reduction (60% smaller)"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/CarCard.jsx, /app/frontend/src/pages/CarDetailPage.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Reduced SPRZEDANE overlay text size by 60%. Updated CarCard.jsx (text-xs to text-lg) and CarDetailPage.jsx (text-base to text-3xl). Also reduced padding, borders, and blur effects proportionally. Needs visual verification."
+        - working: true
+          agent: "main"
+          comment: "Successfully reduced SPRZEDANE overlay text by 60%. Verified implementation completed."
+  
+  - task: "REZERWACJA overlay feature (gray color, mutually exclusive with SPRZEDANE)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/api/busApi.js, /app/frontend/src/components/CarCard.jsx, /app/frontend/src/pages/CarDetailPage.jsx, /app/frontend/src/pages/AdminPanel.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented REZERWACJA feature: Backend - added reserved field (mapped from winda), toggle endpoints (toggle-sold, toggle-reserved) with mutual exclusivity. Frontend - added gray overlay, admin panel buttons. Priority logic: SPRZEDANE > REZERWACJA. Ready for testing."
 
   - task: "Display buses on listings page"
     implemented: true
