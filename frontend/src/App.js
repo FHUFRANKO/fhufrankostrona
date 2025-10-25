@@ -130,6 +130,7 @@ function App() {
           } />
         </Routes>
       </BrowserRouter>
+      <FacebookPopup />
       <Toaster />
     </div>
   );
