@@ -704,9 +704,10 @@ async def get_bus_by_id(bus_id: str):
     if not response.data:
         raise HTTPException(status_code=404, detail="Bus not found")
     
-    # Map gwarancja to sold (workaround)
+    # Map gwarancja to sold and winda to reserved (workaround)
     bus_data = response.data[0]
     bus_data['sold'] = bus_data.get('gwarancja', False)
+    bus_data['reserved'] = bus_data.get('winda', False)
     return Bus(**bus_data)
 
 @api_router.put("/ogloszenia/{bus_id}", response_model=Bus, dependencies=[Depends(admin_required)])
