@@ -300,6 +300,8 @@ agent_communication:
       message: "Reduced SPRZEDANE overlay text by 60% as requested by user. Updated both CarCard.jsx and CarDetailPage.jsx with smaller font sizes, padding, borders, and blur effects. Changes: CarCard from text-xl/2xl/3xl/4xl to text-xs/sm/base/lg, CarDetailPage from text-3xl/4xl/5xl/6xl/7xl to text-base/lg/xl/2xl/3xl. Ready for visual verification."
     - agent: "main"
       message: "Implemented REZERWACJA feature with gray overlay. Backend: Added reserved field (mapped from winda), created toggle-sold and toggle-reserved endpoints with mutual exclusivity logic. Frontend: Added gray overlay in CarCard and CarDetailPage, added REZERWACJA button in AdminPanel. Priority: SPRZEDANE > REZERWACJA. Ready for testing."
+    - agent: "main"
+      message: "Enhanced Rich Text Editor to Otomoto-style with hashtags, bullet lists, preserved line breaks. Minimal line spacing (line-height: 1.4) as requested - no extra gaps between lines. Editor and description display updated for compact, professional formatting."
     - agent: "testing"
       message: "❌ CRITICAL REZERWACJA ISSUE FOUND: POST /api/ogloszenia/{id}/toggle-reserved fails with Supabase PGRST204 schema cache error for 'winda' column. ✅ PARTIAL SUCCESS: toggle-sold works perfectly, field mapping (gwarancja→sold, winda→reserved) works in GET endpoints, mutual exclusivity logic correct. ✅ Workaround confirmed: Regular PUT /api/ogloszenia/{id} can update both fields. ROOT CAUSE: PostgREST schema cache stale for winda column in toggle endpoints. SOLUTION NEEDED: Database admin must run 'NOTIFY pgrst, reload schema;' or restart Supabase instance to refresh schema cache."
     - agent: "testing"
