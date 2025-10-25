@@ -136,4 +136,6 @@ export const scrapeOtomoto = busApi.scrapeOtomoto;
 export const createListing = busApi.createListing;
 export const updateListing = busApi.updateListing;
 export const getListing = busApi.getListing;
+export const toggleSoldStatus = busApi.toggleSoldStatus;
+export const toggleReservedStatus = busApi.toggleReservedStatus;
 
