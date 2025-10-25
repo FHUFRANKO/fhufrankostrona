@@ -134,6 +134,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "❌ STILL FAILING AFTER CZTERYKOLA FIX: Main agent switched from 'winda' to 'czterykola' field but toggle-reserved still fails with PGRST204 'Could not find czterykola column'. ✅ CONFIRMED: Both czterykola and winda fields exist in DB and work with regular PUT operations. ✅ toggle-sold works perfectly. ✅ Field mapping (gwarancja→sold, czterykola→reserved) works. ROOT CAUSE: PostgREST schema cache is stale. SOLUTION: Database admin must run 'NOTIFY pgrst, reload schema;' in Supabase SQL editor to refresh schema cache."
+        - working: false
+          agent: "testing"
+          comment: "❌ PUT WORKAROUND FAILS FOR RESERVED: Tested PUT /api/ogloszenia/{id} workaround. ✅ gwarancja field updates work (sold status). ❌ Both czterykola and winda fields fail with PGRST204 schema cache error in PUT operations. Added czterykola and winda to BusUpdate model but both still fail. CONCLUSION: PUT workaround cannot solve reserved status - same schema cache issue affects all operations (POST toggle and PUT update) for czterykola/winda fields. Only gwarancja (sold) functionality works."
   
   - task: "Configure CORS for cookie-based authentication"
     implemented: true
