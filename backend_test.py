@@ -457,6 +457,7 @@ class BusAPITester:
         # Test admin endpoints (require auth)
         if auth_success:
             self.test_admin_bus_endpoints()
+            self.test_rezerwacja_toggle_endpoints()
             self.test_admin_opinion_endpoints()
             self.test_image_upload()
             self.cleanup_test_data()
