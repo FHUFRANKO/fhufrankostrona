@@ -64,7 +64,7 @@ export const FacebookPopup = () => {
           onClick={handleFacebookClick}
           className="cursor-pointer flex items-center gap-3 pr-4"
         >
-          {/* Facebook Logo - Square */}
+          {/* Facebook Logo - Square with centered 'f' */}
           <div className="flex-shrink-0">
             <svg 
               className="w-14 h-14 hover:scale-105 transition-transform"
@@ -74,7 +74,7 @@ export const FacebookPopup = () => {
             >
               <rect x="0" y="0" width="48" height="48" rx="8" fill="#1877F2"/>
               <path 
-                d="M28 26L28.7 21.5H24.5V18.8C24.5 17.5 25.1 16.3 27.1 16.3H29V12.4C29 12.4 27.2 12.1 25.5 12.1C21.8 12.1 19.5 14.2 19.5 18.3V21.5H15.5V26H19.5V37C20.3 37.1 21.1 37.2 22 37.2C22.9 37.2 23.7 37.1 24.5 37V26H28Z" 
+                d="M30 24.5L30.8 19.5H26V16.2C26 14.7 26.7 13.3 29 13.3H31V9C31 9 29 8.7 27.1 8.7C23 8.7 20.3 11.2 20.3 15.5V19.5H16V24.5H20.3V38.5C21.2 38.6 22.1 38.7 23 38.7C23.9 38.7 24.8 38.6 25.7 38.5V24.5H30Z" 
                 fill="white"
               />
             </svg>
