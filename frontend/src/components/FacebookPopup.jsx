@@ -64,15 +64,15 @@ export const FacebookPopup = () => {
           onClick={handleFacebookClick}
           className="cursor-pointer flex items-center gap-3 pr-4"
         >
-          {/* Facebook Logo */}
+          {/* Facebook Logo - Square */}
           <div className="flex-shrink-0">
             <svg 
-              className="w-12 h-12 hover:scale-105 transition-transform"
+              className="w-14 h-14 hover:scale-105 transition-transform"
               viewBox="0 0 48 48" 
               fill="none" 
               xmlns="http://www.w3.org/2000/svg"
             >
-              <circle cx="24" cy="24" r="24" fill="#1877F2"/>
+              <rect x="0" y="0" width="48" height="48" rx="8" fill="#1877F2"/>
               <path 
                 d="M26.5016 25.5L27.1059 21.8156H23.5764V19.4969C23.5764 18.4812 24.0763 17.4906 25.7247 17.4906H27.2506V14.4094C27.2506 14.4094 25.7247 14.1562 24.2684 14.1562C21.2339 14.1562 19.2588 15.9937 19.2588 19.0781V21.8156H16V25.5H19.2588V34.8438C19.9201 34.9469 20.5982 35 21.2882 35C21.9782 35 22.6563 34.9469 23.3176 34.8438V25.5H26.5016Z" 
                 fill="white"
