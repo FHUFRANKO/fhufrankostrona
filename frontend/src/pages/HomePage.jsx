@@ -229,7 +229,7 @@ export const HomePage = () => {
               Dlaczego FHU FRANKO?
             </h2>
             <p className="text-[#838282] max-w-2xl mx-auto">
-              Specjalizujemy się w pojazdach użytkowych z wieloletnim doświadczeniem i profesjonalnym podejściem do branży LCV
+              Specjalizujemy się w pojazdach użytkowych z wieloletnim doświadczeniem i profesjonalnym podejściem
             </p>
           </div>
 
