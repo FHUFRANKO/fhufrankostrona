@@ -738,16 +738,31 @@ async def update_bus(bus_id: str, bus_update: BusUpdate):
     # Update only provided fields
     update_data = {k: v for k, v in bus_update.dict().items() if v is not None}
     
+    # Convert youtubeUrl to youtube_url for database
+    if 'youtubeUrl' in update_data:
+        update_data['youtube_url'] = update_data.pop('youtubeUrl')
+    
     if update_data:
         response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
         
         if not response.data:
             raise HTTPException(status_code=500, detail="Failed to update bus")
         
-        return Bus(**response.data[0])
+        # Map for response
+        bus_data = response.data[0]
+        bus_data['sold'] = bus_data.get('gwarancja', False)
+        bus_data['reserved'] = bus_data.get('hak', False)
+        if 'youtube_url' in bus_data and bus_data['youtube_url']:
+            bus_data['youtubeUrl'] = bus_data['youtube_url']
+        return Bus(**bus_data)
     
     # No updates, return existing
-    return Bus(**response.data[0])
+    bus_data = response.data[0]
+    bus_data['sold'] = bus_data.get('gwarancja', False)
+    bus_data['reserved'] = bus_data.get('hak', False)
+    if 'youtube_url' in bus_data and bus_data['youtube_url']:
+        bus_data['youtubeUrl'] = bus_data['youtube_url']
+    return Bus(**bus_data)
 
 @api_router.delete("/ogloszenia/{bus_id}", dependencies=[Depends(admin_required)])
 async def delete_bus(bus_id: str):
