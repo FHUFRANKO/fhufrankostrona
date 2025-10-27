@@ -993,6 +993,7 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         # SEKCJA 4: Opis sprzedawcy
         'description_html': listing_data.get('description_html'),
         'opis': listing_data.get('description_html'),  # Keep both for backward compatibility
+        'youtube_url': listing_data.get('youtube_url'),
         'home_delivery': listing_data.get('home_delivery', False),
         'tech_visual_short': listing_data.get('tech_visual_short'),
         'seller_profile_url': listing_data.get('seller_profile_url'),
