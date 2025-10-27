@@ -167,6 +167,7 @@ class ListingUpdate(BaseModel):
     
     # SEKCJA 4: Opis sprzedawcy
     description_html: Optional[str] = Field(None, min_length=20, max_length=10_000)
+    youtube_url: Optional[str] = Field(None, max_length=200)
     home_delivery: Optional[bool] = None
     tech_visual_short: Optional[str] = Field(None, max_length=280)
     seller_profile_url: Optional[str] = Field(None, max_length=200)
