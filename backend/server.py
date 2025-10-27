@@ -208,7 +208,8 @@ class Bus(BaseModel):
     wyposazenie: List[str] = []
     zdjecia: List[str] = []
     zdjecieGlowne: Optional[str] = None
-    youtubeUrl: Optional[str] = None
+    youtube_url: Optional[str] = None
+    youtubeUrl: Optional[str] = None  # Alias for frontend compatibility
     wyrozniowane: bool = False
     nowosc: bool = False
     flotowy: bool = False
