@@ -747,6 +747,13 @@ async def delete_bus(bus_id: str):
     
     return {"success": True, "message": "Bus deleted successfully"}
 
+@api_router.get("/admin/check-auth")
+async def check_auth(user: dict = Depends(get_current_user_optional)):
+    """Check if user is authenticated as admin"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return {"authenticated": True, "user": user}
+
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold_status(bus_id: str):
     """Toggle sold status for a bus listing (using gwarancja field as workaround)"""
