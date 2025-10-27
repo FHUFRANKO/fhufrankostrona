@@ -193,7 +193,7 @@ export const HomePage = () => {
                 Wyróżnione busy i najnowsze oferty
               </h2>
               <p className="text-[#838282]">
-                Sprawdź nasze najlepsze pojazdy LCV gotowe do pracy
+                Sprawdź nasze najlepsze pojazdy gotowe do pracy
               </p>
             </div>
             
