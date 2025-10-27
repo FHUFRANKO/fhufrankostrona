@@ -360,7 +360,7 @@ export const HomePage = () => {
                 Potrzebujesz pomocy w wyborze busa?
               </h3>
               <p className="text-gray-300">
-                Profesjonalne doradztwo i pomoc w doborze idealnego pojazdu LCV dla Twojej branży
+                Profesjonalne doradztwo i pomoc w doborze idealnego pojazdu dla Twojej branży
               </p>
             </div>
 
