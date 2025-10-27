@@ -243,6 +243,18 @@ frontend:
         - working: true
           agent: "main"
           comment: "Created FacebookPopup component with FB logo, appears after 3 seconds on all pages, links to https://www.facebook.com/profile.php?id=61578689111557. Features: close button, localStorage to hide for 7 days after closing, overlay background, smooth animations. Added to App.js for global visibility."
+  
+  - task: "Custom favicon from user image"
+    implemented: true
+    working: true
+    file: "/app/frontend/public/index.html, /app/frontend/public/favicon.png"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Downloaded user-provided favicon image and set as site favicon. Added favicon.png to public folder and updated index.html with link tags for favicon and apple-touch-icon."
 
   - task: "Display buses on listings page"
     implemented: true
