@@ -117,6 +117,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
       setServicedInAso(editData.serviced_in_aso || editData.serwisowanyWAso || false);
       
       setDescriptionHtml(editData.description_html || editData.opis || '');
+      setYoutubeUrl(editData.youtube_url || editData.youtubeUrl || '');
       setHomeDelivery(editData.home_delivery || false);
       setTechVisualShort(editData.tech_visual_short || '');
       setSellerProfileUrl(editData.seller_profile_url || '');
