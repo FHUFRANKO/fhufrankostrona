@@ -34,8 +34,12 @@ function App() {
           {/* Hidden Admin Login - exact match */}
           <Route path={`/admin-${process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374'}`} element={<AdminLoginRedirect />} />
           
-          {/* Admin Panel - bez Header/Footer */}
-          <Route path="/admin" element={<AdminPanel />} />
+          {/* Admin Panel - bez Header/Footer, protected */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
           
           {/* Strony z Header/Footer */}
           <Route path="/" element={
