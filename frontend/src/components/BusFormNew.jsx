@@ -58,6 +58,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
 
   // ========== SEKCJA 4: Opis sprzedawcy ==========
   const [descriptionHtml, setDescriptionHtml] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [homeDelivery, setHomeDelivery] = useState(false);
   const [techVisualShort, setTechVisualShort] = useState('');
   const [sellerProfileUrl, setSellerProfileUrl] = useState('');
