@@ -721,6 +721,9 @@ async def get_bus_by_id(bus_id: str):
     bus_data = response.data[0]
     bus_data['sold'] = bus_data.get('gwarancja', False)
     bus_data['reserved'] = bus_data.get('hak', False)
+    # Map youtube_url to youtubeUrl for frontend compatibility
+    if 'youtube_url' in bus_data and bus_data['youtube_url']:
+        bus_data['youtubeUrl'] = bus_data['youtube_url']
     return Bus(**bus_data)
 
 @api_router.put("/ogloszenia/{bus_id}", response_model=Bus, dependencies=[Depends(admin_required)])
