@@ -44,6 +44,30 @@ export const CarDetailPage = () => {
     wiadomosc: ''
   });
 
+  // Convert YouTube URL to embed URL
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return '';
+    
+    // Extract video ID from various YouTube URL formats
+    let videoId = '';
+    
+    // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+    if (url.includes('youtube.com/watch')) {
+      const urlParams = new URLSearchParams(url.split('?')[1]);
+      videoId = urlParams.get('v');
+    }
+    // Short URL: https://youtu.be/VIDEO_ID
+    else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+    else if (url.includes('youtube.com/embed/')) {
+      videoId = url.split('embed/')[1].split('?')[0];
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
+
   useEffect(() => {
     fetchBusDetails();
   }, [id]);
