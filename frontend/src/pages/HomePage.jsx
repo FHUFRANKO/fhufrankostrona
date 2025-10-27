@@ -111,7 +111,7 @@ export const HomePage = () => {
               </h1>
               
               <p className="text-xl text-[#838282] mb-8 max-w-2xl">
-                Sprawdzone pojazdy LCV z dokumentacją flotową, VAT 23% i gwarancją. Furgony, brygadowe, chłodnie, minibusy - wszystko dla Twojej branży.
+                Sprawdzone pojazdy z dokumentacją flotową, VAT 23% i gwarancją. Furgony, brygadowe, chłodnie, minibusy
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
