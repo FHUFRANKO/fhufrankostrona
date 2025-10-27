@@ -1055,6 +1055,7 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
         
         # SEKCJA 4
         'description_html': bus_data.get('description_html') or bus_data.get('opis') or '',
+        'youtube_url': bus_data.get('youtube_url'),
         'home_delivery': bus_data.get('home_delivery', False),
         'tech_visual_short': bus_data.get('tech_visual_short'),
         'seller_profile_url': bus_data.get('seller_profile_url'),
