@@ -316,7 +316,7 @@ export const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-[#222122] mb-4">
-              Kategorie pojazdów LCV
+              Kategorie pojazdów
             </h2>
             <p className="text-[#838282]">
               Znajdź odpowiedni bus dla Twojej branży
