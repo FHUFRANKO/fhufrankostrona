@@ -308,7 +308,8 @@ class BusUpdate(BaseModel):
     wyposazenie: Optional[List[str]] = None
     zdjecia: Optional[List[str]] = None
     zdjecieGlowne: Optional[str] = None
-    youtubeUrl: Optional[str] = None
+    youtube_url: Optional[str] = None
+    youtubeUrl: Optional[str] = None  # Alias for frontend compatibility
     wyrozniowane: Optional[bool] = None
     nowosc: Optional[bool] = None
     flotowy: Optional[bool] = None
