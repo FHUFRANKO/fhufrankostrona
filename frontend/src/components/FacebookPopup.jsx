@@ -86,7 +86,7 @@ export const FacebookPopup = () => {
               Obserwuj nas na Facebooku!
             </h3>
             <p className="text-xs text-gray-600 mt-1">
-              Nowe ogłoszenia na FB
+              Dołącz do naszej społeczności
             </p>
           </div>
         </div>
