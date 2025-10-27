@@ -703,6 +703,9 @@ async def get_all_buses():
     for bus_data in response.data:
         bus_data['sold'] = bus_data.get('gwarancja', False)
         bus_data['reserved'] = bus_data.get('hak', False)
+        # Map youtube_url to youtubeUrl for frontend compatibility
+        if 'youtube_url' in bus_data and bus_data['youtube_url']:
+            bus_data['youtubeUrl'] = bus_data['youtube_url']
         buses.append(Bus(**bus_data))
     return buses
 
