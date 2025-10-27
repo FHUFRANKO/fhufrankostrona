@@ -255,6 +255,18 @@ frontend:
         - working: true
           agent: "main"
           comment: "Downloaded user-provided favicon image and set as site favicon. Added favicon.png to public folder and updated index.html with link tags for favicon and apple-touch-icon."
+  
+  - task: "YouTube video integration in listings"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py, /app/frontend/src/components/BusFormNew.jsx, /app/frontend/src/pages/CarDetailPage.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "main"
+          comment: "Added youtube_url field to Bus model. Added input field in admin panel (Section 4). Added YouTube embed player on CarDetailPage below price section. Supports multiple YouTube URL formats (watch, youtu.be, embed). Video displayed as responsive iframe with 16:9 aspect ratio."
 
   - task: "Display buses on listings page"
     implemented: true
