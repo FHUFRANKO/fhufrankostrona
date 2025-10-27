@@ -299,6 +299,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         
         // Sekcja 4
         description_html: descriptionHtml,
+        youtube_url: youtubeUrl || null,
         home_delivery: homeDelivery,
         tech_visual_short: techVisualShort || null,
         seller_profile_url: sellerProfileUrl || null,
