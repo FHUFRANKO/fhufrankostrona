@@ -260,6 +260,7 @@ class BusCreate(BaseModel):
     wyposazenie: List[str] = []
     zdjecia: List[str] = []
     zdjecieGlowne: Optional[str] = None
+    youtubeUrl: Optional[str] = None
     wyrozniowane: bool = False
     nowosc: bool = False
     flotowy: bool = False
