@@ -90,7 +90,7 @@ export const ONasPage = () => {
                 FHU FRANKO
               </h1>
               <p className="text-lg text-[#838282] mt-2">
-                Autohandel BUSY/LCV
+                Autohandel BUSY
               </p>
             </div>
           </div>
