@@ -71,7 +71,7 @@ export const Footer = () => {
           {/* Navigation */}
           <div>
             <h3 className="font-semibold text-white mb-4">Nawigacja</h3>
-            <nav className="space-y-2">
+            <nav className="flex flex-col space-y-2">
               {[
                 { label: 'Ogłoszenia', path: '/ogloszenia' },
                 { label: 'Opinie', path: '/opinie' },
@@ -81,7 +81,7 @@ export const Footer = () => {
                 <Button
                   key={item.path}
                   variant="ghost"
-                  className="p-0 h-auto text-gray-300 hover:text-[#F3BC30] justify-start"
+                  className="p-0 h-auto text-gray-300 hover:text-[#F3BC30] justify-start w-fit"
                   onClick={() => handleNavigation(item.path)}
                 >
                   {item.label}
