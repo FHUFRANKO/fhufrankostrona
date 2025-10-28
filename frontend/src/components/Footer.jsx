@@ -93,7 +93,7 @@ export const Footer = () => {
           {/* Services */}
           <div>
             <h3 className="font-semibold text-white mb-4">Nasza Oferta</h3>
-            <nav className="space-y-2">
+            <nav className="flex flex-col space-y-2">
               {[
                 { label: 'Busy dostawcze', path: '/ogloszenia?typ=dostawcze' },
                 { label: 'Furgony', path: '/ogloszenia?typ=furgony' },
@@ -105,7 +105,7 @@ export const Footer = () => {
                 <Button
                   key={item.path}
                   variant="ghost"
-                  className="p-0 h-auto text-gray-300 hover:text-[#F3BC30] justify-start"
+                  className="p-0 h-auto text-gray-300 hover:text-[#F3BC30] justify-start w-fit"
                   onClick={() => item.external ? handleExternalLink(item.path) : handleNavigation(item.path)}
                 >
                   {item.label}
