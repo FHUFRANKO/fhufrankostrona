@@ -1,0 +1,15 @@
+{
+  "name": "fhu-franko",
+  "private": true,
+  "workspaces": ["frontend"],
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "scripts": {
+    "build": "yarn workspace frontend build",
+    "start": "serve -s frontend/build -l $PORT"
+  }
+}
