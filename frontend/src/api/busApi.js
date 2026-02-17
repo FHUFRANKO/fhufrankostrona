@@ -5,6 +5,20 @@ const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 // Configure axios to send cookies with requests
 axios.defaults.withCredentials = true;
 
+// Interceptor to handle 401s
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Only redirect if not already on login page to avoid loops
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const busApi = {
   // Get all buses
   async getAllBuses() {
@@ -50,18 +64,18 @@ export const busApi = {
 
   // Get stats
   async getStats() {
-    const response = await axios.get(`${API_URL}/api/stats`);
+    const response = await axios.get(`${API_URL}/api/admin/stats`);
     return response.data;
   },
 
   // Opinions API
   async getAllOpinions() {
-    const response = await axios.get(`${API_URL}/api/opinie`);
+    const response = await axios.get(`${API_URL}/api/admin/opinions`);
     return response.data;
   },
 
   async getPublicOpinions() {
-    const response = await axios.get(`${API_URL}/api/opinie/public`);
+    const response = await axios.get(`${API_URL}/api/opinie`);
     return response.data;
   },
 
@@ -71,17 +85,17 @@ export const busApi = {
   },
 
   async createOpinion(opinionData) {
-    const response = await axios.post(`${API_URL}/api/opinie`, opinionData);
+    const response = await axios.post(`${API_URL}/api/admin/opinions`, opinionData);
     return response.data;
   },
 
   async updateOpinion(id, opinionData) {
-    const response = await axios.put(`${API_URL}/api/opinie/${id}`, opinionData);
+    const response = await axios.put(`${API_URL}/api/admin/opinions/${id}`, opinionData);
     return response.data;
   },
 
   async deleteOpinion(id) {
-    const response = await axios.delete(`${API_URL}/api/opinie/${id}`);
+    const response = await axios.delete(`${API_URL}/api/admin/opinions/${id}`);
     return response.data;
   },
 
@@ -103,6 +117,12 @@ export const busApi = {
 
   async getListing(id) {
     const response = await axios.get(`${API_URL}/api/admin/listings/${id}`);
+    return response.data;
+  },
+
+  // Logout
+  async logout() {
+    const response = await axios.post(`${API_URL}/api/auth/logout`);
     return response.data;
   },
 
@@ -138,4 +158,3 @@ export const updateListing = busApi.updateListing;
 export const getListing = busApi.getListing;
 export const toggleSoldStatus = busApi.toggleSoldStatus;
 export const toggleReservedStatus = busApi.toggleReservedStatus;
-

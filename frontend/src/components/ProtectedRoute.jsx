@@ -23,15 +23,12 @@ export const ProtectedRoute = ({ children }) => {
         setIsAuthenticated(true);
       } else {
         setIsAuthenticated(false);
-        // Redirect to login page
-        const adminPath = process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374';
-        navigate(`/admin-${adminPath}`);
+        navigate('/login');
       }
     } catch (err) {
       console.error('Auth check failed:', err);
       setIsAuthenticated(false);
-      const adminPath = process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374';
-      navigate(`/admin-${adminPath}`);
+      navigate('/login');
     } finally {
       setIsChecking(false);
     }
@@ -49,7 +46,7 @@ export const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return null; // Navigation already handled
+    return null; // Navigation handled above
   }
 
   return children;

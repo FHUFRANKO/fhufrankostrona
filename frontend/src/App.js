@@ -1,6 +1,6 @@
 import React from "react";
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { FacebookPopup } from "./components/FacebookPopup";
@@ -12,7 +12,7 @@ import { AdminPanel } from "./pages/AdminPanel";
 import { KontaktPage } from "./pages/KontaktPage";
 import { ONasPage } from "./pages/ONasPage";
 import { OpiniePage } from "./pages/OpiniePage";
-import { AdminLoginRedirect } from "./pages/AdminLoginRedirect";
+import { LoginPage } from "./pages/LoginPage";
 import { Toaster } from "./components/ui/sonner";
 
 // Placeholder components for other pages
@@ -31,17 +31,16 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          {/* Hidden Admin Login - exact match */}
-          <Route path={`/admin-${process.env.REACT_APP_ADMIN_PATH || 'moj-tajny-panel-82374'}`} element={<AdminLoginRedirect />} />
+          {/* Admin Routes */}
+          <Route path="/login" element={<LoginPage />} />
           
-          {/* Admin Panel - bez Header/Footer, protected */}
           <Route path="/admin" element={
             <ProtectedRoute>
               <AdminPanel />
             </ProtectedRoute>
           } />
           
-          {/* Strony z Header/Footer */}
+          {/* Public Routes */}
           <Route path="/" element={
             <>
               <Header />
@@ -84,13 +83,8 @@ function App() {
               <Footer />
             </>
           } />
-          <Route path="/logowanie" element={
-            <>
-              <Header />
-              <main><PlaceholderPage title="Logowanie" /></main>
-              <Footer />
-            </>
-          } />
+          <Route path="/logowanie" element={<Navigate to="/login" replace />} />
+          
           <Route path="/o-nas" element={
             <>
               <Header />
