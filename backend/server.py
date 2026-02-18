@@ -207,69 +207,45 @@ class OpinionUpdate(BaseModel):
 
 # --- HELPERS ---
 def map_listing_to_bus_db(listing_data: dict) -> dict:
-    """Map new listing model fields to existing database schema"""
+    """Map new listing model fields STRICTLY to existing database schema"""
     bus_data = {
-        # Map title explicitly
-        'title': listing_data.get('title'),
-        
-        # SEKCJA 1: Informacje podstawowe
         'marka': listing_data.get('make'),
         'model': listing_data.get('model'),
-        'color': listing_data.get('color'),
-        'liczbaMiejsc': listing_data.get('seats'),
         'rok': listing_data.get('production_year'),
-        'vin': listing_data.get('vin'),
-        'installments_available': listing_data.get('installments_available', False),
-        'cenaBrutto': listing_data.get('price_pln'),
-        
-        # SEKCJA 2: Specyfikacja techniczna
-        'paliwo': listing_data.get('fuel_type'),
-        'kubatura': listing_data.get('engine_displacement_cc'),
-        'moc': listing_data.get('power_hp'),
-        'typNadwozia': listing_data.get('body_type'),
-        'skrzynia': listing_data.get('gearbox'),
-        'gvw_kg': listing_data.get('gvw_kg'),
-        'twin_rear_wheels': listing_data.get('twin_rear_wheels', False),
-        
-        # SEKCJA 3: Stan i historia pojazdu
-        'origin_country': listing_data.get('origin_country'),
         'przebieg': listing_data.get('mileage_km'),
-        'registration_number': listing_data.get('registration_number'),
-        'condition_status': listing_data.get('condition_status'),
-        'first_registration_date': listing_data.get('first_registration_date').isoformat() if isinstance(listing_data.get('first_registration_date'), (datetime, date)) else listing_data.get('first_registration_date'),
-        'accident_free': listing_data.get('accident_free', False),
-        'has_registration_number': listing_data.get('has_registration_number', False),
-        'serviced_in_aso': listing_data.get('serviced_in_aso', False),
-        
-        # SEKCJA 4: Opis sprzedawcy
-        'description_html': listing_data.get('description_html'),
-        'opis': listing_data.get('description_html'),  # Keep both for backward compatibility
-        'youtube_url': listing_data.get('youtube_url'),
-        'home_delivery': listing_data.get('home_delivery', False),
-        'tech_visual_short': listing_data.get('tech_visual_short'),
-        'seller_profile_url': listing_data.get('seller_profile_url'),
-        'location_street': listing_data.get('location_street'),
-        'location_city': listing_data.get('location_city'),
-        'location_region': listing_data.get('location_region'),
-        
-        # Additional fields
+        'cenaBrutto': listing_data.get('price_pln'),
+        'paliwo': listing_data.get('fuel_type'),
+        'skrzynia': listing_data.get('gearbox'),
+        'typNadwozia': listing_data.get('body_type'),
+        'moc': listing_data.get('power_hp'),
+        'kubatura': listing_data.get('engine_displacement_cc'),
+        'kolor': listing_data.get('color'),
+        'opis': listing_data.get('description_html'),
         'zdjecia': listing_data.get('zdjecia', []),
-        'zdjecieGlowne': listing_data.get('zdjecieGlowne'),
+        'zdjecieGlowne': listing_data.get('zdjecieGlowne') or (listing_data.get('zdjecia')[0] if listing_data.get('zdjecia') else None),
+        
         'wyrozniowane': listing_data.get('wyrozniowane', False),
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
-        'gwarancja': listing_data.get('sold', False),  # SOLD mapped to gwarancja
-        'sold': listing_data.get('sold', False),
-        'hak': False, # Reserved mapped to hak (legacy)
+        'gwarancja': listing_data.get('sold', False), 
+        'hak': listing_data.get('reserved', False),   
         
-        # Required fields with defaults for backward compatibility
+        'miasto': listing_data.get('location_city', 'Smyków'),
+        'pierwszaRejestracja': str(listing_data.get('first_registration_date'))[:10] if listing_data.get('first_registration_date') else None,
+        'vin': listing_data.get('vin'),
+        
+        # Pola wymagane przez baze do ktorych nie mamy wejscia w nowym UI
         'normaEmisji': 'Euro 6',
         'dmcKategoria': 'do 3.5t',
         'ladownosc': 1000,
         'vat': True,
     }
     
-    # Remove None values
+    # Hack: przechowujemy wygenerowany na nowo Tytuł w starym polu "naped", 
+    # zeby stara tabela bazy danych go nie odrzuciła
+    if listing_data.get('title'):
+        bus_data['naped'] = listing_data.get('title')
+        
     return {k: v for k, v in bus_data.items() if v is not None}
 
 def map_bus_db_to_listing(bus_data: dict) -> dict:
@@ -398,7 +374,7 @@ async def create_listing(listing_data: ListingCreate):
         bus_id = str(uuid.uuid4())
         bus_dict['id'] = bus_id
         bus_dict['dataPublikacji'] = datetime.now().isoformat()
-        bus_dict['created_at'] = datetime.now().isoformat()
+        
         
         # Generate listing number
         response = supabase.table('buses').select('id', count='exact').execute()
@@ -418,7 +394,7 @@ async def create_listing(listing_data: ListingCreate):
         }
     except Exception as e:
         logging.error(f"Create listing error: {e}")
-        raise HTTPException(status_code=500, detail=f"Error creating listing: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd bazy Supabase: {str(e)}")
 
 @api_router.put("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
 async def update_listing(listing_id: str, listing_update: ListingUpdate):
@@ -434,7 +410,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         
         if update_dict:
             bus_update = map_listing_to_bus_db(update_dict)
-            bus_update['updated_at'] = datetime.now().isoformat()
+            
             
             # Remove keys that shouldn't be updated if they are mapped incorrectly or empty
             # map_listing_to_bus_db might add defaults, we should be careful.
@@ -460,7 +436,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         
     except Exception as e:
         logging.error(f"Update listing error: {e}")
-        raise HTTPException(status_code=500, detail=f"Error updating listing: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd bazy Supabase: {str(e)}")
 
 @api_router.delete("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
 async def delete_listing(listing_id: str):
