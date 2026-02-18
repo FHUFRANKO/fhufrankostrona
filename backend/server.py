@@ -597,7 +597,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             if m: return m.group(1)
             
             # Wyszukiwanie bezpośrednio w czystym tekście HTML dla starych szablonów dostawczaków
-            m2 = re.search(label + r'[<>\w\s/\-="']*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<', html)
+            m2 = re.search(label + r"[^>]*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<", html)
             if m2:
                 val = m2.group(1).strip()
                 if len(val) < 40 and val != label: return val
