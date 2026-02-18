@@ -150,6 +150,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         const data = result.data;
         
         // Map scraped data to new fields
+        if (data.title) setTitle(data.title);
         if (data.marka) setMake(data.marka);
         if (data.model) setModel(data.model);
         if (data.cenaBrutto) setPricePln(data.cenaBrutto);
@@ -161,10 +162,22 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         if (data.kubatura) setEngineDisplacementCc(data.kubatura);
         if (data.typNadwozia) setBodyType(data.typNadwozia);
         if (data.kolor) setColor(data.kolor);
+        if (data.vin) setVin(data.vin);
+        if (data.wersja) setTechVisualShort(data.wersja);
         if (data.krajPochodzenia) setOriginCountry(data.krajPochodzenia);
         if (data.stan) setConditionStatus(data.stan);
         if (data.opis) setDescriptionHtml(data.opis);
+        
+        // Booleans
         if (typeof data.bezwypadkowy === 'boolean') setAccidentFree(data.bezwypadkowy);
+        if (typeof data.serwisowanyWAso === 'boolean') setServicedInAso(data.serwisowanyWAso);
+        if (typeof data.maNumerRejestracyjny === 'boolean') setHasRegistrationNumber(data.maNumerRejestracyjny);
+        
+        // Zdjęcia
+        if (data.zdjecia && data.zdjecia.length > 0) {
+            setZdjecia(prev => [...prev, ...data.zdjecia]); // Dodajemy pobrane do ewentualnych obecnych
+            if (!zdjecieGlowne) setZdjecieGlowne(data.zdjecieGlowne || data.zdjecia[0]);
+        }
         
         toast.success('Dane zaimportowane z Otomoto! Sprawdź i uzupełnij brakujące pola.');
         

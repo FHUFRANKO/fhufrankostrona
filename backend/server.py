@@ -565,18 +565,14 @@ async def upload_images_bulk(files: List[UploadFile] = File(...)):
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
-    """Scrape Otomoto - Enhanced Version"""
+    """Ultimate Otomoto Scraper - Pobiera parametry i ZDJĘCIA"""
     import json
     try:
         url = request.url.strip()
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": "\"Windows\"",
-            "Upgrade-Insecure-Requests": "1"
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "pl-PL,pl;q=0.9",
         }
         
         session = requests.Session()
@@ -589,98 +585,89 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         
         next_data = soup.find("script", id="__NEXT_DATA__")
         if next_data:
-            try:
-                json_data = json.loads(next_data.string)
-                ad_data = json_data.get("props", {}).get("pageProps", {}).get("ad", {})
-                if ad_data:
-                    data["marka"] = ad_data.get("make", "")
-                    data["model"] = ad_data.get("model", "")
-                    
-                    price_dict = ad_data.get("price", {})
-                    data["cenaBrutto"] = price_dict.get("value", 0) if isinstance(price_dict, dict) else 0
-                    
-                    data["rok"] = ad_data.get("productionYear", "")
-                    data["przebieg"] = ad_data.get("mileage", "")
-                    data["paliwo"] = ad_data.get("fuelType", "")
-                    data["moc"] = ad_data.get("enginePower", "")
-                    data["kubatura"] = ad_data.get("engineCapacity", "")
-                    data["typNadwozia"] = ad_data.get("bodyType", "")
-                    data["skrzynia"] = ad_data.get("gearbox", "")
-                    data["vin"] = ad_data.get("vin", "")
-                    data["kolor"] = ad_data.get("color", "")
-                    data["opis"] = ad_data.get("description", "")
-                    
-                    for key in ["rok", "przebieg", "moc", "kubatura"]:
-                        if data.get(key):
-                            try: data[key] = int(re.sub(r"[^\d]", "", str(data[key])))
-                            except: pass
-                            
-                    return {"success": True, "data": data, "missing_fields": missing_fields}
-            except Exception as json_e:
-                logging.warning(f"JSON parsing failed, falling back to HTML: {json_e}")
+            json_data = json.loads(next_data.string)
+            ad_data = json_data.get("props", {}).get("pageProps", {}).get("ad", {})
+            
+            if ad_data:
+                # Wyciągamy słowniki z parametrami (Otomoto ma różne formaty, łapiemy wszystkie)
+                params_list = ad_data.get("params", []) or ad_data.get("target", [])
+                params_dict = {}
+                for p in params_list:
+                    key = p.get("key") or p.get("name")
+                    disp = p.get("displayValue") or p.get("value", "")
+                    if isinstance(disp, list) and len(disp) > 0:
+                        disp = disp[0]
+                    if key:
+                        params_dict[key] = str(disp).strip()
 
-        def get_param(labels):
-            if isinstance(labels, str): labels = [labels]
-            for p in soup.select("[data-testid=\"advert-details-item\"]"):
-                if any(l in p.get_text() for l in labels):
-                    val = p.select_one("p, a, div:nth-child(2)")
-                    if val: return val.get_text(strip=True)
-            for param in soup.select("li.offer-params__item"):
-                if any(label in param.get_text() for label in labels):
-                    val = param.select_one(".offer-params__value, a")
-                    return val.get_text(strip=True) if val else None
-            return None
-            
-        title_elem = soup.select_one("h1.offer-title") or soup.select_one("[data-testid=\"ad-title\"]")
-        if title_elem:
-            parts = title_elem.get_text(strip=True).split()
-            data["marka"] = parts[0] if parts else ""
-            data["model"] = " ".join(parts[1:]) if len(parts) > 1 else ""
-            
-        price_elem = soup.select_one(".offer-price__number") or soup.select_one("[data-testid=\"ad-price-container\"] h3")
-        if price_elem:
-            try: data["cenaBrutto"] = int(re.sub(r"[^\d]", "", price_elem.get_text()))
-            except: pass
-            
-        year = get_param(["Rok produkcji", "Year"])
-        if year: data["rok"] = int(re.sub(r"[^\d]", "", year))
-        
-        mileage = get_param(["Przebieg", "Mileage"])
-        if mileage: data["przebieg"] = int(re.sub(r"[^\d]", "", mileage))
-        
-        fuel = get_param(["Rodzaj paliwa", "Fuel type"])
-        if fuel: data["paliwo"] = fuel
-        
-        engine = get_param(["Pojemność skokowa", "Displacement"])
-        if engine: data["kubatura"] = int(re.sub(r"[^\d]", "", engine))
-        
-        power = get_param(["Moc", "Power"])
-        if power: data["moc"] = int(re.sub(r"[^\d]", "", power))
-        
-        body = get_param(["Typ nadwozia", "Body type"])
-        if body: data["typNadwozia"] = body
-        
-        gearbox = get_param(["Skrzynia biegów", "Gearbox"])
-        if gearbox: data["skrzynia"] = gearbox
-        
-        color = get_param(["Kolor", "Color"])
-        if color: data["kolor"] = color
-        
-        vin = get_param(["VIN"])
-        if vin: data["vin"] = vin
-        
-        accident = get_param(["Bezwypadkowy"])
-        data["bezwypadkowy"] = bool(accident)
-        
-        desc = soup.select_one(".offer-description__description") or soup.select_one("[data-testid=\"ad-description\"]")
-        if desc: 
-            data["opis"] = str(desc)
-            
-        return {"success": True, "data": data, "missing_fields": missing_fields}
+                # Tytuł i cena
+                data["title"] = ad_data.get("title", "")
+                price_dict = ad_data.get("price", {})
+                data["cenaBrutto"] = price_dict.get("value", 0) if isinstance(price_dict, dict) else 0
+
+                # Podstawowe pola
+                data["marka"] = params_dict.get("make", "")
+                data["model"] = params_dict.get("model", "")
+                data["wersja"] = params_dict.get("version", "")
+                data["vin"] = params_dict.get("vin", "")
+                data["kolor"] = params_dict.get("color", "")
+                data["krajPochodzenia"] = params_dict.get("country_origin", "")
+                data["typNadwozia"] = params_dict.get("body_type", "")
+                
+                # Konwersja numeryczna
+                def clean_int(val):
+                    try: return int(re.sub(r"[^\d]", "", str(val)))
+                    except: return None
+
+                data["rok"] = clean_int(params_dict.get("year"))
+                data["przebieg"] = clean_int(params_dict.get("mileage"))
+                data["moc"] = clean_int(params_dict.get("engine_power"))
+                data["kubatura"] = clean_int(params_dict.get("engine_capacity"))
+
+                # Tłumaczenie paliwa na format z Twojej aplikacji
+                fuel_raw = params_dict.get("fuel_type", "").lower()
+                if "diesel" in fuel_raw: data["paliwo"] = "Diesel"
+                elif "benzyna" in fuel_raw or "petrol" in fuel_raw: data["paliwo"] = "Benzyna"
+                elif "elektryczny" in fuel_raw or "electric" in fuel_raw: data["paliwo"] = "Elektryczny"
+                elif "hybryda" in fuel_raw or "hybrid" in fuel_raw: data["paliwo"] = "Hybryda"
+                
+                # Tłumaczenie skrzyni biegów
+                gearbox_raw = params_dict.get("gearbox", "").lower()
+                if "automatyczna" in gearbox_raw or "automatic" in gearbox_raw: data["skrzynia"] = "Automatyczna"
+                elif "manualna" in gearbox_raw or "manual" in gearbox_raw: data["skrzynia"] = "Manualna"
+
+                # Boolean (Tak/Nie)
+                data["bezwypadkowy"] = params_dict.get("no_accident") == "Tak"
+                data["serwisowanyWAso"] = params_dict.get("service_record") == "Tak"
+                data["maNumerRejestracyjny"] = params_dict.get("registered") == "Tak"
+                
+                state_val = params_dict.get("state", "").lower()
+                data["stan"] = "Nowy" if "nowy" in state_val or "new" in state_val else "Używany"
+
+                # Opis
+                data["opis"] = ad_data.get("description", "")
+                
+                # ZDJĘCIA (Najważniejsze!)
+                photos = ad_data.get("photos", [])
+                image_urls = []
+                for photo in photos:
+                    links = photo.get("links", {})
+                    # Szukamy najwyższej dostępnej rozdzielczości z Otomoto
+                    if "1080x720" in links: image_urls.append(links["1080x720"])
+                    elif "800x600" in links: image_urls.append(links["800x600"])
+                    elif links: image_urls.append(list(links.values())[0])
+                
+                if image_urls:
+                    data["zdjecia"] = image_urls
+                    data["zdjecieGlowne"] = image_urls[0]
+
+                return {"success": True, "data": data, "missing_fields": missing_fields}
+                
+        raise Exception("Nie znaleziono struktury danych JSON na stronie Otomoto.")
         
     except Exception as e:
         logging.error(f"Scrape error: {e}")
-        raise HTTPException(status_code=500, detail=f"Błąd scrapowania. Szczegóły: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd pobierania danych. Otomoto zablokowało zapytanie lub ogłoszenie nie istnieje. ({str(e)})")
 
 # Stats Endpoint
 @api_router.get("/admin/stats", dependencies=[Depends(admin_required)])
