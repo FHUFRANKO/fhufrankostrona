@@ -565,7 +565,7 @@ async def upload_images_bulk(files: List[UploadFile] = File(...)):
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
-    """Otomoto Scraper - Ostateczna Wersja Nuklearna (Regex) + UTF-8 Fix"""
+    """Otomoto Scraper - Ostateczny Fix na Kodowanie (Czysty tekst + UTF-8)"""
     import json
     import re
     try:
@@ -578,23 +578,22 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         
         response = requests.get(url, headers=headers, timeout=15)
         
-        # KLUCZOWA ZMIANA: Wymuszenie kodowania UTF-8, aby polskie znaki działały poprawnie
-        response.encoding = 'utf-8'
-        
         if response.status_code in [403, 401, 429]:
             raise Exception("Otomoto zablokowało zapytanie (Ochrona Cloudflare).")
             
         response.raise_for_status()
-        html = response.text
+        
+        # Wymuszamy czytanie surowych bajtów jako UTF-8
+        html = response.content.decode('utf-8', errors='ignore')
         soup = BeautifulSoup(html, "lxml")
         data = {}
         
         def extract_value(key, label):
-            m = re.search(r'"key"[\s:]*"' + key + r'"[^\}]*?"displayValue"[\s:]*"([^"]+)"', html)
+            m = re.search(r'"key"[\s:]*"' + key + r'"[^}]*?"displayValue"[\s:]*"([^"]+)"', html)
             if m: return m.group(1)
-            m = re.search(r'"key"[\s:]*"' + key + r'"[^\}]*?"value"[\s:]*"([^"]+)"', html)
+            m = re.search(r'"key"[\s:]*"' + key + r'"[^}]*?"value"[\s:]*"([^"]+)"', html)
             if m: return m.group(1)
-            m = re.search(r'"label"[\s:]*"' + label + r'"[^\}]*?"value"[\s:]*"([^"]+)"', html)
+            m = re.search(r'"label"[\s:]*"' + label + r'"[^}]*?"value"[\s:]*"([^"]+)"', html)
             if m: return m.group(1)
             
             m2 = re.search(label + r'[^>]*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<', html)
@@ -628,7 +627,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             m_title = re.search(r'"title"[\s:]*"([^"]+)"', html)
             if m_title: data["title"] = m_title.group(1)
 
-        m_price = re.search(r'"price"[\s:]*\{[^\}]*?"value"[\s:]*(\d+)', html)
+        m_price = re.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
         if m_price:
             data["cenaBrutto"] = int(m_price.group(1))
         else:
@@ -647,16 +646,25 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             data["zdjecia"] = unique_images
             data["zdjecieGlowne"] = unique_images[0]
 
-        # 5. OPIS - ZMIANA: decode_contents() + czyszczenie ewentualnych śmieci
+        # 5. OPIS - Wymuszanie przerw między liniami
         desc_elem = soup.select_one('[data-testid="ad-description"]') or soup.select_one('.offer-description__description')
         if desc_elem:
-            data["opis"] = desc_elem.decode_contents()
+            for br in desc_elem.find_all("br"):
+                br.replace_with("\n")
+            for p in desc_elem.find_all("p"):
+                p.append("\n")
+                
+            clean_text = desc_elem.get_text(separator=' ', strip=False)
+            clean_text = re.sub(r' {2,}', ' ', clean_text)
+            clean_text = re.sub(r'\n\s*\n\s*\n+', '\n\n', clean_text)
+            data["opis"] = clean_text.strip()
         else:
             m_desc = re.search(r'"description"[\s:]*"(.*?)"(?:,|})', html)
             if m_desc:
-                import codecs
-                try: data["opis"] = codecs.decode(m_desc.group(1), 'unicode_escape')
-                except: data["opis"] = m_desc.group(1)
+                try:
+                    data["opis"] = json.loads('"' + m_desc.group(1) + '"')
+                except:
+                    data["opis"] = m_desc.group(1)
 
         for k in ["rok", "przebieg", "moc", "kubatura"]:
             if data.get(k):
