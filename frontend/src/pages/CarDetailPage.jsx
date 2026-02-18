@@ -109,13 +109,13 @@ export const CarDetailPage = () => {
 
   const handlePrevImage = () => {
     setCurrentImageIndex(prev => 
-      prev === 0 ? car.zdjecia.length - 1 : prev - 1
+      prev === 0 ? (car.zdjecia?.length || 1) - 1 : prev - 1
     );
   };
 
   const handleNextImage = () => {
     setCurrentImageIndex(prev => 
-      prev === car.zdjecia.length - 1 ? 0 : prev + 1
+      prev === (car.zdjecia?.length || 1) - 1 ? 0 : prev + 1
     );
   };
 
@@ -128,12 +128,24 @@ export const CarDetailPage = () => {
   };
 
   const formatCena = (cena) => {
+    if (!cena) return 'Brak podanej ceny';
     return new Intl.NumberFormat('pl-PL').format(cena) + ' zł';
   };
 
   const formatPrzebieg = (przebieg) => {
+    if (przebieg === undefined || przebieg === null) return 'Brak danych';
     return new Intl.NumberFormat('pl-PL').format(przebieg) + ' km';
   };
+
+  // Helper variables for data mapping
+  const carTitle = car.title || `${car.make || car.marka || ''} ${car.model || ''}`;
+  const isFeatured = car.wyrozniowane || false;
+  const isNew = car.nowosc || false;
+  const priceGross = car.price_pln || car.cenaBrutto;
+  const hasVat = car.vat !== false; // zakladamy domyslnie ze jest VAT
+  const isSold = car.sold || false;
+  const isReserved = car.reserved || false;
+  const description = car.description_html || car.opis || 'Brak opisu pojazdu.';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,9 +163,9 @@ export const CarDetailPage = () => {
               Wróć do listy
             </Button>
             <span>/</span>
-            <span>{car.marka}</span>
+            <span>{car.make || car.marka || 'Pojazd'}</span>
             <span>/</span>
-            <span className="text-[#222122] font-medium">{car.model}</span>
+            <span className="text-[#222122] font-medium">{car.model || ''}</span>
           </div>
         </div>
       </div>
@@ -167,24 +179,24 @@ export const CarDetailPage = () => {
             {/* Title and Actions */}
             <div className="flex justify-between items-start">
               <div>
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
                   <h1 className="text-3xl font-bold text-[#222122]">
-                    {car.marka} {car.model}
+                    {carTitle}
                   </h1>
-                  {car.wyroznialone && (
+                  {isFeatured && (
                     <Badge className="bg-[#F3BC30] text-[#222122] hover:bg-[#E0AA2B]">
                       Wyróżnione
                     </Badge>
                   )}
-                  {car.nowosc && (
+                  {isNew && (
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
                       Nowość
                     </Badge>
                   )}
                 </div>
-                <p className="text-[#838282]">{car.wersja}</p>
+                <p className="text-[#838282]">{car.wersja || ''}</p>
                 <p className="text-sm text-[#838282]">
-                  Nr ogłoszenia: {car.numerOgloszenia}
+                  Nr ogłoszenia: {car.numerOgloszenia || car.id?.substring(0,8) || 'Brak'}
                 </p>
               </div>
 
@@ -210,12 +222,12 @@ export const CarDetailPage = () => {
                   <>
                     <img
                       src={car.zdjecia[currentImageIndex]}
-                      alt={`${car.marka} ${car.model} - zdjęcie ${currentImageIndex + 1}`}
+                      alt={`${carTitle} - zdjęcie ${currentImageIndex + 1}`}
                       className="w-full h-[500px] object-cover"
                     />
                     
                     {/* SPRZEDANE overlay - highest priority */}
-                    {car.sold && (
+                    {isSold && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-red-600/50 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
@@ -223,14 +235,13 @@ export const CarDetailPage = () => {
                               SPRZEDANE
                             </span>
                           </div>
-                          {/* Dodatkowy efekt świetlny */}
                           <div className="absolute inset-0 bg-red-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
                     
                     {/* REZERWACJA overlay - shows only if not sold */}
-                    {!car.sold && car.reserved && (
+                    {!isSold && isReserved && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-gray-600/50 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
@@ -238,7 +249,6 @@ export const CarDetailPage = () => {
                               REZERWACJA
                             </span>
                           </div>
-                          {/* Dodatkowy efekt świetlny */}
                           <div className="absolute inset-0 bg-gray-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
                         </div>
                       </div>
@@ -265,11 +275,11 @@ export const CarDetailPage = () => {
                       </>
                     )}
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-full px-4">
                       {car.zdjecia.map((_, index) => (
                         <button
                           key={index}
-                          className={`w-2 h-2 rounded-full transition-colors ${
+                          className={`w-2 h-2 rounded-full transition-colors flex-shrink-0 ${
                             index === currentImageIndex ? 'bg-white' : 'bg-white/50'
                           }`}
                           onClick={() => setCurrentImageIndex(index)}
@@ -281,12 +291,12 @@ export const CarDetailPage = () => {
                   <>
                     <img
                       src={car.zdjecieGlowne}
-                      alt={`${car.marka} ${car.model}`}
+                      alt={carTitle}
                       className="w-full h-[500px] object-cover"
                     />
                     
-                    {/* SPRZEDANE overlay - highest priority */}
-                    {car.sold && (
+                    {/* SPRZEDANE overlay */}
+                    {isSold && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-red-600/50 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
@@ -294,14 +304,13 @@ export const CarDetailPage = () => {
                               SPRZEDANE
                             </span>
                           </div>
-                          {/* Dodatkowy efekt świetlny */}
                           <div className="absolute inset-0 bg-red-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
                     
-                    {/* REZERWACJA overlay - shows only if not sold */}
-                    {!car.sold && car.reserved && (
+                    {/* REZERWACJA overlay */}
+                    {!isSold && isReserved && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                         <div className="relative">
                           <div className="bg-gray-600/50 text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 lg:px-10 lg:py-5 rounded-lg sm:rounded-xl shadow-2xl transform -rotate-12 border-2 sm:border-3 md:border-4 border-white">
@@ -309,15 +318,17 @@ export const CarDetailPage = () => {
                               REZERWACJA
                             </span>
                           </div>
-                          {/* Dodatkowy efekt świetlny */}
                           <div className="absolute inset-0 bg-gray-500 opacity-30 blur-lg sm:blur-xl rounded-lg sm:rounded-xl transform -rotate-12"></div>
                         </div>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-[500px] flex items-center justify-center">
-                    <span className="text-9xl">🚐</span>
+                  <div className="w-full h-[500px] flex items-center justify-center bg-gray-100">
+                    <div className="text-center">
+                      <span className="text-9xl block mb-4">🚐</span>
+                      <p className="text-gray-500">Brak zdjęć pojazdu</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -337,7 +348,7 @@ export const CarDetailPage = () => {
                     <Calendar className="h-4 w-4 text-[#F3BC30]" />
                     <div>
                       <div className="text-sm text-[#838282]">Rok produkcji</div>
-                      <div className="font-medium text-[#222122]">{car.rok}</div>
+                      <div className="font-medium text-[#222122]">{car.production_year || car.rok || 'Brak danych'}</div>
                     </div>
                   </div>
 
@@ -345,7 +356,7 @@ export const CarDetailPage = () => {
                     <Gauge className="h-4 w-4 text-[#F3BC30]" />
                     <div>
                       <div className="text-sm text-[#838282]">Przebieg</div>
-                      <div className="font-medium text-[#222122]">{formatPrzebieg(car.przebieg)}</div>
+                      <div className="font-medium text-[#222122]">{formatPrzebieg(car.mileage_km || car.przebieg)}</div>
                     </div>
                   </div>
 
@@ -353,7 +364,7 @@ export const CarDetailPage = () => {
                     <Fuel className="h-4 w-4 text-[#F3BC30]" />
                     <div>
                       <div className="text-sm text-[#838282]">Paliwo</div>
-                      <div className="font-medium text-[#222122]">{car.paliwo}</div>
+                      <div className="font-medium text-[#222122]">{car.fuel_type || car.paliwo || 'Brak danych'}</div>
                     </div>
                   </div>
 
@@ -361,7 +372,7 @@ export const CarDetailPage = () => {
                     <Settings className="h-4 w-4 text-[#F3BC30]" />
                     <div>
                       <div className="text-sm text-[#838282]">Skrzynia</div>
-                      <div className="font-medium text-[#222122]">{car.skrzynia}</div>
+                      <div className="font-medium text-[#222122]">{car.gearbox || car.skrzynia || 'Brak danych'}</div>
                     </div>
                   </div>
                 </div>
@@ -371,55 +382,57 @@ export const CarDetailPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-[#838282]">Moc: </span>
-                    <span className="font-medium text-[#222122]">{car.moc} KM</span>
+                    <span className="font-medium text-[#222122]">{car.power_hp || car.moc ? `${car.power_hp || car.moc} KM` : 'Brak danych'}</span>
                   </div>
                   <div>
                     <span className="text-[#838282]">Pojemność: </span>
-                    <span className="font-medium text-[#222122]">{car.pojemnosc} cm³</span>
-                  </div>
-                  <div>
-                    <span className="text-[#838282]">Napęd: </span>
-                    <span className="font-medium text-[#222122]">{car.naped}</span>
+                    <span className="font-medium text-[#222122]">{car.engine_displacement_cc || car.pojemnosc ? `${car.engine_displacement_cc || car.pojemnosc} cm³` : 'Brak danych'}</span>
                   </div>
                   <div>
                     <span className="text-[#838282]">Nadwozie: </span>
-                    <span className="font-medium text-[#222122]">{car.nadwozie}</span>
+                    <span className="font-medium text-[#222122]">{car.body_type || car.typNadwozia || 'Brak danych'}</span>
                   </div>
                   <div>
                     <span className="text-[#838282]">Kolor: </span>
-                    <span className="font-medium text-[#222122]">{car.kolor}</span>
+                    <span className="font-medium text-[#222122]">{car.color || car.kolor || 'Brak danych'}</span>
                   </div>
                   <div>
-                    <span className="text-[#838282]">Pierwsza rej.: </span>
-                    <span className="font-medium text-[#222122]">{car.pierwszaRejestracja}</span>
+                    <span className="text-[#838282]">Data 1. rej.: </span>
+                    <span className="font-medium text-[#222122]">{car.first_registration_date || car.pierwszaRejestracja || 'Brak danych'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#838282]">VIN: </span>
+                    <span className="font-medium text-[#222122]">{car.vin || 'Brak danych'}</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Equipment */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-[#F3BC30]" />
-                  Wyposażenie
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {Object.entries(car.wyposazenie).map(([kategoria, elementy]) => (
-                  <div key={kategoria} className="mb-6 last:mb-0">
-                    <h4 className="font-medium text-[#222122] mb-3">{kategoria}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {elementy.map((element, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {element}
-                        </Badge>
-                      ))}
+            {/* Equipment - BEZPIECZNY SPOSÓB */}
+            {car.wyposazenie && Object.keys(car.wyposazenie).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5 text-[#F3BC30]" />
+                    Wyposażenie
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.entries(car.wyposazenie).map(([kategoria, elementy]) => (
+                    <div key={kategoria} className="mb-6 last:mb-0">
+                      <h4 className="font-medium text-[#222122] mb-3">{kategoria}</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(elementy) && elementy.map((element, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {element}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Description */}
             <Card>
@@ -428,19 +441,17 @@ export const CarDetailPage = () => {
               </CardHeader>
               <CardContent>
                 <div 
-                  className="text-[#222122]"
+                  className="text-[#222122] prose max-w-none"
                   style={{ 
-                    fontSize: '14px',
-                    lineHeight: '1.4',
+                    fontSize: '15px',
+                    lineHeight: '1.6',
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap'
                   }}
                   dangerouslySetInnerHTML={{ 
-                    __html: car.opis
-                      // Zamień pojedyncze \n na <br> bez dodatkowych odstępów
+                    __html: description
+                      // Zamień \n na <br>
                       .replace(/\n/g, '<br>')
-                      // Dodaj jeden <br> przed sekcjami z ***
-                      .replace(/\*\*\*/g, '<br>***')
                       // Pogrub hashtagi
                       .replace(/(^|<br>)(#[^<\n]+)/g, '$1<strong>$2</strong>')
                   }}
@@ -456,23 +467,25 @@ export const CarDetailPage = () => {
             <Card>
               <CardContent className="p-6">
                 <div className="text-3xl font-bold text-[#222122] mb-2">
-                  {formatCena(car.cenaBrutto)}
+                  {formatCena(priceGross)}
                 </div>
-                {car.vat && (
+                {hasVat && (
                   <div className="text-sm text-[#838282] mb-4">
-                    Netto: {formatCena(car.cenaNetto)}
+                    Możliwość odliczenia VAT
                   </div>
                 )}
                 
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {car.vat && <Badge variant="outline">Faktura VAT</Badge>}
-                  {car.gwarancja && <Badge variant="outline">Gwarancja</Badge>}
+                  {hasVat && <Badge variant="outline">Faktura VAT</Badge>}
+                  {(car.gwarancja || car.gwarancja_dealerska) && <Badge variant="outline">Gwarancja</Badge>}
+                  {car.serviced_in_aso && <Badge variant="outline">Serwis ASO</Badge>}
+                  {car.accident_free && <Badge variant="outline">Bezwypadkowy</Badge>}
                 </div>
 
                 <div className="space-y-3">
                   <Button
                     className="w-full bg-[#F3BC30] hover:bg-[#E0AA2B] text-[#222122] font-semibold"
-                    onClick={() => window.open(`tel:+48123456789`)}
+                    onClick={() => window.location.href = `tel:+48509509509`}
                   >
                     <Phone className="mr-2 h-4 w-4" />
                     Zadzwoń teraz
@@ -491,13 +504,13 @@ export const CarDetailPage = () => {
             </Card>
 
             {/* YouTube Video */}
-            {car.youtubeUrl && (
+            {car.youtube_url && (
               <Card>
                 <CardContent className="p-0">
                   <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                     <iframe
-                      className="absolute top-0 left-0 w-full h-full rounded-lg"
-                      src={getYoutubeEmbedUrl(car.youtubeUrl)}
+                      className="absolute top-0 left-0 w-full h-full rounded-b-lg"
+                      src={getYoutubeEmbedUrl(car.youtube_url)}
                       title="YouTube video player"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -553,7 +566,7 @@ export const CarDetailPage = () => {
                       <Textarea
                         id="wiadomosc"
                         rows={4}
-                        placeholder={`Dzień dobry, interesuje mnie ${car.marka} ${car.model} z ogłoszenia nr ${car.numerOgloszenia}. Proszę o kontakt.`}
+                        placeholder={`Dzień dobry, interesuje mnie ${carTitle} z ogłoszenia. Proszę o kontakt.`}
                         value={contactForm.wiadomosc}
                         onChange={(e) => setContactForm(prev => ({ ...prev, wiadomosc: e.target.value }))}
                       />
@@ -583,12 +596,12 @@ export const CarDetailPage = () => {
                   
                   <div className="flex items-center gap-2 text-sm text-[#838282]">
                     <MapPin className="h-4 w-4" />
-                    Polska
+                    {car.location_city || 'Smyków'}, {car.location_region || 'Świętokrzyskie'}
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm text-[#838282]">
                     <Clock className="h-4 w-4" />
-                    Pon-Pt: 9:00-17:00
+                    Pon-Pt: 8:00-17:00, Sob: 8:00-14:00
                   </div>
                 </div>
               </CardContent>
@@ -600,7 +613,7 @@ export const CarDetailPage = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-green-600" />
-                    <span className="text-[#222122] text-sm">Legalne pochodzenie</span>
+                    <span className="text-[#222122] text-sm">Legalne pochodzenie z UE</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-blue-600" />
@@ -608,11 +621,11 @@ export const CarDetailPage = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <Award className="h-5 w-5 text-[#F3BC30]" />
-                    <span className="text-[#222122] text-sm">Gwarancja jakości</span>
+                    <span className="text-[#222122] text-sm">Możliwość jazdy próbnej</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Wrench className="h-5 w-5 text-purple-600" />
-                    <span className="text-[#222122] text-sm">Wsparcie serwisowe</span>
+                    <span className="text-[#222122] text-sm">Możliwość sprawdzenia na SKP</span>
                   </div>
                 </div>
               </CardContent>
