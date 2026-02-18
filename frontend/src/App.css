@@ -4,8 +4,35 @@
   text-align: left; /* Changed from center to maintain natural reading flow */
 }
 
+/* Hide Emergent badge - more aggressive approach */
+#emergent-badge,
+a[href*="emergent.sh"],
+[id*="emergent"], 
+[class*="emergent"],
+div[style*="position: fixed"][style*="bottom"],
+div[style*="position: fixed"][style*="right"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  z-index: -1 !important;
+}
 
-/* Badge hiding removed (it was breaking the app by hiding/removing DOM) */
+/* Hide any fixed positioned elements in bottom right that might be the badge */
+body > div:last-child {
+  display: none !important;
+}
+
+/* Override any inline styles */
+[style*="Made with"] {
+  display: none !important;
+}
+
+/* Additional CSS to hide badge */
+body::after {
+  content: "";
+}
+
+/* Use JavaScript to remove badge */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

@@ -123,10 +123,3 @@ div[style*="white-space: pre-wrap"] br {
   line-height: 0;
   margin: 0;
 }
-
-/* ROOT_VISIBILITY_GUARD */
-html, body, #root {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
