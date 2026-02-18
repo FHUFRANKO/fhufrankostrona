@@ -1,3 +1,13 @@
+// Safe removal of Emergent badge (if present)
+const removeEmergentBadge = () => {
+  const badge = document.getElementById("emergent-badge");
+  if (badge) badge.remove();
+};
+
+removeEmergentBadge();
+document.addEventListener("DOMContentLoaded", removeEmergentBadge);
+
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
