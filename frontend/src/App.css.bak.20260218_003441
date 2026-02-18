@@ -18,6 +18,10 @@ div[style*="position: fixed"][style*="right"] {
 }
 
 /* Hide any fixed positioned elements in bottom right that might be the badge */
+body > div:last-child {
+  display: none !important;
+}
+
 /* Override any inline styles */
 [style*="Made with"] {
   display: none !important;
