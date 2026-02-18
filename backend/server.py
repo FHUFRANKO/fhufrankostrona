@@ -565,100 +565,92 @@ async def upload_images_bulk(files: List[UploadFile] = File(...)):
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
-    """Otomoto Scraper - Bulletproof Edition"""
+    """Otomoto Scraper - Aggressive Regex & JSON-LD Edition"""
     import json
     import re
     try:
         url = request.url.strip()
         headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Referer": "https://www.otomoto.pl/"
+            "Accept-Language": "pl-PL,pl;q=0.9",
         }
         
-        session = requests.Session()
-        response = session.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=15)
         
         if response.status_code in [403, 401, 429]:
-            raise Exception("Otomoto zablokowało to zapytanie (ochrona anty-botowa Cloudflare).")
+            raise Exception("Otomoto zablokowało zapytanie. Odczekaj chwilę lub użyj VPN.")
             
         response.raise_for_status()
         html = response.text
         soup = BeautifulSoup(html, "lxml")
         data = {}
         
-        # --- 1. ZDJĘCIA (Wyciąganie siłowe z surowego HTML) ---
-        # Szukamy patternów zdjęć wysokiej jakości w kodzie strony
-        images = re.findall(r'https://[^"]+/image;s=1080x720', html)
-        if not images:
-            images = re.findall(r'https://[^"]+/image;s=800x600', html)
-        if not images:
-            # Łapiemy tagi meta
-            og_images = soup.select('meta[property="og:image"]')
-            images = [img["content"] for img in og_images]
+        # --- 1. ZDJĘCIA (Najskuteczniejsza metoda Regex) ---
+        images = []
+        # Wyciąganie linków do dużych zdjęć bezpośrednio z kodu
+        img_matches = re.findall(r'(https://[^"]+\.olxcdn\.com/[^"]+;s=1080x720)', html)
+        if not img_matches:
+            img_matches = re.findall(r'(https://[^"]+\.olxcdn\.com/[^"]+;s=800x600)', html)
+        if not img_matches:
+            # Fallback dla mniejszych obrazków
+            img_matches = re.findall(r'src="(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
             
-        unique_images = list(dict.fromkeys(images)) # usunięcie duplikatów
-        if unique_images:
-            data["zdjecia"] = unique_images
-            data["zdjecieGlowne"] = unique_images[0]
+        for img in img_matches:
+            # Normalizacja do wysokiej jakości
+            high_res = img.replace(';s=800x600', ';s=1080x720')
+            images.append(high_res)
+            
+        if not images:
+            og_images = soup.select('meta[property="og:image"]')
+            images = [i["content"] for i in og_images if "content" in i.attrs]
+            
+        images = list(dict.fromkeys(images)) # Usunięcie duplikatów
+        if images:
+            data["zdjecia"] = images
+            data["zdjecieGlowne"] = images[0]
 
-        # --- 2. CENA ---
-        price_elem = soup.select_one('[data-testid="ad-price-container"] h3')
-        if price_elem:
-            data["cenaBrutto"] = price_elem.get_text(strip=True)
-
-        # --- 3. DANE Z JSON-LD (Dane dla Google - bardzo stabilne) ---
+        # --- 2. JSON-LD (Dane przygotowane przez Otomoto dla Google) ---
         ld_scripts = soup.find_all("script", type="application/ld+json")
         for script in ld_scripts:
             try:
-                ld_data = json.loads(script.string)
-                if isinstance(ld_data, list): ld_data = ld_data[0]
-                
-                if "@type" in ld_data and ("Car" in ld_data["@type"] or "Vehicle" in ld_data["@type"] or "Product" in ld_data["@type"]):
-                    if "brand" in ld_data and isinstance(ld_data["brand"], dict):
-                        data["marka"] = ld_data["brand"].get("name", "")
-                    
-                    data["model"] = ld_data.get("model", "")
-                    data["rok"] = ld_data.get("productionDate", "")
-                    data["kolor"] = ld_data.get("color", "")
-                    data["vin"] = ld_data.get("vehicleIdentificationNumber", "")
-                    data["typNadwozia"] = ld_data.get("bodyType", "")
-                    
-                    if "mileageFromOdometer" in ld_data and isinstance(ld_data["mileageFromOdometer"], dict):
-                        data["przebieg"] = ld_data["mileageFromOdometer"].get("value", "")
-                        
-                    if "vehicleEngine" in ld_data and isinstance(ld_data["vehicleEngine"], dict):
-                        engine = ld_data["vehicleEngine"]
+                ld = json.loads(script.string)
+                if isinstance(ld, list): ld = ld[0]
+                if "@type" in ld and ("Car" in ld["@type"] or "Vehicle" in ld["@type"] or "Product" in ld["@type"]):
+                    if "brand" in ld and isinstance(ld["brand"], dict):
+                        data["marka"] = ld["brand"].get("name", "")
+                    data["model"] = ld.get("model", "")
+                    data["rok"] = ld.get("productionDate", "")
+                    data["kolor"] = ld.get("color", "")
+                    data["vin"] = ld.get("vehicleIdentificationNumber", "")
+                    data["typNadwozia"] = ld.get("bodyType", "")
+                    if "mileageFromOdometer" in ld and isinstance(ld["mileageFromOdometer"], dict):
+                        data["przebieg"] = ld["mileageFromOdometer"].get("value", "")
+                    if "vehicleEngine" in ld and isinstance(ld["vehicleEngine"], dict):
+                        engine = ld["vehicleEngine"]
                         data["paliwo"] = engine.get("fuelType", "")
                         data["kubatura"] = engine.get("engineDisplacement", {}).get("value", "")
                         data["moc"] = engine.get("enginePower", {}).get("value", "")
+                    if "offers" in ld and isinstance(ld["offers"], dict):
+                        data["cenaBrutto"] = ld["offers"].get("price", "")
             except: pass
 
-        # --- 4. SZUKANIE W KAFELKACH DETALI ---
-        for item in soup.select('[data-testid="advert-details-item"]'):
-            texts = [t.strip() for t in item.stripped_strings if t.strip()]
-            if len(texts) >= 2:
-                label, val = texts[0], texts[1]
-                if "Rok produkcji" in label: data["rok"] = val
-                elif "Przebieg" in label: data["przebieg"] = val
-                elif "Pojemność skokowa" in label: data["kubatura"] = val
-                elif "Rodzaj paliwa" in label: data["paliwo"] = val
-                elif "Moc" in label: data["moc"] = val
-                elif "VIN" in label: data["vin"] = val
-                elif "Typ nadwozia" in label: data["typNadwozia"] = val
-                elif "Skrzynia biegów" in label: data["skrzynia"] = val
-                elif "Kolor" in label: data["kolor"] = val
-                elif "Wersja" in label: data["wersja"] = val
-            
-            # Checkboxy / tagi
-            full_text = item.get_text()
-            if "Bezwypadkowy" in full_text: data["bezwypadkowy"] = True
-            if "Serwisowany w ASO" in full_text: data["serwisowanyWAso"] = True
-            if "Zarejestrowany w Polsce" in full_text: data["maNumerRejestracyjny"] = True
+        # --- 3. REGEX NA SUROWYM HTML (Uzupełnianie braków z detali ogłoszenia) ---
+        def get_regex(pattern):
+            match = re.search(pattern, html, re.IGNORECASE)
+            return match.group(1).strip() if match else None
 
-        # Zabezpieczenie tytułu
-        title_elem = soup.select_one('[data-testid="ad-title"]') or soup.select_one("h1")
+        if not data.get("rok"): data["rok"] = get_regex(r'"production_year"[\s:]*"?(19\d\d|20\d\d)"?') or get_regex(r'Rok produkcji[<>\w\s]*?(\d{4})')
+        if not data.get("przebieg"): data["przebieg"] = get_regex(r'"mileage"\s*:\s*(\d+)') or get_regex(r'Przebieg[<>\w\s]*?(\d+)\s*km')
+        if not data.get("moc"): data["moc"] = get_regex(r'"engine_power"\s*:\s*(\d+)') or get_regex(r'Moc[<>\w\s]*?(\d+)\s*KM')
+        if not data.get("kubatura"): data["kubatura"] = get_regex(r'"engine_capacity"\s*:\s*(\d+)') or get_regex(r'Pojemność skokowa[<>\w\s]*?(\d+)\s*cm')
+        if not data.get("vin"): data["vin"] = get_regex(r'"vin"\s*:\s*"([^"]+)"') or get_regex(r'VIN[<>\w\s]*?([A-Z0-9]{17})')
+        if not data.get("paliwo"): data["paliwo"] = get_regex(r'"fuel_type"\s*:\s*"([^"]+)"') or get_regex(r'Rodzaj paliwa[<>\w\s]*?(Diesel|Benzyna|Elektryczny|Hybryda)')
+        if not data.get("skrzynia"): data["skrzynia"] = get_regex(r'"gearbox"\s*:\s*"([^"]+)"') or get_regex(r'Skrzynia biegów[<>\w\s]*?(Automatyczna|Manualna)')
+        if not data.get("cenaBrutto"): data["cenaBrutto"] = get_regex(r'"price"\s*:\s*\{\s*"value"\s*:\s*(\d+)')
+
+        # Tytuł
+        title_elem = soup.select_one("h1")
         if title_elem:
             data["title"] = title_elem.get_text(strip=True)
             if not data.get("marka"):
@@ -666,36 +658,37 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
                 data["marka"] = parts[0] if parts else ""
                 data["model"] = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        # --- 5. OPIS ---
-        desc_elem = soup.select_one('[data-testid="ad-description"]')
+        # Opis
+        desc_elem = soup.select_one('[data-testid="ad-description"]') or soup.select_one('.offer-description__description')
         if desc_elem:
             data["opis"] = str(desc_elem)
 
-        # --- 6. FORMATOWANIE DO BAZY DANYCH ---
-        for key in ["rok", "przebieg", "moc", "kubatura", "cenaBrutto"]:
-            if data.get(key):
-                try: data[key] = int(re.sub(r"[^\d]", "", str(data[key])))
-                except: pass
+        # Booleany
+        if "Bezwypadkowy" in html: data["bezwypadkowy"] = True
+        if "Serwisowany w ASO" in html: data["serwisowanyWAso"] = True
 
-        # Mapowanie Enumów dla Twojej aplikacji
+        # --- 4. FORMATOWANIE DANYCH DO FORMULARZA ---
         fuel = str(data.get("paliwo", "")).lower()
         if "diesel" in fuel: data["paliwo"] = "Diesel"
-        elif "benzyna" in fuel: data["paliwo"] = "Benzyna"
-        elif "elektryczny" in fuel: data["paliwo"] = "Elektryczny"
+        elif "benzyna" in fuel or "petrol" in fuel: data["paliwo"] = "Benzyna"
+        elif "elektryczny" in fuel or "electric" in fuel: data["paliwo"] = "Elektryczny"
         elif "hybryd" in fuel: data["paliwo"] = "Hybryda"
         
-        gearbox = str(data.get("skrzynia", "")).lower()
-        if "auto" in gearbox: data["skrzynia"] = "Automatyczna"
-        elif "man" in gearbox: data["skrzynia"] = "Manualna"
+        gb = str(data.get("skrzynia", "")).lower()
+        if "auto" in gb: data["skrzynia"] = "Automatyczna"
+        elif "man" in gb: data["skrzynia"] = "Manualna"
 
-        if not data.get("title"):
-            data["title"] = f"{data.get('marka', '')} {data.get('model', '')}".strip()
+        # Zamiana na liczby
+        for k in ["rok", "przebieg", "moc", "kubatura", "cenaBrutto"]:
+            if data.get(k):
+                try: data[k] = int(re.sub(r"[^\d]", "", str(data[k])))
+                except: data[k] = None
 
         return {"success": True, "data": data, "missing_fields": []}
         
     except Exception as e:
         import traceback
-        logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
+        logging.error(f"Scrape error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Stats Endpoint
