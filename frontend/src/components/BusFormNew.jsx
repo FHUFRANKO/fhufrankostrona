@@ -185,8 +185,22 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
           console.log('Pola do uzupełnienia:', result.missing_fields);
         }
       }
-    } catch (error) {
-      toast.error(error.response?.data?.detail || error.message || 'Błąd importu z Otomoto');
+        } catch (error) {
+      console.error('Submit error:', error);
+      
+      // Obsługa błędu 422 z FastAPI (Pydantic Validation Error)
+      if (error.response?.status === 422) {
+        const details = error.response.data.detail;
+        if (Array.isArray(details)) {
+          // Wyciągamy nazwę pola i powód błędu
+          const msg = details.map(err => `Pole '${err.loc[err.loc.length - 1]}': ${err.msg}`).join(' | ');
+          toast.error(`Odrzucono dane! ${msg}`, { duration: 8000 });
+        } else {
+          toast.error('Błąd 422: Nieprawidłowy format danych w formularzu.');
+        }
+      } else {
+        toast.error((typeof error.response?.data?.detail === 'string' ? error.response.data.detail : null) || error.message || 'Błąd zapisu ogłoszenia');
+      }
     } finally {
       setImporting(false);
     }
@@ -214,8 +228,22 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
       if (result.errors && result.errors.length > 0) {
         result.errors.forEach(err => toast.error(err));
       }
-    } catch (error) {
-      toast.error('Błąd przesyłania zdjęć. Upewnij się, że pojedyncze zdjęcie nie waży więcej niż 10MB.');
+        } catch (error) {
+      console.error('Submit error:', error);
+      
+      // Obsługa błędu 422 z FastAPI (Pydantic Validation Error)
+      if (error.response?.status === 422) {
+        const details = error.response.data.detail;
+        if (Array.isArray(details)) {
+          // Wyciągamy nazwę pola i powód błędu
+          const msg = details.map(err => `Pole '${err.loc[err.loc.length - 1]}': ${err.msg}`).join(' | ');
+          toast.error(`Odrzucono dane! ${msg}`, { duration: 8000 });
+        } else {
+          toast.error('Błąd 422: Nieprawidłowy format danych w formularzu.');
+        }
+      } else {
+        toast.error((typeof error.response?.data?.detail === 'string' ? error.response.data.detail : null) || error.message || 'Błąd zapisu ogłoszenia');
+      }
     } finally {
       setUploadingImage(false);
       e.target.value = ''; 
@@ -347,13 +375,19 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         toast.success(editData ? 'Ogłoszenie zaktualizowane!' : 'Ogłoszenie dodane!');
         if (onSuccess) onSuccess();
       }
-    } catch (error) {
+        } catch (error) {
       console.error('Submit error:', error);
       
-      // Handle validation errors from backend
-      if (error.response?.data?.detail?.errors) {
-        setErrors(error.response.data.detail.errors);
-        toast.error('Błędy walidacji - sprawdź formularz');
+      // Obsługa błędu 422 z FastAPI (Pydantic Validation Error)
+      if (error.response?.status === 422) {
+        const details = error.response.data.detail;
+        if (Array.isArray(details)) {
+          // Wyciągamy nazwę pola i powód błędu
+          const msg = details.map(err => `Pole '${err.loc[err.loc.length - 1]}': ${err.msg}`).join(' | ');
+          toast.error(`Odrzucono dane! ${msg}`, { duration: 8000 });
+        } else {
+          toast.error('Błąd 422: Nieprawidłowy format danych w formularzu.');
+        }
       } else {
         toast.error((typeof error.response?.data?.detail === 'string' ? error.response.data.detail : null) || error.message || 'Błąd zapisu ogłoszenia');
       }
