@@ -515,6 +515,53 @@ async def upload_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
+
+@api_router.post("/upload-bulk", dependencies=[Depends(admin_required)])
+async def upload_images_bulk(files: List[UploadFile] = File(...)):
+    """Upload multiple images to Supabase Storage in one request"""
+    uploaded_urls = []
+    errors = []
+    
+    MAX_FILE_SIZE = 10 * 1024 * 1024 
+    ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"]
+
+    for file in files:
+        try:
+            if file.content_type not in ALLOWED_TYPES:
+                errors.append(f"{file.filename}: Niewłaściwy format (Tylko JPG/PNG/WEBP/AVIF)")
+                continue
+                
+            contents = await file.read()
+            
+            if len(contents) > MAX_FILE_SIZE:
+                errors.append(f"{file.filename}: Plik za duży (Max 10MB)")
+                continue
+
+            ext = file.filename.split('.')[-1].lower()
+            unique_filename = f"{uuid.uuid4()}.{ext}"
+            
+            try:
+                path = f"buses/{unique_filename}"
+                supabase.storage.from_(supabase_bucket).upload(path, contents, file_options={"content-type": file.content_type})
+                public_url = supabase.storage.from_(supabase_bucket).get_public_url(path)
+                uploaded_urls.append(public_url)
+            except Exception as supabase_error:
+                logging.warning(f"Supabase upload failed, using local fallback: {supabase_error}")
+                local_path = UPLOADS_DIR / "buses"
+                local_path.mkdir(parents=True, exist_ok=True)
+                with open(local_path / unique_filename, "wb") as local_f:
+                    local_f.write(contents)
+                uploaded_urls.append(f"/uploads/buses/{unique_filename}")
+            
+        except Exception as e:
+            errors.append(f"{file.filename}: Błąd uploadu ({str(e)})")
+
+    return {
+        "success": True if len(uploaded_urls) > 0 else False,
+        "urls": uploaded_urls,
+        "errors": errors
+    }
+
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):

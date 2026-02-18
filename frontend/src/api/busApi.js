@@ -49,12 +49,26 @@ export const busApi = {
     const response = await axios.delete(`${API_URL}/api/ogloszenia/${id}`);
     return response.data;
   },
-
   // Upload image
   async uploadImage(file) {
     const formData = new FormData();
     formData.append('file', file);
     const response = await axios.post(`${API_URL}/api/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Upload wielu zdjęć na raz (Bulk)
+  async uploadImagesBulk(files) {
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
+    
+    const response = await axios.post(`${API_URL}/api/upload-bulk`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -145,6 +159,7 @@ export const createBus = busApi.createBus;
 export const updateBus = busApi.updateBus;
 export const deleteBus = busApi.deleteBus;
 export const uploadImage = busApi.uploadImage;
+export const uploadImagesBulk = busApi.uploadImagesBulk;
 export const getStats = busApi.getStats;
 export const getAllOpinions = busApi.getAllOpinions;
 export const getPublicOpinions = busApi.getPublicOpinions;

@@ -178,29 +178,34 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
       setImporting(false);
     }
   };
-
   // Image upload
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploadingImage(true);
     try {
-      const result = await busApi.uploadImage(file);
-      if (result.success) {
-        const newImages = [...zdjecia, result.url];
-        setZdjecia(newImages);
-        
-        if (!zdjecieGlowne) {
-          setZdjecieGlowne(result.url);
-        }
-        
-        toast.success('Zdjęcie dodane');
+      const result = await busApi.uploadImagesBulk(files);
+      
+      if (result.urls && result.urls.length > 0) {
+        setZdjecia(prev => {
+          const newImages = [...prev, ...result.urls];
+          if (!zdjecieGlowne) {
+            setZdjecieGlowne(newImages[0]);
+          }
+          return newImages;
+        });
+        toast.success(`Dodano ${result.urls.length} zdjęć.`);
+      }
+      
+      if (result.errors && result.errors.length > 0) {
+        result.errors.forEach(err => toast.error(err));
       }
     } catch (error) {
-      toast.error('Błąd przesyłania zdjęcia');
+      toast.error('Błąd przesyłania zdjęć. Upewnij się, że pojedyncze zdjęcie nie waży więcej niż 10MB.');
     } finally {
       setUploadingImage(false);
+      e.target.value = ''; 
     }
   };
 
@@ -928,7 +933,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Zdjęcia</label>
             <input
-              type="file"
+              type="file" multiple
               accept="image/*"
               onChange={handleImageUpload}
               disabled={uploadingImage}
