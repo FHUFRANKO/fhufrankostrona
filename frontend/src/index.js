@@ -3,17 +3,6 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import App from "./App";
 
-// Safe removal of Emergent badge (only the badge)
-const removeEmergentBadge = () => {
-  const badge = document.getElementById("emergent-badge");
-  if (badge) badge.remove();
-  document.querySelectorAll("a[href*=\"app.emergent.sh\"]").forEach((el) => el.remove());
-  document.querySelectorAll("a[href*=\"emergent-badge\"]").forEach((el) => el.remove());
-};
-
-removeEmergentBadge();
-document.addEventListener("DOMContentLoaded", removeEmergentBadge);
-
 const container = document.getElementById("root");
 const root = ReactDOM.createRoot(container);
 
