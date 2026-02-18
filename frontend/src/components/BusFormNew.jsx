@@ -355,7 +355,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         setErrors(error.response.data.detail.errors);
         toast.error('Błędy walidacji - sprawdź formularz');
       } else {
-        toast.error(error.message || 'Błąd zapisu ogłoszenia');
+        toast.error((typeof error.response?.data?.detail === 'string' ? error.response.data.detail : null) || error.message || 'Błąd zapisu ogłoszenia');
       }
     } finally {
       setLoading(false);
