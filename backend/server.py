@@ -273,63 +273,46 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
     return {k: v for k, v in bus_data.items() if v is not None}
 
 def map_bus_db_to_listing(bus_data: dict) -> dict:
-    """Map database fields to new listing model"""
-    return {
-        # SEKCJA 1
-        'title': bus_data.get('title') or f"{bus_data.get('marka', '')} {bus_data.get('model', '')}".strip(),
-        'price_pln': bus_data.get('cenaBrutto'),
-        'make': bus_data.get('marka'),
-        'model': bus_data.get('model'),
-        'color': bus_data.get('color'),
-        'seats': bus_data.get('liczbaMiejsc'),
-        'production_year': bus_data.get('rok'),
-        'vin': bus_data.get('vin'),
-        'installments_available': bus_data.get('installments_available', False),
-        
-        # SEKCJA 2
-        'fuel_type': bus_data.get('paliwo'),
-        'engine_displacement_cc': bus_data.get('kubatura'),
-        'power_hp': bus_data.get('moc'),
-        'body_type': bus_data.get('typNadwozia'),
-        'gearbox': bus_data.get('skrzynia'),
-        'gvw_kg': bus_data.get('gvw_kg'),
-        'twin_rear_wheels': bus_data.get('twin_rear_wheels', False),
-        
-        # SEKCJA 3
-        'origin_country': bus_data.get('origin_country'),
-        'mileage_km': bus_data.get('przebieg'),
-        'registration_number': bus_data.get('registration_number'),
-        'condition_status': bus_data.get('condition_status') or 'Używany',
-        'first_registration_date': bus_data.get('first_registration_date'),
-        'accident_free': bus_data.get('accident_free', False),
-        'has_registration_number': bus_data.get('has_registration_number', False),
-        'serviced_in_aso': bus_data.get('serviced_in_aso', False),
-        
-        # SEKCJA 4
-        'description_html': bus_data.get('description_html') or bus_data.get('opis') or '',
-        'youtube_url': bus_data.get('youtube_url'),
-        'home_delivery': bus_data.get('home_delivery', False),
-        'tech_visual_short': bus_data.get('tech_visual_short'),
-        'seller_profile_url': bus_data.get('seller_profile_url'),
-        'location_street': bus_data.get('location_street'),
-        'location_city': bus_data.get('location_city'),
-        'location_region': bus_data.get('location_region'),
-        
-        # System fields
-        'id': bus_data.get('id'),
-        'created_at': bus_data.get('created_at') or bus_data.get('dataPublikacji'),
-        'updated_at': bus_data.get('updated_at'),
-        
-        # Additional
-        'zdjecia': bus_data.get('zdjecia', []),
-        'zdjecieGlowne': bus_data.get('zdjecieGlowne'),
-        'wyrozniowane': bus_data.get('wyrozniowane', False),
-        'nowosc': bus_data.get('nowosc', False),
-        'flotowy': bus_data.get('flotowy', False),
-        'gwarancja': bus_data.get('gwarancja', False),
-        'sold': bus_data.get('gwarancja', False),  # SOLD mapped from gwarancja
-        'reserved': bus_data.get('hak', False),    # Reserved mapped from hak
-    }
+    """Map database fields to new listing model while preserving legacy frontend keys"""
+    # Kopiujemy oryginalne dane z bazy
+    result = dict(bus_data)
+    
+    # 1. Odtworzenie POLSKICH kluczy (dla publicznej strony głównej)
+    result['cenaBrutto'] = bus_data.get('cenaBrutto') or bus_data.get('price_pln')
+    result['rok'] = bus_data.get('rok') or bus_data.get('production_year')
+    result['przebieg'] = bus_data.get('przebieg') or bus_data.get('mileage_km')
+    result['marka'] = bus_data.get('marka') or bus_data.get('make')
+    result['paliwo'] = bus_data.get('paliwo') or bus_data.get('fuel_type')
+    result['skrzynia'] = bus_data.get('skrzynia') or bus_data.get('gearbox')
+    result['moc'] = bus_data.get('moc') or bus_data.get('power_hp')
+    result['kubatura'] = bus_data.get('kubatura') or bus_data.get('engine_displacement_cc')
+    result['typNadwozia'] = bus_data.get('typNadwozia') or bus_data.get('body_type')
+    result['opis'] = bus_data.get('opis') or bus_data.get('description_html')
+    
+    # Zabezpieczenia dla list i obiektów (zapobiega crashom "Cannot read properties of undefined")
+    result['zdjecia'] = bus_data.get('zdjecia') or []
+    result['wyposazenie'] = bus_data.get('wyposazenie') or {}
+
+    # 2. Odtworzenie ANGIELSKICH kluczy (dla nowego Panelu Admina)
+    result['title'] = bus_data.get('title') or f"{result.get('marka', '')} {bus_data.get('model', '')}".strip()
+    result['price_pln'] = result['cenaBrutto']
+    result['make'] = result['marka']
+    result['production_year'] = result['rok']
+    result['mileage_km'] = result['przebieg']
+    result['fuel_type'] = result['paliwo']
+    result['gearbox'] = result['skrzynia']
+    result['power_hp'] = result['moc']
+    result['engine_displacement_cc'] = result['kubatura']
+    result['body_type'] = result['typNadwozia']
+    result['description_html'] = result['opis']
+    
+    result['color'] = bus_data.get('kolor') or bus_data.get('color')
+    result['seats'] = bus_data.get('liczbaMiejsc') or bus_data.get('seats')
+    result['gvw_kg'] = bus_data.get('dmc') or bus_data.get('gvw_kg')
+    result['origin_country'] = bus_data.get('krajPochodzenia') or bus_data.get('origin_country')
+    result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
+    
+    return result
 
 # --- API ENDPOINTS ---
 
