@@ -1,4 +1,16 @@
 // Safe removal of Emergent badge (if present)
+  const badge = document.getElementById("emergent-badge");
+  if (badge) badge.remove();
+};
+
+
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
+
+// Safe removal of Emergent badge (if present)
 const removeEmergentBadge = () => {
   const badge = document.getElementById("emergent-badge");
   if (badge) badge.remove();
@@ -7,14 +19,7 @@ const removeEmergentBadge = () => {
 removeEmergentBadge();
 document.addEventListener("DOMContentLoaded", removeEmergentBadge);
 
-
-import React from "react";
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import App from "./App";
-
 // Function to remove Emergent badge
-const removeEmergentBadge = () => {
   const removeElements = () => {
     // Remove by ID
     const emergentBadge = document.getElementById('emergent-badge');
@@ -59,7 +64,6 @@ const removeEmergentBadge = () => {
 };
 
 // Start badge removal
-removeEmergentBadge();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
