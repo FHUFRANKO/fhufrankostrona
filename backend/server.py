@@ -565,7 +565,7 @@ async def upload_images_bulk(files: List[UploadFile] = File(...)):
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
-    """Otomoto Scraper - Ostateczna Wersja Nuklearna (Regex)"""
+    """Otomoto Scraper - Ostateczna Wersja Nuklearna (Regex) + UTF-8 Fix"""
     import json
     import re
     try:
@@ -578,6 +578,9 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         
         response = requests.get(url, headers=headers, timeout=15)
         
+        # KLUCZOWA ZMIANA: Wymuszenie kodowania UTF-8, aby polskie znaki działały poprawnie
+        response.encoding = 'utf-8'
+        
         if response.status_code in [403, 401, 429]:
             raise Exception("Otomoto zablokowało zapytanie (Ochrona Cloudflare).")
             
@@ -586,9 +589,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         soup = BeautifulSoup(html, "lxml")
         data = {}
         
-        # Super-funkcja skanująca ukryte obiekty niezależnie od tego gdzie są
         def extract_value(key, label):
-            # Szukanie w GraphQL JSON (np. "key":"year","value":"2016")
             m = re.search(r'"key"[\s:]*"' + key + r'"[^\}]*?"displayValue"[\s:]*"([^"]+)"', html)
             if m: return m.group(1)
             m = re.search(r'"key"[\s:]*"' + key + r'"[^\}]*?"value"[\s:]*"([^"]+)"', html)
@@ -596,14 +597,12 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             m = re.search(r'"label"[\s:]*"' + label + r'"[^\}]*?"value"[\s:]*"([^"]+)"', html)
             if m: return m.group(1)
             
-            # Wyszukiwanie bezpośrednio w czystym tekście HTML dla starych szablonów dostawczaków
-            m2 = re.search(label + r"[^>]*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<", html)
+            m2 = re.search(label + r'[^>]*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<', html)
             if m2:
                 val = m2.group(1).strip()
                 if len(val) < 40 and val != label: return val
             return None
 
-        # 1. PARAMETRY (100% skuteczności dzięki skanowaniu surowego tekstu)
         data["rok"] = extract_value("year", "Rok produkcji")
         data["przebieg"] = extract_value("mileage", "Przebieg")
         data["moc"] = extract_value("engine_power", "Moc")
@@ -622,7 +621,6 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         data["serwisowanyWAso"] = extract_value("service_record", "Serwisowany w ASO") == "Tak"
         data["maNumerRejestracyjny"] = extract_value("registered", "Zarejestrowany w Polsce") == "Tak"
 
-        # 2. TYTUŁ
         title_elem = soup.select_one("h1")
         if title_elem:
             data["title"] = title_elem.get_text(strip=True)
@@ -630,7 +628,6 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             m_title = re.search(r'"title"[\s:]*"([^"]+)"', html)
             if m_title: data["title"] = m_title.group(1)
 
-        # 3. CENA
         m_price = re.search(r'"price"[\s:]*\{[^\}]*?"value"[\s:]*(\d+)', html)
         if m_price:
             data["cenaBrutto"] = int(m_price.group(1))
@@ -638,23 +635,22 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             p_elem = soup.select_one('[data-testid="ad-price-container"] h3')
             if p_elem: data["cenaBrutto"] = int(re.sub(r'[^\d]', '', p_elem.get_text()))
 
-        # 4. ZDJĘCIA (Wyciąganie czystych linków do CDN w jakości 1080p)
         raw_images = re.findall(r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
         hq_images = []
         for img in raw_images:
             if "image" in img:
-                base = img.split(';')[0]  # Odrzuca miniatury
-                hq_images.append(base + ";s=1080x720") # Wymusza pobranie dużej wersji
+                base = img.split(';')[0]
+                hq_images.append(base + ";s=1080x720")
                 
         unique_images = list(dict.fromkeys(hq_images))
         if unique_images:
             data["zdjecia"] = unique_images
             data["zdjecieGlowne"] = unique_images[0]
 
-        # 5. OPIS
+        # 5. OPIS - ZMIANA: decode_contents() + czyszczenie ewentualnych śmieci
         desc_elem = soup.select_one('[data-testid="ad-description"]') or soup.select_one('.offer-description__description')
         if desc_elem:
-            data["opis"] = str(desc_elem)
+            data["opis"] = desc_elem.decode_contents()
         else:
             m_desc = re.search(r'"description"[\s:]*"(.*?)"(?:,|})', html)
             if m_desc:
@@ -662,13 +658,11 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
                 try: data["opis"] = codecs.decode(m_desc.group(1), 'unicode_escape')
                 except: data["opis"] = m_desc.group(1)
 
-        # 6. CZYSZCZENIE DANYCH (Wyciąganie samych cyfr z roczników/przebiegu)
         for k in ["rok", "przebieg", "moc", "kubatura"]:
             if data.get(k):
                 try: data[k] = int(re.sub(r'[^\d]', '', str(data[k])))
                 except: pass
 
-        # 7. STANDARYZACJA WYBORÓW DO TWOJEJ BAZY
         fuel = str(data.get("paliwo", "")).lower()
         if "diesel" in fuel: data["paliwo"] = "Diesel"
         elif "benz" in fuel or "petrol" in fuel: data["paliwo"] = "Benzyna"
@@ -679,7 +673,6 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         if "auto" in gb: data["skrzynia"] = "Automatyczna"
         elif "man" in gb: data["skrzynia"] = "Manualna"
 
-        # Zabezpieczenie braku marki
         if not data.get("marka") and data.get("title"):
             parts = data["title"].split()
             data["marka"] = parts[0]
