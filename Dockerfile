@@ -4,8 +4,10 @@ WORKDIR /app/frontend
 COPY frontend/package*.json frontend/yarn.lock* ./
 RUN yarn install
 COPY frontend/ ./
-# KLUCZOWA ZMIANA: Używamy tyldy (~) jako separatora w sed, aby uniknąć konfliktu z operatorami ||
-RUN sed -i "s~const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';~const API_URL = '';~g" src/api/busApi.js
+
+# KLUCZOWA ZMIANA: Twardo wpisujemy Twoją domenę. React podmieni 'localhost' na ten adres podczas budowy.
+ENV REACT_APP_BACKEND_URL="https://fhufranko.com"
+
 RUN yarn build
 
 # Etap 2: Środowisko uruchomieniowe (Python + wbudowany frontend)
