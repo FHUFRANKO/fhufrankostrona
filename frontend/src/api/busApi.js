@@ -46,7 +46,7 @@ export const busApi = {
 
   // Delete bus
   async deleteBus(id) {
-    const response = await axios.delete(`${API_URL}/api/ogloszenia/${id}`);
+    const response = await axios.delete(`${API_URL}/api/admin/listings/${id}`);
     return response.data;
   },
   // Upload image

@@ -464,11 +464,38 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
 
 @api_router.delete("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
 async def delete_listing(listing_id: str):
-    """Delete listing"""
+    """Delete listing and its images"""
+    # Najpierw pobieramy dane, aby wiedzieć jakie zdjęcia usunąć z chmury
+    listing = supabase.table('buses').select('zdjecia, zdjecieGlowne').eq('id', listing_id).execute()
+    
+    # 1. Usuwamy wpis z bazy danych
     response = supabase.table('buses').delete().eq('id', listing_id).execute()
+    
     if not response.data:
         raise HTTPException(status_code=404, detail="Listing not found")
-    return {"success": True, "message": "Listing deleted"}
+        
+    # 2. Próbujemy usunąć zdjęcia z Supabase Storage (optymalizacja miejsca)
+    try:
+        if listing.data:
+            bus = listing.data[0]
+            images = bus.get('zdjecia', []) or []
+            main_image = bus.get('zdjecieGlowne')
+            if main_image and main_image not in images:
+                images.append(main_image)
+                
+            paths_to_delete = []
+            for img_url in images:
+                if img_url and "supabase.co" in img_url and "/buses/" in img_url:
+                    # Wyciągamy samą nazwę pliku po ostatnim ukośniku
+                    filename = img_url.split('/')[-1]
+                    paths_to_delete.append(f"buses/{filename}")
+            
+            if paths_to_delete:
+                supabase.storage.from_(supabase_bucket).remove(paths_to_delete)
+    except Exception as e:
+        logging.warning(f"Nie udało się usunąć zdjęć z chmury: {e}")
+
+    return {"success": True, "message": "Ogłoszenie i zdjęcia usunięte"}
 
 # Upload Image
 @api_router.post("/upload", dependencies=[Depends(admin_required)])
@@ -675,6 +702,23 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         import traceback
         logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Błąd krytyczny: {str(e)}")
+
+
+@api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
+async def toggle_sold(bus_id: str):
+    bus = supabase.table('buses').select('gwarancja').eq('id', bus_id).execute()
+    if not bus.data: raise HTTPException(404, "Not found")
+    current = bus.data[0].get('gwarancja', False)
+    supabase.table('buses').update({'gwarancja': not current}).eq('id', bus_id).execute()
+    return {"success": True, "sold": not current}
+
+@api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
+async def toggle_reserved(bus_id: str):
+    bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
+    if not bus.data: raise HTTPException(404, "Not found")
+    current = bus.data[0].get('hak', False)
+    supabase.table('buses').update({'hak': not current}).eq('id', bus_id).execute()
+    return {"success": True, "reserved": not current}
 
 # Stats Endpoint
 @api_router.get("/admin/stats", dependencies=[Depends(admin_required)])
