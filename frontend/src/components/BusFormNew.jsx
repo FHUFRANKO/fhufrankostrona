@@ -186,7 +186,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         }
       }
     } catch (error) {
-      toast.error(error.message || 'Błąd importu z Otomoto');
+      toast.error(error.response?.data?.detail || error.message || 'Błąd importu z Otomoto');
     } finally {
       setImporting(false);
     }
