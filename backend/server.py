@@ -518,65 +518,122 @@ async def upload_image(file: UploadFile = File(...)):
 # Otomoto Scraper
 @api_router.post("/scrape-otomoto", dependencies=[Depends(admin_required)])
 async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
-    """Scrape Otomoto"""
-    # ... (Keep existing scraping logic or import it)
-    # For brevity, I'll assume the previous logic was fine, but I need to include it.
-    # I'll copy the scraping logic from the original file (lines 419-670 approx)
-    # Since I'm rewriting the whole file, I MUST include it.
-    
-    # ... [Re-implementing scraping logic simplified for brevity but functional] ...
+    """Scrape Otomoto - Enhanced Version"""
+    import json
     try:
         url = request.url.strip()
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(url, headers=headers, timeout=10)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Sec-Ch-Ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": "\"Windows\"",
+            "Upgrade-Insecure-Requests": "1"
+        }
+        
+        session = requests.Session()
+        response = session.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         
-        soup = BeautifulSoup(response.content, 'lxml')
+        soup = BeautifulSoup(response.content, "lxml")
         data = {}
         missing_fields = []
         
-        # Helper
-        def get_param(label):
-            for param in soup.select('li.offer-params__item'):
-                if label in param.get_text():
-                    val = param.select_one('.offer-params__value, a')
+        next_data = soup.find("script", id="__NEXT_DATA__")
+        if next_data:
+            try:
+                json_data = json.loads(next_data.string)
+                ad_data = json_data.get("props", {}).get("pageProps", {}).get("ad", {})
+                if ad_data:
+                    data["marka"] = ad_data.get("make", "")
+                    data["model"] = ad_data.get("model", "")
+                    
+                    price_dict = ad_data.get("price", {})
+                    data["cenaBrutto"] = price_dict.get("value", 0) if isinstance(price_dict, dict) else 0
+                    
+                    data["rok"] = ad_data.get("productionYear", "")
+                    data["przebieg"] = ad_data.get("mileage", "")
+                    data["paliwo"] = ad_data.get("fuelType", "")
+                    data["moc"] = ad_data.get("enginePower", "")
+                    data["kubatura"] = ad_data.get("engineCapacity", "")
+                    data["typNadwozia"] = ad_data.get("bodyType", "")
+                    data["skrzynia"] = ad_data.get("gearbox", "")
+                    data["vin"] = ad_data.get("vin", "")
+                    data["kolor"] = ad_data.get("color", "")
+                    data["opis"] = ad_data.get("description", "")
+                    
+                    for key in ["rok", "przebieg", "moc", "kubatura"]:
+                        if data.get(key):
+                            try: data[key] = int(re.sub(r"[^\d]", "", str(data[key])))
+                            except: pass
+                            
+                    return {"success": True, "data": data, "missing_fields": missing_fields}
+            except Exception as json_e:
+                logging.warning(f"JSON parsing failed, falling back to HTML: {json_e}")
+
+        def get_param(labels):
+            if isinstance(labels, str): labels = [labels]
+            for p in soup.select("[data-testid=\"advert-details-item\"]"):
+                if any(l in p.get_text() for l in labels):
+                    val = p.select_one("p, a, div:nth-child(2)")
+                    if val: return val.get_text(strip=True)
+            for param in soup.select("li.offer-params__item"):
+                if any(label in param.get_text() for label in labels):
+                    val = param.select_one(".offer-params__value, a")
                     return val.get_text(strip=True) if val else None
             return None
             
-        # Title/Make/Model
-        title = soup.select_one('h1.offer-title')
-        if title:
-            title_text = title.get_text(strip=True)
-            parts = title_text.split()
-            data['marka'] = parts[0] if parts else ""
-            data['model'] = ' '.join(parts[1:]) if len(parts) > 1 else ""
+        title_elem = soup.select_one("h1.offer-title") or soup.select_one("[data-testid=\"ad-title\"]")
+        if title_elem:
+            parts = title_elem.get_text(strip=True).split()
+            data["marka"] = parts[0] if parts else ""
+            data["model"] = " ".join(parts[1:]) if len(parts) > 1 else ""
             
-        # Price
-        price_elem = soup.select_one('.offer-price__number')
+        price_elem = soup.select_one(".offer-price__number") or soup.select_one("[data-testid=\"ad-price-container\"] h3")
         if price_elem:
-            data['cenaBrutto'] = int(re.sub(r'[^\d]', '', price_elem.get_text()))
+            try: data["cenaBrutto"] = int(re.sub(r"[^\d]", "", price_elem.get_text()))
+            except: pass
             
-        # Params
-        year = get_param('Rok produkcji')
-        if year: data['rok'] = int(year)
+        year = get_param(["Rok produkcji", "Year"])
+        if year: data["rok"] = int(re.sub(r"[^\d]", "", year))
         
-        mileage = get_param('Przebieg')
-        if mileage: data['przebieg'] = int(re.sub(r'[^\d]', '', mileage))
+        mileage = get_param(["Przebieg", "Mileage"])
+        if mileage: data["przebieg"] = int(re.sub(r"[^\d]", "", mileage))
         
-        fuel = get_param('Rodzaj paliwa')
-        if fuel: data['paliwo'] = fuel
+        fuel = get_param(["Rodzaj paliwa", "Fuel type"])
+        if fuel: data["paliwo"] = fuel
         
-        # ... (Add more fields as needed)
+        engine = get_param(["Pojemność skokowa", "Displacement"])
+        if engine: data["kubatura"] = int(re.sub(r"[^\d]", "", engine))
         
-        # Description
-        desc = soup.select_one('.offer-description__description')
-        if desc: data['opis'] = desc.decode_contents() # Get HTML
+        power = get_param(["Moc", "Power"])
+        if power: data["moc"] = int(re.sub(r"[^\d]", "", power))
         
+        body = get_param(["Typ nadwozia", "Body type"])
+        if body: data["typNadwozia"] = body
+        
+        gearbox = get_param(["Skrzynia biegów", "Gearbox"])
+        if gearbox: data["skrzynia"] = gearbox
+        
+        color = get_param(["Kolor", "Color"])
+        if color: data["kolor"] = color
+        
+        vin = get_param(["VIN"])
+        if vin: data["vin"] = vin
+        
+        accident = get_param(["Bezwypadkowy"])
+        data["bezwypadkowy"] = bool(accident)
+        
+        desc = soup.select_one(".offer-description__description") or soup.select_one("[data-testid=\"ad-description\"]")
+        if desc: 
+            data["opis"] = str(desc)
+            
         return {"success": True, "data": data, "missing_fields": missing_fields}
         
     except Exception as e:
         logging.error(f"Scrape error: {e}")
-        raise HTTPException(status_code=500, detail=f"Scrape failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Błąd scrapowania. Szczegóły: {str(e)}")
 
 # Stats Endpoint
 @api_router.get("/admin/stats", dependencies=[Depends(admin_required)])
