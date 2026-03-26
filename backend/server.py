@@ -403,7 +403,7 @@ async def create_listing(listing_data: ListingCreate):
         }
     except Exception as e:
                 logging.error(f"Create error: {str(e)}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Błąd Supabase: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Błąd Supabase: {str(e)}")
 
 @api_router.put("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
 async def update_listing(listing_id: str, listing_update: ListingUpdate):
