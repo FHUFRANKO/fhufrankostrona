@@ -15,6 +15,7 @@ import logging
 import uuid
 import jwt
 import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 import re
 from supabase import create_client, Client
@@ -833,6 +834,7 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bs4 import BeautifulSoup
 import requests
+import cloudscraper
 import re as regex_cron
 from datetime import datetime, timedelta, timezone
 import uuid
@@ -862,6 +864,7 @@ async def sync_otomoto_job():
         
         headers = {"User-Agent": "Mozilla/5.0"}
         offer_links = set()
+        scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
         
         # Pobieramy do 3 stron (dla pewności, że złapiemy wszystkie auta, jeśli jest ich więcej niż 30)
         for page in range(1, 4):
@@ -878,7 +881,7 @@ async def sync_otomoto_job():
         
         for link in offer_links:
             try:
-                r = requests.get(link, headers=headers, timeout=10)
+                r = scraper.get(link, timeout=10)
                 html = r.content.decode('utf-8', errors='ignore')
                 
                 vin = extract_oto_value(html, "vin", "VIN")
