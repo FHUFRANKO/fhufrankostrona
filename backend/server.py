@@ -41,7 +41,7 @@ def _sign(value: str) -> str:
 # Supabase client (database + storage)
 supabase_url = os.environ.get('SUPABASE_URL')
 supabase_key = os.environ.get('SUPABASE_ANON_KEY')
-"buses" = os.environ.get('SUPABASE_BUCKET', 'bus-images')
+supabase_bucket = os.environ.get('SUPABASE_BUCKET', 'bus-images')
 
 if not supabase_url or not supabase_key:
     # Ensure variables are set, otherwise fail gracefully or log error
