@@ -95,8 +95,7 @@ ADMIN_EMAILS = set(
 def verify_supabase_token(token: str) -> dict:
     """Verify Supabase JWT token"""
     if not JWT_SECRET:
-        raise HTTPException(status_code=500,
-                            detail="SUPABASE_JWT_SECRET not configured")
+        raise HTTPException(status_code=500, detail="SUPABASE_JWT_SECRET not configured")
     try:
         payload = jwt.decode(
             token,
@@ -138,7 +137,7 @@ async def get_current_user_optional(
 def admin_required(user: Optional[dict] = Depends(get_current_user_optional)):
     """Dependency to require admin privileges (cookie or JWT)"""
     if not user:
-    raise HTTPException(status_code=401, detail="Authentication required")
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     # Cookie-based access is always admin
     if user.get("auth_method") == "cookie":
@@ -148,12 +147,12 @@ def admin_required(user: Optional[dict] = Depends(get_current_user_optional)):
     if user.get("auth_method") == "jwt":
         email = (user.get('email') or '').lower()
         if email not in ADMIN_EMAILS:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Admin access required. Email '{email}' is not in admin list.")
+            raise HTTPException(
+                status_code=403,
+                detail=f"Admin access required. Email '{email}' is not in admin list.")
         return user
 
-        raise HTTPException(status_code=403, detail="Admin access required")
+    raise HTTPException(status_code=403, detail="Admin access required")
 # --- AUTH END ---
 
 
@@ -309,11 +308,7 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['wyposazenie'] = bus_data.get('wyposazenie') or {}
 
     # 2. Odtworzenie ANGIELSKICH kluczy (dla nowego Panelu Admina)
-    result['title'] = bus_data.get('title') or f"{
-        result.get(
-            'marka', '')} {
-        bus_data.get(
-            'model', '')}".strip()
+    result['title'] = bus_data.get('title') or f"{result.get('marka', '')} {bus_data.get('model', '')}".strip()
     result['price_pln'] = result['cenaBrutto']
     result['make'] = result['marka']
     result['production_year'] = result['rok']
@@ -350,7 +345,7 @@ async def read_root():
 async def login(request: Request, login_data: AdminLoginRequest):
     """Admin login with password"""
     if login_data.password != ADMIN_PASSWORD:
-    raise HTTPException(status_code=401, detail="Invalid password")
+        raise HTTPException(status_code=401, detail="Invalid password")
 
     response = JSONResponse({
         "success": True,
@@ -379,11 +374,10 @@ async def logout():
 
 
 @api_router.get("/admin/check-auth")
-async def check_auth(user: Optional[dict]
-                     = Depends(get_current_user_optional)):
+async def check_auth(user: Optional[dict] = Depends(get_current_user_optional)):
     """Check if user is authenticated"""
     if not user:
-    raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return {"authenticated": True, "user": user}
 
 # Listing Endpoints (Public)
@@ -408,13 +402,13 @@ async def get_listing_by_id(listing_id: str):
     if not supabase:
         bus = next((b for b in MOCK_BUSES if b['id'] == listing_id), None)
         if not bus:
-        raise HTTPException(status_code=404, detail="Listing not found")
+            raise HTTPException(status_code=404, detail="Listing not found")
         return map_bus_db_to_listing(bus)
 
     response = supabase.table('buses').select(
         '*').eq('id', listing_id).execute()
     if not response.data:
-    raise HTTPException(status_code=404, detail="Listing not found")
+        raise HTTPException(status_code=404, detail="Listing not found")
     return map_bus_db_to_listing(response.data[0])
 
 # Admin Listing Endpoints
@@ -480,7 +474,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         response = supabase.table('buses').select(
             '*').eq('id', listing_id).execute()
         if not response.data:
-        raise HTTPException(status_code=404, detail="Listing not found")
+            raise HTTPException(status_code=404, detail="Listing not found")
 
         # Prepare update data
         update_dict = {
@@ -504,9 +498,9 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
                 bus_update).eq('id', listing_id).execute()
 
             if not response.data:
-            raise HTTPException(
-                status_code=500,
-                detail="Database update failed")
+                raise HTTPException(
+                    status_code=500,
+                    detail="Database update failed")
 
             return {
                 "success": True,
@@ -520,8 +514,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         logging.error(f"Update listing error: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Błąd bazy Supabase: {
-                str(e)}")
+            detail=f"Błąd bazy Supabase: {str(e)}")
 
 
 @api_router.delete("/admin/listings/{listing_id}",
@@ -536,7 +529,7 @@ async def delete_listing(listing_id: str):
     response = supabase.table('buses').delete().eq('id', listing_id).execute()
 
     if not response.data:
-    raise HTTPException(status_code=404, detail="Listing not found")
+        raise HTTPException(status_code=404, detail="Listing not found")
 
     # 2. Próbujemy usunąć zdjęcia z Supabase Storage (optymalizacja miejsca)
     try:
@@ -592,7 +585,7 @@ async def upload_image(file: UploadFile = File(...)):
             return {"success": True, "url": f"/uploads/buses/{filename}"}
 
     except Exception as e:
-    raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @api_router.post("/upload-bulk", dependencies=[Depends(admin_required)])
@@ -867,8 +860,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
-            detail=f"Błąd krytyczny: {
-                str(e)}")
+            detail=f"Błąd krytyczny: {str(e)}")
 
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold",
@@ -981,7 +973,7 @@ if FRONTEND_BUILD_DIR.exists():
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
         if full_path.startswith("api") or full_path.startswith("uploads"):
-        raise HTTPException(status_code=404)
+            raise HTTPException(status_code=404)
 
         file_path = FRONTEND_BUILD_DIR / full_path
         if file_path.exists() and file_path.is_file():
@@ -1070,8 +1062,7 @@ async def sync_otomoto_job():
                 offer_links.add(l)
 
         print(
-            f"[CRON] Znaleziono {
-                len(offer_links)} aktywnych linków na profilu Otomoto.")
+            f"[CRON] Znaleziono {len(offer_links)} aktywnych linków na profilu Otomoto.")
 
         active_vins = set()
         active_titles = set()
@@ -1111,8 +1102,7 @@ async def sync_otomoto_job():
                         'cenaBrutto') == price for b in db_buses)
 
                 if not exists:
-                    print(
-                        f"[CRON] Znaleziono nowe auto: {title}. Pobieram z Otomoto i dodaję do bazy Supabase...")
+                    print(f"[CRON] Znaleziono nowe auto: {title}. Pobieram z Otomoto i dodaję do bazy Supabase...")
                     data = {"vin": vin, "title": title}
 
                     price_elem = BeautifulSoup(html, "html.parser").select_one(
@@ -1239,11 +1229,8 @@ async def sync_otomoto_job():
                     try:
                         dt_str = bus['data_sprzedazy'].replace('Z', '+00:00')
                         sell_date = datetime.fromisoformat(dt_str)
-                        if datetime.now(timezone.utc) - \
-                                sell_date > timedelta(days=5):
-                            print(
-                                f"[CRON] Auto {
-                                    bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
+                        if datetime.now(timezone.utc) - sell_date > timedelta(days=5):
+                            print(f"[CRON] Auto {bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
                             supabase.table('buses').delete().eq(
                                 'id', bus['id']).execute()
                             # Usuwanie plików z koszyka zdjęć
@@ -1269,9 +1256,7 @@ async def sync_otomoto_job():
                 # połączyliśmy się w ogóle z Otomoto) by uniknąć fałszywego
                 # usuwania
                 if is_missing and active_vins:
-                    print(
-                        f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({
-                            bus.get('id')}) jako sprzedane.")
+                    print(f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({bus.get('id')}) jako sprzedane.")
                     supabase.table('buses').update({
                         'status': 'sprzedane',
                         'sold': True,
