@@ -853,9 +853,11 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             detail=f"Błąd krytyczny: {str(e)}")
 
 @api_router.post("/admin/listings/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
+@api_router.post("/admin/listings/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold(bus_id: str):
     try:
+        from datetime import datetime, timezone
         bus = supabase.table('buses').select('gwarancja, status').eq('id', bus_id).execute()
         if not bus.data:
             raise HTTPException(404, "Not found")
@@ -866,8 +868,7 @@ async def toggle_sold(bus_id: str):
         
         update_data = {
             'gwarancja': new_val,
-            'status': new_status,
-            'sold': new_val
+            'status': new_status
         }
         if new_val:
             update_data['data_sprzedazy'] = datetime.now(timezone.utc).isoformat()
@@ -889,8 +890,11 @@ async def toggle_reserved(bus_id: str):
             raise HTTPException(404, "Not found")
         current = bus.data[0].get('hak', False)
         new_val = not current
-        supabase.table('buses').update({'hak': new_val, 'reserved': new_val}).eq('id', bus_id).execute()
+        supabase.table('buses').update({'hak': new_val}).eq('id', bus_id).execute()
         return {"success": True, "reserved": new_val}
+    except Exception as e:
+        print(f"Błąd toggle-reserved: {e}")
+        raise HTTPException(500, detail=str(e))
     except Exception as e:
         print(f"Błąd toggle-reserved: {e}")
         raise HTTPException(500, detail=str(e))
