@@ -900,6 +900,44 @@ async def toggle_reserved(bus_id: str):
         raise HTTPException(500, detail=str(e))
 
 
+
+@api_router.put("/ogloszenia/{listing_id}", dependencies=[Depends(admin_required)])
+async def legacy_update_listing(listing_id: str, request: Request):
+    try:
+        data = await request.json()
+        from datetime import datetime, timezone
+        
+        update_data = {}
+        
+        # 1. Obsługa zmiany statusu na "Sprzedane"
+        if 'gwarancja' in data or 'sold' in data or data.get('status') == 'sprzedane':
+            is_sold = data.get('gwarancja') or data.get('sold') or data.get('status') == 'sprzedane'
+            update_data['gwarancja'] = is_sold
+            update_data['status'] = 'sprzedane' if is_sold else 'aktywne'
+            update_data['data_sprzedazy'] = datetime.now(timezone.utc).isoformat() if is_sold else None
+        
+        # 2. Obsługa rezerwacji
+        if 'hak' in data or 'reserved' in data:
+            is_reserved = data.get('hak') or data.get('reserved')
+            update_data['hak'] = is_reserved
+            
+        # 3. Przepisanie pozostałych danych z formularza
+        for k, v in data.items():
+            if k not in ['gwarancja', 'sold', 'status', 'data_sprzedazy', 'hak', 'reserved']:
+                update_data[k] = v
+
+        if update_data:
+            response = supabase.table('buses').update(update_data).eq('id', listing_id).execute()
+            if not response.data:
+                raise HTTPException(status_code=404, detail="Nie znaleziono ogłoszenia w bazie")
+            return {"success": True, "data": response.data[0]}
+            
+        return {"success": True, "message": "Brak zmian do zapisu"}
+        
+    except Exception as e:
+        print(f"Błąd legacy_update_listing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Stats Endpoint
 
 
