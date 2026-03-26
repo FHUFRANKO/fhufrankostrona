@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import re as regex_cron
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
-import requests
+import httpx
 import traceback
 from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Form, Request, Depends
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse, FileResponse
@@ -20,7 +20,6 @@ import hashlib
 import logging
 import uuid
 import jwt
-import cloudscraper
 from bs4 import BeautifulSoup
 import re
 from supabase import create_client, Client
@@ -484,16 +483,6 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         if update_dict:
             bus_update = map_listing_to_bus_db(update_dict)
 
-            # Remove keys that shouldn't be updated if they are mapped incorrectly or empty
-            # map_listing_to_bus_db might add defaults, we should be careful.
-            # Actually map_listing_to_bus_db does a full mapping.
-            # Better to only map fields that were present in update_dict.
-            # But map_listing_to_bus_db expects full structure roughly.
-            # Let's trust the mapping but filter out None from the result of mapping if origin was not in update_dict?
-            # No, map_listing_to_bus_db uses .get() so it handles partials if we pass partial dict?
-            # Yes, if we pass partial dict to map_listing_to_bus_db, it will
-            # return fields.
-
             response = supabase.table('buses').update(
                 bus_update).eq('id', listing_id).execute()
 
@@ -655,7 +644,8 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             "Accept-Language": "pl-PL,pl;q=0.9",
         }
 
-        response = requests.get(url, headers=headers, timeout=15)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=headers, timeout=15)
 
         if response.status_code in [403, 401, 429]:
             raise Exception(
@@ -1029,6 +1019,23 @@ def extract_oto_value(html, key, label):
     return None
 
 
+async def upload_image_task(img_url, supabase_client):
+    """Asynchroniczny upload pojedynczego zdjęcia za pomocą httpx"""
+    try:
+        async with httpx.AsyncClient() as client:
+            img_r = await client.get(img_url, timeout=10)
+            if img_r.status_code == 200:
+                fname = f"{uuid.uuid4()}.jpg"
+                supabase_client.storage.from_("buses").upload(
+                    f"buses/{fname}",
+                    img_r.content,
+                    file_options={"content-type": "image/jpeg"}
+                )
+                return supabase_client.storage.from_("buses").get_public_url(f"buses/{fname}")
+    except Exception as e:
+        print(f"[CRON] Błąd uploadu zdjęcia ({img_url}): {e}")
+    return None
+
 async def sync_otomoto_job():
     print("[CRON] Rozpoczynam synchronizację z Otomoto...")
     if not supabase:
@@ -1038,191 +1045,182 @@ async def sync_otomoto_job():
         db_resp = supabase.table('buses').select('*').execute()
         db_buses = db_resp.data or []
 
-        headers = {"User-Agent": "Mozilla/5.0"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "pl-PL,pl;q=0.9",
+        }
+        
         offer_links = set()
-        scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'mobile': False})
 
-        # Pobieramy do 3 stron (dla pewności, że złapiemy wszystkie auta, jeśli
-        # jest ich więcej niż 30)
-        for page in range(1, 4):
-            resp = requests.get(
-                f"{DEALER_URL}?page={page}",
-                headers=headers,
-                timeout=15)
-            soup = BeautifulSoup(resp.content, "html.parser")
-            links = [a['href'].split('?')[0] for a in soup.find_all(
-                'a', href=True) if '/oferta/' in a['href'] and 'otomoto.pl' in a['href']]
-            if not links:
-                break
-            for l in links:
-                offer_links.add(l)
+        async with httpx.AsyncClient() as client:
+            # Pobieramy do 3 stron
+            for page in range(1, 4):
+                try:
+                    resp = await client.get(
+                        f"{DEALER_URL}?page={page}",
+                        headers=headers,
+                        timeout=15)
+                    soup = BeautifulSoup(resp.content, "html.parser")
+                    links = [a['href'].split('?')[0] for a in soup.find_all(
+                        'a', href=True) if '/oferta/' in a['href'] and 'otomoto.pl' in a['href']]
+                    if not links:
+                        break
+                    for l in links:
+                        offer_links.add(l)
+                except Exception as e:
+                     print(f"[CRON] Błąd pobierania strony dealera: {e}")
 
-        print(
-            f"[CRON] Znaleziono {len(offer_links)} aktywnych linków na profilu Otomoto.")
+            print(
+                f"[CRON] Znaleziono {len(offer_links)} aktywnych linków na profilu Otomoto.")
 
-        active_vins = set()
-        active_titles = set()
+            active_vins = set()
+            active_titles = set()
 
-        for link in offer_links:
-            try:
-                r = scraper.get(link, timeout=10)
-                html = r.content.decode('utf-8', errors='ignore')
+            for link in offer_links:
+                try:
+                    r = await client.get(link, headers=headers, timeout=15)
+                    html = r.content.decode('utf-8', errors='ignore')
 
-                vin = extract_oto_value(html, "vin", "VIN")
-                if vin and ("Zgadzam" in vin or len(vin) > 20):
-                    vin = ""
-                    s_soup = BeautifulSoup(html, "html.parser")
-                    for div in s_soup.find_all(
-                        'div', attrs={
-                            "data-testid": "advert-details-item"}):
-                        p_tags = div.find_all('p')
-                        if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
-                            vin = p_tags[1].text.strip()
+                    vin = extract_oto_value(html, "vin", "VIN")
+                    if vin and ("Zgadzam" in vin or len(vin) > 20):
+                        vin = ""
+                        s_soup = BeautifulSoup(html, "html.parser")
+                        for div in s_soup.find_all(
+                            'div', attrs={
+                                "data-testid": "advert-details-item"}):
+                            p_tags = div.find_all('p')
+                            if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
+                                vin = p_tags[1].text.strip()
 
-                m_title = regex_cron.search(r'"title"[\s:]*"([^"]+)"', html)
-                title = m_title.group(1) if m_title else ""
+                    m_title = regex_cron.search(r'"title"[\s:]*"([^"]+)"', html)
+                    title = m_title.group(1) if m_title else ""
 
-                if vin:
-                    active_vins.add(vin)
-                if title:
-                    active_titles.add(title)
+                    if vin:
+                        active_vins.add(vin)
+                    if title:
+                        active_titles.add(title)
 
-                exists = False
-                if vin:
-                    exists = any(b.get('vin') == vin for b in db_buses)
-                else:
-                    m_price = regex_cron.search(
-                        r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
-                    price = int(m_price.group(1)) if m_price else 0
-                    exists = any((b.get('title') == title or b.get('naped') == title) and b.get(
-                        'cenaBrutto') == price for b in db_buses)
-
-                if not exists:
-                    print(f"[CRON] Znaleziono nowe auto: {title}. Pobieram z Otomoto i dodaję do bazy Supabase...")
-                    data = {"vin": vin, "title": title}
-
-                    price_elem = BeautifulSoup(html, "html.parser").select_one(
-                        '[data-testid="ad-price-container"] h3')
-                    if price_elem:
-                        data["cenaBrutto"] = int(
-                            regex_cron.sub(
-                                r'[^\d]', '', str(
-                                    getattr(
-                                        price_elem, "text", "0") or "0")) or 0)
+                    exists = False
+                    if vin:
+                        exists = any(b.get('vin') == vin for b in db_buses)
                     else:
                         m_price = regex_cron.search(
                             r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
-                        data["cenaBrutto"] = int(
-                            m_price.group(1)) if m_price else 0
+                        price = int(m_price.group(1)) if m_price else 0
+                        exists = any((b.get('title') == title or b.get('naped') == title) and b.get(
+                            'cenaBrutto') == price for b in db_buses)
 
-                    data["rok"] = extract_oto_value(
-                        html, "year", "Rok produkcji")
-                    data["przebieg"] = extract_oto_value(
-                        html, "mileage", "Przebieg")
-                    data["moc"] = extract_oto_value(
-                        html, "engine_power", "Moc")
-                    data["kubatura"] = extract_oto_value(
-                        html, "engine_capacity", "Pojemność skokowa")
+                    if not exists:
+                        print(f"[CRON] Znaleziono nowe auto: {title}. Pobieram z Otomoto i dodaję do bazy Supabase...")
+                        data = {"vin": vin, "title": title}
 
-                    for k in ["rok", "przebieg", "moc", "kubatura"]:
-                        if data.get(k):
-                            try:
-                                v = str(
-                                    data[k]).lower().replace(
-                                    'cm3',
-                                    '').replace(
-                                    'cm³',
-                                    '')
-                                data[k] = int(regex_cron.sub(r'[^\d]', '', v))
-                            except BaseException:
-                                pass
+                        price_elem = BeautifulSoup(html, "html.parser").select_one(
+                            '[data-testid="ad-price-container"] h3')
+                        if price_elem:
+                            data["cenaBrutto"] = int(
+                                regex_cron.sub(
+                                    r'[^\d]', '', str(
+                                        getattr(
+                                            price_elem, "text", "0") or "0")) or 0)
+                        else:
+                            m_price = regex_cron.search(
+                                r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
+                            data["cenaBrutto"] = int(
+                                m_price.group(1)) if m_price else 0
 
-                    marka = extract_oto_value(html, "make", "Marka pojazdu") or title.split()[
-                        0] if title else "Inna"
-                    model = extract_oto_value(
-                        html, "model", "Model pojazdu") or "Inny"
+                        data["rok"] = extract_oto_value(
+                            html, "year", "Rok produkcji")
+                        data["przebieg"] = extract_oto_value(
+                            html, "mileage", "Przebieg")
+                        data["moc"] = extract_oto_value(
+                            html, "engine_power", "Moc")
+                        data["kubatura"] = extract_oto_value(
+                            html, "engine_capacity", "Pojemność skokowa")
 
-                    raw_images = regex_cron.findall(
-                        r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
-                    hq_images = [
-                        img.split(';')[0] +
-                        ";s=1080x720" for img in raw_images if "image" in img]
-                    unique_images = list(dict.fromkeys(hq_images))
+                        for k in ["rok", "przebieg", "moc", "kubatura"]:
+                            if data.get(k):
+                                try:
+                                    v = str(
+                                        data[k]).lower().replace(
+                                        'cm3',
+                                        '').replace(
+                                        'cm³',
+                                        '')
+                                    data[k] = int(regex_cron.sub(r'[^\d]', '', v))
+                                except BaseException:
+                                    pass
 
-                    # Automatyczny upload zdjęć na Supabase
-                    uploaded_urls = []
-                    # Pobieramy maksymalnie pierwszych 10 zdjęć do
-                    # optymalizacji
-                    for img_url in unique_images[:10]:
-                        try:
-                            img_r = requests.get(img_url, timeout=5)
-                            fname = f"{uuid.uuid4()}.jpg"
-                            supabase.storage.from_("buses").upload(
-                                f"buses/{fname}",
-                                img_r.content,
-                                file_options={
-                                    "content-type": "image/jpeg"})
-                            uploaded_urls.append(supabase.storage.from_(
-                                "buses").get_public_url(f"buses/{fname}"))
-                        except BaseException:
-                            pass
+                        marka = extract_oto_value(html, "make", "Marka pojazdu") or title.split()[
+                            0] if title else "Inna"
+                        model = extract_oto_value(
+                            html, "model", "Model pojazdu") or "Inny"
 
-                    desc_elem = BeautifulSoup(html, "html.parser").select_one(
-                        '[data-testid="ad-description"]')
-                    if desc_elem:
-                        for br in desc_elem.find_all("br"):
-                            br.replace_with("\n")
-                        opis = str(
-                            getattr(
-                                desc_elem,
-                                "text",
-                                "Zaimportowano automatycznie.") or "Zaimportowano automatycznie.")
-                    else:
-                        opis = "Zaimportowano automatycznie."
+                        raw_images = regex_cron.findall(
+                            r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
+                        hq_images = [
+                            img.split(';')[0] +
+                            ";s=1080x720" for img in raw_images if "image" in img]
+                        unique_images = list(dict.fromkeys(hq_images))
 
-                    # Zabezpieczający wpis z uzupełnieniem domyślnych kluczy,
-                    # by PostgreSQL nie narzekał
-                    bus_dict = {
-                        'id': str(uuid.uuid4()),
-                        'numerOgloszenia': f"FKBUS{str(uuid.uuid4().int)[:6]}",
-                        'marka': marka,
-                        'model': model,
-                        'rok': data.get('rok', 2000),
-                        'przebieg': data.get('przebieg', 0),
-                        'cenaBrutto': data.get('cenaBrutto', 0),
-                        'paliwo': extract_oto_value(html, "fuel_type", "Rodzaj paliwa") or "Diesel",
-                        'skrzynia': extract_oto_value(html, "gearbox", "Skrzynia biegów") or "Manualna",
-                        'typNadwozia': extract_oto_value(html, "body_type", "Typ nadwozia") or "Furgon",
-                        'moc': data.get('moc', 0),
-                        'kubatura': data.get('kubatura', 0),
-                        'kolor': extract_oto_value(html, "color", "Kolor") or "Biały",
-                        'opis': opis,
-                        'zdjecia': uploaded_urls,
-                        'zdjecieGlowne': uploaded_urls[0] if uploaded_urls else None,
-                        'vin': data.get('vin'),
-                        'naped': title,
-                        'miasto': 'Smyków',
-                        'status': 'aktywne',
-                        'dataPublikacji': datetime.now(timezone.utc).isoformat(),
-                        'normaEmisji': 'Euro 6',
-                        'dmcKategoria': 'do 3.5t',
-                        'ladownosc': 1000,
-                        'vat': True
-                    }
-                    supabase.table('buses').insert(bus_dict).execute()
+                        # ZABEZPIECZENIE: Nie zapisuj aut bez ceny lub zdjęć (Ochrona przed blokadą Otomoto)
+                        if data.get('cenaBrutto', 0) <= 0 or not unique_images:
+                            print(f"[CRON] Odrzucam puste ogłoszenie {title} - zablokowane przez Otomoto na podstronie.")
+                            continue
 
-            except Exception as e:
-                print(f"[CRON] Błąd przy analizie oferty: {e}")
-                traceback.print_exc()
-            # Odstęp, żeby Otomoto nie zablokowało serwera (zbyt dużo zapytań
-            # naraz)
-            await asyncio.sleep(2)
+                        # Asynchroniczny upload zdjęć przez httpx
+                        upload_tasks = [upload_image_task(url, supabase) for url in unique_images[:10]]
+                        uploaded_results = await asyncio.gather(*upload_tasks)
+                        uploaded_urls = [url for url in uploaded_results if url]
 
-        # 3. Oznacz jako sprzedane i usuwaj trwale stare ogłoszenia
+                        desc_elem = BeautifulSoup(html, "html.parser").select_one(
+                            '[data-testid="ad-description"]')
+                        if desc_elem:
+                            for br in desc_elem.find_all("br"):
+                                br.replace_with("\n")
+                            opis = str(
+                                getattr(
+                                    desc_elem,
+                                    "text",
+                                    "Zaimportowano automatycznie.") or "Zaimportowano automatycznie.")
+                        else:
+                            opis = "Zaimportowano automatycznie."
+
+                        bus_dict = {
+                            'id': str(uuid.uuid4()),
+                            'numerOgloszenia': f"FKBUS{str(uuid.uuid4().int)[:6]}",
+                            'marka': marka,
+                            'model': model,
+                            'rok': data.get('rok', 2000),
+                            'przebieg': data.get('przebieg', 0),
+                            'cenaBrutto': data.get('cenaBrutto', 0),
+                            'paliwo': extract_oto_value(html, "fuel_type", "Rodzaj paliwa") or "Diesel",
+                            'skrzynia': extract_oto_value(html, "gearbox", "Skrzynia biegów") or "Manualna",
+                            'typNadwozia': extract_oto_value(html, "body_type", "Typ nadwozia") or "Furgon",
+                            'moc': data.get('moc', 0),
+                            'kubatura': data.get('kubatura', 0),
+                            'kolor': extract_oto_value(html, "color", "Kolor") or "Biały",
+                            'opis': opis,
+                            'zdjecia': uploaded_urls,
+                            'zdjecieGlowne': uploaded_urls[0] if uploaded_urls else None,
+                            'vin': data.get('vin'),
+                            'naped': title,
+                            'miasto': 'Smyków',
+                            'status': 'aktywne',
+                            'dataPublikacji': datetime.now(timezone.utc).isoformat(),
+                            'normaEmisji': 'Euro 6',
+                            'dmcKategoria': 'do 3.5t',
+                            'ladownosc': 1000,
+                            'vat': True
+                        }
+                        supabase.table('buses').insert(bus_dict).execute()
+
+                except Exception as e:
+                    print(f"[CRON] Błąd przy analizie oferty: {e}")
+                    traceback.print_exc()
+                
+                await asyncio.sleep(2)
+
         for bus in db_buses:
             if bus.get('status') == 'sprzedane':
                 if bus.get('data_sprzedazy'):
@@ -1233,7 +1231,6 @@ async def sync_otomoto_job():
                             print(f"[CRON] Auto {bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
                             supabase.table('buses').delete().eq(
                                 'id', bus['id']).execute()
-                            # Usuwanie plików z koszyka zdjęć
                             images = bus.get('zdjecia', [])
                             paths = [img.split('/')[-1]
                                      for img in images if "Client.co" in img]
@@ -1252,15 +1249,12 @@ async def sync_otomoto_job():
                             'naped') not in active_titles:
                         is_missing = True
 
-                # Upewniamy się, że active_vins nie jest pusty (czyli że
-                # połączyliśmy się w ogóle z Otomoto) by uniknąć fałszywego
-                # usuwania
                 if is_missing and active_vins:
                     print(f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({bus.get('id')}) jako sprzedane.")
                     supabase.table('buses').update({
                         'status': 'sprzedane',
                         'sold': True,
-                        'gwarancja': True,  # W starym UI pole to włączało widoczność etykietki
+                        'gwarancja': True, 
                         'data_sprzedazy': datetime.now(timezone.utc).isoformat()
                     }).eq('id', bus['id']).execute()
 
