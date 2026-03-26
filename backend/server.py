@@ -852,30 +852,49 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             status_code=500,
             detail=f"Błąd krytyczny: {str(e)}")
 
-
-@api_router.post("/ogloszenia/{bus_id}/toggle-sold",
-                 dependencies=[Depends(admin_required)])
+@api_router.post("/admin/listings/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
+@api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold(bus_id: str):
-    bus = supabase.table('buses').select(
-        'gwarancja').eq('id', bus_id).execute()
-    if not bus.data:
-        raise HTTPException(404, "Not found")
-    current = bus.data[0].get('gwarancja', False)
-    supabase.table('buses').update(
-        {'gwarancja': not current}).eq('id', bus_id).execute()
-    return {"success": True, "sold": not current}
+    try:
+        bus = supabase.table('buses').select('gwarancja, status').eq('id', bus_id).execute()
+        if not bus.data:
+            raise HTTPException(404, "Not found")
+        
+        current = bus.data[0].get('gwarancja', False)
+        new_val = not current
+        new_status = 'sprzedane' if new_val else 'aktywne'
+        
+        update_data = {
+            'gwarancja': new_val,
+            'status': new_status,
+            'sold': new_val
+        }
+        if new_val:
+            update_data['data_sprzedazy'] = datetime.now(timezone.utc).isoformat()
+        else:
+            update_data['data_sprzedazy'] = None
+            
+        supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+        return {"success": True, "sold": new_val}
+    except Exception as e:
+        print(f"Błąd toggle-sold: {e}")
+        raise HTTPException(500, detail=str(e))
 
-
-@api_router.post("/ogloszenia/{bus_id}/toggle-reserved",
-                 dependencies=[Depends(admin_required)])
+@api_router.post("/admin/listings/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
+@api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved(bus_id: str):
-    bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
-    if not bus.data:
-        raise HTTPException(404, "Not found")
-    current = bus.data[0].get('hak', False)
-    supabase.table('buses').update(
-        {'hak': not current}).eq('id', bus_id).execute()
-    return {"success": True, "reserved": not current}
+    try:
+        bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
+        if not bus.data:
+            raise HTTPException(404, "Not found")
+        current = bus.data[0].get('hak', False)
+        new_val = not current
+        supabase.table('buses').update({'hak': new_val, 'reserved': new_val}).eq('id', bus_id).execute()
+        return {"success": True, "reserved": new_val}
+    except Exception as e:
+        print(f"Błąd toggle-reserved: {e}")
+        raise HTTPException(500, detail=str(e))
+
 
 # Stats Endpoint
 
