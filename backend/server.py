@@ -913,7 +913,7 @@ async def sync_otomoto_job():
                     
                     price_elem = BeautifulSoup(html, "html.parser").select_one('[data-testid="ad-price-container"] h3')
                     if price_elem:
-                        data["cenaBrutto"] = int(regex_cron.sub(r'[^\d]', '', getattr(price_elem, "text", "0")) or 0)
+                        data["cenaBrutto"] = int(regex_cron.sub(r'[^\d]', '', str(getattr(price_elem, "text", "0") or "0")) or 0)
                     else:
                         m_price = regex_cron.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
                         data["cenaBrutto"] = int(m_price.group(1)) if m_price else 0
@@ -950,7 +950,7 @@ async def sync_otomoto_job():
                     desc_elem = BeautifulSoup(html, "html.parser").select_one('[data-testid="ad-description"]')
                     if desc_elem:
                         for br in desc_elem.find_all("br"): br.replace_with("\n")
-                        opis = getattr(desc_elem, "text", "Zaimportowano automatycznie.")
+                        opis = str(getattr(desc_elem, "text", "Zaimportowano automatycznie.") or "Zaimportowano automatycznie.")
                     else:
                         opis = "Zaimportowano automatycznie."
                         
