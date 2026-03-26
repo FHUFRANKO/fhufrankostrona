@@ -138,7 +138,7 @@ async def get_current_user_optional(
 def admin_required(user: Optional[dict] = Depends(get_current_user_optional)):
     """Dependency to require admin privileges (cookie or JWT)"""
     if not user:
-    raise HTTPException(status_code=401, detail="Authentication required")
+        raise HTTPException(status_code=401, detail="Authentication required")
 
     # Cookie-based access is always admin
     if user.get("auth_method") == "cookie":
@@ -148,7 +148,7 @@ def admin_required(user: Optional[dict] = Depends(get_current_user_optional)):
     if user.get("auth_method") == "jwt":
         email = (user.get('email') or '').lower()
         if email not in ADMIN_EMAILS:
-        raise HTTPException(
+            raise HTTPException(
             status_code=403,
             detail=f"Admin access required. Email '{email}' is not in admin list.")
         return user
@@ -350,7 +350,7 @@ async def read_root():
 async def login(request: Request, login_data: AdminLoginRequest):
     """Admin login with password"""
     if login_data.password != ADMIN_PASSWORD:
-    raise HTTPException(status_code=401, detail="Invalid password")
+        raise HTTPException(status_code=401, detail="Invalid password")
 
     response = JSONResponse({
         "success": True,
@@ -381,9 +381,9 @@ async def logout():
 @api_router.get("/admin/check-auth")
 async def check_auth(user: Optional[dict]
                      = Depends(get_current_user_optional)):
-    """Check if user is authenticated"""
+                         """Check if user is authenticated"""
     if not user:
-    raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return {"authenticated": True, "user": user}
 
 # Listing Endpoints (Public)
@@ -408,13 +408,13 @@ async def get_listing_by_id(listing_id: str):
     if not supabase:
         bus = next((b for b in MOCK_BUSES if b['id'] == listing_id), None)
         if not bus:
-        raise HTTPException(status_code=404, detail="Listing not found")
+            raise HTTPException(status_code=404, detail="Listing not found")
         return map_bus_db_to_listing(bus)
 
     response = supabase.table('buses').select(
         '*').eq('id', listing_id).execute()
     if not response.data:
-    raise HTTPException(status_code=404, detail="Listing not found")
+        raise HTTPException(status_code=404, detail="Listing not found")
     return map_bus_db_to_listing(response.data[0])
 
 # Admin Listing Endpoints
@@ -480,7 +480,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
         response = supabase.table('buses').select(
             '*').eq('id', listing_id).execute()
         if not response.data:
-        raise HTTPException(status_code=404, detail="Listing not found")
+            raise HTTPException(status_code=404, detail="Listing not found")
 
         # Prepare update data
         update_dict = {
@@ -504,7 +504,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
                 bus_update).eq('id', listing_id).execute()
 
             if not response.data:
-            raise HTTPException(
+                raise HTTPException(
                 status_code=500,
                 detail="Database update failed")
 
@@ -536,7 +536,7 @@ async def delete_listing(listing_id: str):
     response = supabase.table('buses').delete().eq('id', listing_id).execute()
 
     if not response.data:
-    raise HTTPException(status_code=404, detail="Listing not found")
+        raise HTTPException(status_code=404, detail="Listing not found")
 
     # 2. Próbujemy usunąć zdjęcia z Supabase Storage (optymalizacja miejsca)
     try:
@@ -592,7 +592,7 @@ async def upload_image(file: UploadFile = File(...)):
             return {"success": True, "url": f"/uploads/buses/{filename}"}
 
     except Exception as e:
-    raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @api_router.post("/upload-bulk", dependencies=[Depends(admin_required)])
@@ -716,11 +716,11 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         data["vin"] = extract_value("vin", "VIN")
         if data.get("vin") and ("Zgadzam" in str(
                 data["vin"]) or len(str(data["vin"])) > 20):
-            data["vin"] = ""
+                    data["vin"] = ""
             for div in soup.find_all(
                 'div', attrs={
                     "data-testid": "advert-details-item"}):
-                p_tags = div.find_all('p')
+                        p_tags = div.find_all('p')
                 if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
                     data["vin"] = p_tags[1].text.strip()
 
@@ -981,7 +981,7 @@ if FRONTEND_BUILD_DIR.exists():
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_frontend(full_path: str):
         if full_path.startswith("api") or full_path.startswith("uploads"):
-        raise HTTPException(status_code=404)
+            raise HTTPException(status_code=404)
 
         file_path = FRONTEND_BUILD_DIR / full_path
         if file_path.exists() and file_path.is_file():
@@ -1088,7 +1088,7 @@ async def sync_otomoto_job():
                     for div in s_soup.find_all(
                         'div', attrs={
                             "data-testid": "advert-details-item"}):
-                        p_tags = div.find_all('p')
+                                p_tags = div.find_all('p')
                         if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
                             vin = p_tags[1].text.strip()
 
@@ -1241,7 +1241,7 @@ async def sync_otomoto_job():
                         sell_date = datetime.fromisoformat(dt_str)
                         if datetime.now(timezone.utc) - \
                                 sell_date > timedelta(days=5):
-                            print(
+                                    print(
                                 f"[CRON] Auto {
                                     bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
                             supabase.table('buses').delete().eq(
@@ -1263,7 +1263,7 @@ async def sync_otomoto_job():
                 else:
                     if bus.get('naped') and bus.get(
                             'naped') not in active_titles:
-                        is_missing = True
+                                is_missing = True
 
                 # Upewniamy się, że active_vins nie jest pusty (czyli że
                 # połączyliśmy się w ogóle z Otomoto) by uniknąć fałszywego
