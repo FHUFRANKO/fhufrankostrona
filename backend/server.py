@@ -309,11 +309,7 @@ result['zdjecia'] = bus_data.get('zdjecia') or []
 result['wyposazenie'] = bus_data.get('wyposazenie') or {}
 
 # 2. Odtworzenie ANGIELSKICH kluczy (dla nowego Panelu Admina)
-result['title'] = bus_data.get('title') or f"{
-result.get(
-'marka', '')} {
-bus_data.get(
-'model', '')}".strip()
+result[\'title\'] = bus_data.get(\'title\') or f"{result.get(\'marka\', \'\')} {bus_data.get(\'model\', \'\')}".strip()
 result['price_pln'] = result['cenaBrutto']
 result['make'] = result['marka']
 result['production_year'] = result['rok']
@@ -520,8 +516,7 @@ except Exception as e:
 logging.error(f"Update listing error: {e}")
 raise HTTPException(
 status_code=500,
-detail=f"Błąd bazy Supabase: {
-str(e)}")
+detail=f"Błąd bazy Supabase: {str(e)}")
 
 
 @api_router.delete("/admin/listings/{listing_id}",
@@ -867,8 +862,7 @@ except Exception as e:
 logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
 raise HTTPException(
 status_code=500,
-detail=f"Błąd krytyczny: {
-str(e)}")
+detail=f"Błąd krytyczny: {str(e)}")
 
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold",
@@ -1070,8 +1064,7 @@ for l in links:
 offer_links.add(l)
 
 print(
-f"[CRON] Znaleziono {
-len(offer_links)} aktywnych linków na profilu Otomoto.")
+f"[CRON] Znaleziono {len(offer_links)} aktywnych linków na profilu Otomoto.")
 
 active_vins = set()
 active_titles = set()
@@ -1242,8 +1235,7 @@ sell_date = datetime.fromisoformat(dt_str)
 if datetime.now(timezone.utc) - \
 sell_date > timedelta(days=5):
 print(
-f"[CRON] Auto {
-bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
+f"[CRON] Auto {bus[\'id\']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
 supabase.table('buses').delete().eq(
 'id', bus['id']).execute()
 # Usuwanie plików z koszyka zdjęć
@@ -1270,8 +1262,7 @@ is_missing = True
 # usuwania
 if is_missing and active_vins:
 print(
-f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({
-bus.get('id')}) jako sprzedane.")
+f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({bus.get(\'id\')}) jako sprzedane.")
 supabase.table('buses').update({
 'status': 'sprzedane',
 'sold': True,
