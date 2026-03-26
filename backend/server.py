@@ -1287,3 +1287,4 @@ print(
 "[CRON] Pomyślnie uruchomiono skaner. Automatyzacja działa w tle co 30 min.")
 except Exception as e:
 print("[CRON] Błąd uruchamiania schedulera:", e) 
+#423f
