@@ -324,8 +324,20 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['gvw_kg'] = bus_data.get('dmc') or bus_data.get('gvw_kg')
     result['origin_country'] = bus_data.get(
         'krajPochodzenia') or bus_data.get('origin_country')
-    result['condition_status'] = bus_data.get(
-        'stan') or bus_data.get('condition_status') or 'Używany'
+    result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
+
+    # --- KLUCZOWY FIX: TŁUMACZENIE BAZY DLA FRONTENDU ---
+    # Oszukujemy frontend, że status to zawsze "aktywne", żeby nie ukrył nam auta z ekranu
+    result['status'] = 'aktywne' 
+    
+    # Przekazujemy jawną flagę sprzedaży z bazy, by frontend nałożył napis "Sprzedane" i podświetlił przycisk!
+    is_sold = bool(bus_data.get('gwarancja') or bus_data.get('sold'))
+    result['gwarancja'] = is_sold
+    result['sold'] = is_sold
+    
+    is_reserved = bool(bus_data.get('hak') or bus_data.get('reserved'))
+    result['hak'] = is_reserved
+    result['reserved'] = is_reserved
 
     return result
 
