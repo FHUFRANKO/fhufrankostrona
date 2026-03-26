@@ -167,6 +167,7 @@ const BusFormNew = ({ editData, onSuccess, onCancel }) => {
         if (data.krajPochodzenia) setOriginCountry(data.krajPochodzenia);
         if (data.stan) setConditionStatus(data.stan);
         if (data.opis) setDescriptionHtml(data.opis);
+        if (data.youtube || data.youtubeLink || data.video) setYoutubeUrl(data.youtube || data.youtubeLink || data.video);
         
         // Booleans
         if (typeof data.bezwypadkowy === 'boolean') setAccidentFree(data.bezwypadkowy);
