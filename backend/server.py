@@ -908,29 +908,45 @@ async def legacy_update_listing(listing_id: str, request: Request):
         from datetime import datetime, timezone
         
         update_data = {}
+        # Lista absolutnie jedynych dozwolonych kolumn w bazie Supabase
+        VALID_COLUMNS = {
+            'marka', 'model', 'rok', 'przebieg', 'cenaBrutto', 'paliwo', 'skrzynia',
+            'typNadwozia', 'moc', 'kubatura', 'kolor', 'opis', 'zdjecia', 'zdjecieGlowne',
+            'wyrozniowane', 'nowosc', 'flotowy', 'gwarancja', 'hak', 'miasto',
+            'pierwszaRejestracja', 'vin', 'normaEmisji', 'dmcKategoria', 'ladownosc',
+            'vat', 'naped', 'status', 'data_sprzedazy', 'dmc', 'krajPochodzenia', 'stan',
+            'liczbaMiejsc', 'numerOgloszenia'
+        }
         
-        # 1. Obsługa zmiany statusu na "Sprzedane"
+        # Filtrujemy tylko bezpieczne kolumny
+        for k, v in data.items():
+            if k in VALID_COLUMNS:
+                update_data[k] = v
+                
+        # Zdecydowany priorytet dla zmiany statusu na "Sprzedane"
         if 'gwarancja' in data or 'sold' in data or data.get('status') == 'sprzedane':
-            is_sold = data.get('gwarancja') or data.get('sold') or data.get('status') == 'sprzedane'
+            is_sold = bool(data.get('gwarancja') or data.get('sold') or data.get('status') == 'sprzedane')
             update_data['gwarancja'] = is_sold
             update_data['status'] = 'sprzedane' if is_sold else 'aktywne'
             update_data['data_sprzedazy'] = datetime.now(timezone.utc).isoformat() if is_sold else None
-        
-        # 2. Obsługa rezerwacji
-        if 'hak' in data or 'reserved' in data:
-            is_reserved = data.get('hak') or data.get('reserved')
-            update_data['hak'] = is_reserved
             
-        # 3. Przepisanie pozostałych danych z formularza
-        for k, v in data.items():
-            if k not in ['gwarancja', 'sold', 'status', 'data_sprzedazy', 'hak', 'reserved']:
-                update_data[k] = v
+        # Obsługa rezerwacji
+        if 'hak' in data or 'reserved' in data:
+            update_data['hak'] = bool(data.get('hak') or data.get('reserved'))
+
+        if 'id' in update_data:
+            del update_data['id']
 
         if update_data:
             response = supabase.table('buses').update(update_data).eq('id', listing_id).execute()
             if not response.data:
                 raise HTTPException(status_code=404, detail="Nie znaleziono ogłoszenia w bazie")
-            return {"success": True, "data": response.data[0]}
+            
+            # Formujemy odpowiedź tak, żeby Frontend na 100% zareagował na zmianę etykiety
+            mapped = map_bus_db_to_listing(response.data[0])
+            mapped['sold'] = mapped.get('gwarancja', False)
+            mapped['reserved'] = mapped.get('hak', False)
+            return {"success": True, "data": mapped}
             
         return {"success": True, "message": "Brak zmian do zapisu"}
         
