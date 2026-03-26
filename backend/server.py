@@ -453,10 +453,7 @@ async def create_listing(listing_data: ListingCreate):
             if bus_dict.get(k) is None:
                 bus_dict[k] = v
 
-        if bus_dict.get('cenaBrutto', 0) <= 0 or not bus_dict.get('zdjecia'):
-                        print(f"[CRON] Odrzucam puste ogłoszenie {bus_dict.get('marka')} - zablokowane przez Otomoto na podstronie.")
-                    else:
-                        supabase.table('buses').insert(bus_dict).execute()
+        response = supabase.table('buses').insert(bus_dict).execute()
 
         return {
             "success": True,
@@ -1041,13 +1038,13 @@ async def sync_otomoto_job():
         db_resp = supabase.table('buses').select('*').execute()
         db_buses = db_resp.data or []
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "pl-PL,pl;q=0.9",
-        }
+        headers = {"User-Agent": "Mozilla/5.0"}
         offer_links = set()
-        scraper = requests.Session()
+        scraper = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'mobile': False})
 
         # Pobieramy do 3 stron (dla pewności, że złapiemy wszystkie auta, jeśli
         # jest ich więcej niż 30)
@@ -1216,10 +1213,7 @@ async def sync_otomoto_job():
                         'ladownosc': 1000,
                         'vat': True
                     }
-                    if bus_dict.get('cenaBrutto', 0) <= 0 or not bus_dict.get('zdjecia'):
-                        print(f"[CRON] Odrzucam puste ogłoszenie {bus_dict.get('marka')} - zablokowane przez Otomoto na podstronie.")
-                    else:
-                        supabase.table('buses').insert(bus_dict).execute()
+                    supabase.table('buses').insert(bus_dict).execute()
 
             except Exception as e:
                 print(f"[CRON] Błąd przy analizie oferty: {e}")
