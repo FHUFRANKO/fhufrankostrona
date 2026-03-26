@@ -15,6 +15,7 @@ import logging
 import uuid
 import jwt
 import requests
+import traceback
 import cloudscraper
 from bs4 import BeautifulSoup
 import re
@@ -401,8 +402,7 @@ async def create_listing(listing_data: ListingCreate):
             "message": "Ogłoszenie utworzone pomyślnie"
         }
     except Exception as e:
-        import traceback
-        logging.error(f"Create error: {str(e)}\n{traceback.format_exc()}")
+                logging.error(f"Create error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Błąd Supabase: {str(e)}")
 
 @api_router.put("/admin/listings/{listing_id}", dependencies=[Depends(admin_required)])
@@ -721,8 +721,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         return {"success": True, "data": data, "missing_fields": []}
         
     except Exception as e:
-        import traceback
-        logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
+                logging.error(f"Scrape error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Błąd krytyczny: {str(e)}")
 
 
@@ -834,6 +833,7 @@ import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bs4 import BeautifulSoup
 import requests
+import traceback
 import cloudscraper
 import re as regex_cron
 from datetime import datetime, timedelta, timezone
