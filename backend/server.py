@@ -826,3 +826,206 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# --- AUTOMATYZACJA OTOMOTO ---
+import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from bs4 import BeautifulSoup
+import requests
+import re as regex_cron
+from datetime import datetime, timedelta, timezone
+import uuid
+
+DEALER_URL = "https://fhufranko.otomoto.pl/inventory"
+
+def extract_oto_value(html, key, label):
+    m = regex_cron.search(r'"key"[\s:]*"' + key + r'"[^}]*?"displayValue"[\s:]*"([^"]+)"', html)
+    if m: return m.group(1)
+    m = regex_cron.search(r'"key"[\s:]*"' + key + r'"[^}]*?"value"[\s:]*"([^"]+)"', html)
+    if m: return m.group(1)
+    m = regex_cron.search(r'"label"[\s:]*"' + label + r'"[^}]*?"value"[\s:]*"([^"]+)"', html)
+    if m: return m.group(1)
+    m2 = regex_cron.search(label + r'[^>]*?>([a-zA-Z0-9\sęóąśłżźćńĘÓĄŚŁŻŹĆŃ]+)<', html)
+    if m2:
+        val = m2.group(1).strip()
+        if len(val) < 40 and val != label: return val
+    return None
+
+async def sync_otomoto_job():
+    print("[CRON] Rozpoczynam synchronizację z Otomoto...")
+    if not supabase: return
+
+    try:
+        db_resp = supabase.table('buses').select('*').execute()
+        db_buses = db_resp.data or []
+        
+        headers = {"User-Agent": "Mozilla/5.0"}
+        offer_links = set()
+        
+        # Pobieramy do 3 stron (dla pewności, że złapiemy wszystkie auta, jeśli jest ich więcej niż 30)
+        for page in range(1, 4):
+            resp = requests.get(f"{DEALER_URL}?page={page}", headers=headers, timeout=15)
+            soup = BeautifulSoup(resp.content, "lxml")
+            links = [a['href'].split('?')[0] for a in soup.find_all('a', href=True) if '/oferta/' in a['href'] and 'otomoto.pl' in a['href']]
+            if not links: break
+            for l in links: offer_links.add(l)
+                
+        print(f"[CRON] Znaleziono {len(offer_links)} aktywnych linków na profilu Otomoto.")
+        
+        active_vins = set()
+        active_titles = set()
+        
+        for link in offer_links:
+            try:
+                r = requests.get(link, headers=headers, timeout=10)
+                html = r.content.decode('utf-8', errors='ignore')
+                
+                vin = extract_oto_value(html, "vin", "VIN")
+                if vin and ("Zgadzam" in vin or len(vin) > 20):
+                    vin = ""
+                    s_soup = BeautifulSoup(html, "lxml")
+                    for div in s_soup.find_all('div', attrs={"data-testid": "advert-details-item"}):
+                        p_tags = div.find_all('p')
+                        if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
+                            vin = p_tags[1].text.strip()
+                
+                m_title = regex_cron.search(r'"title"[\s:]*"([^"]+)"', html)
+                title = m_title.group(1) if m_title else ""
+                
+                if vin: active_vins.add(vin)
+                if title: active_titles.add(title)
+                
+                exists = False
+                if vin:
+                    exists = any(b.get('vin') == vin for b in db_buses)
+                else:
+                    m_price = regex_cron.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
+                    price = int(m_price.group(1)) if m_price else 0
+                    exists = any((b.get('title') == title or b.get('naped') == title) and b.get('cenaBrutto') == price for b in db_buses)
+                
+                if not exists:
+                    print(f"[CRON] Znaleziono nowe auto: {title}. Pobieram z Otomoto i dodaję do bazy Supabase...")
+                    data = {"vin": vin, "title": title}
+                    
+                    price_elem = BeautifulSoup(html, "lxml").select_one('[data-testid="ad-price-container"] h3')
+                    if price_elem:
+                        data["cenaBrutto"] = int(regex_cron.sub(r'[^\d]', '', price_elem.get_text()))
+                    else:
+                        m_price = regex_cron.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
+                        data["cenaBrutto"] = int(m_price.group(1)) if m_price else 0
+                        
+                    data["rok"] = extract_oto_value(html, "year", "Rok produkcji")
+                    data["przebieg"] = extract_oto_value(html, "mileage", "Przebieg")
+                    data["moc"] = extract_oto_value(html, "engine_power", "Moc")
+                    data["kubatura"] = extract_oto_value(html, "engine_capacity", "Pojemność skokowa")
+                    
+                    for k in ["rok", "przebieg", "moc", "kubatura"]:
+                        if data.get(k):
+                            try:
+                                v = str(data[k]).lower().replace('cm3', '').replace('cm³', '')
+                                data[k] = int(regex_cron.sub(r'[^\d]', '', v))
+                            except: pass
+                            
+                    marka = extract_oto_value(html, "make", "Marka pojazdu") or title.split()[0] if title else "Inna"
+                    model = extract_oto_value(html, "model", "Model pojazdu") or "Inny"
+                    
+                    raw_images = regex_cron.findall(r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
+                    hq_images = [img.split(';')[0] + ";s=1080x720" for img in raw_images if "image" in img]
+                    unique_images = list(dict.fromkeys(hq_images))
+                    
+                    # Automatyczny upload zdjęć na Supabase
+                    uploaded_urls = []
+                    for img_url in unique_images[:10]: # Pobieramy maksymalnie pierwszych 10 zdjęć do optymalizacji
+                        try:
+                            img_r = requests.get(img_url, timeout=5)
+                            fname = f"{uuid.uuid4()}.jpg"
+                            supabase.storage.from_(supabase_bucket).upload(f"buses/{fname}", img_r.content, file_options={"content-type": "image/jpeg"})
+                            uploaded_urls.append(supabase.storage.from_(supabase_bucket).get_public_url(f"buses/{fname}"))
+                        except: pass
+                            
+                    desc_elem = BeautifulSoup(html, "lxml").select_one('[data-testid="ad-description"]')
+                    if desc_elem:
+                        for br in desc_elem.find_all("br"): br.replace_with("\n")
+                        opis = desc_elem.get_text(separator=' ', strip=True)
+                    else:
+                        opis = "Zaimportowano automatycznie."
+                        
+                    # Zabezpieczający wpis z uzupełnieniem domyślnych kluczy, by PostgreSQL nie narzekał
+                    bus_dict = {
+                        'id': str(uuid.uuid4()),
+                        'numerOgloszenia': f"FKBUS{str(uuid.uuid4().int)[:6]}",
+                        'marka': marka,
+                        'model': model,
+                        'rok': data.get('rok', 2000),
+                        'przebieg': data.get('przebieg', 0),
+                        'cenaBrutto': data.get('cenaBrutto', 0),
+                        'paliwo': extract_oto_value(html, "fuel_type", "Rodzaj paliwa") or "Diesel",
+                        'skrzynia': extract_oto_value(html, "gearbox", "Skrzynia biegów") or "Manualna",
+                        'typNadwozia': extract_oto_value(html, "body_type", "Typ nadwozia") or "Furgon",
+                        'moc': data.get('moc', 0),
+                        'kubatura': data.get('kubatura', 0),
+                        'kolor': extract_oto_value(html, "color", "Kolor") or "Biały",
+                        'opis': opis,
+                        'zdjecia': uploaded_urls,
+                        'zdjecieGlowne': uploaded_urls[0] if uploaded_urls else None,
+                        'vin': data.get('vin'),
+                        'naped': title,
+                        'miasto': 'Smyków',
+                        'status': 'aktywne',
+                        'dataPublikacji': datetime.now(timezone.utc).isoformat(),
+                        'normaEmisji': 'Euro 6',
+                        'dmcKategoria': 'do 3.5t',
+                        'ladownosc': 1000,
+                        'vat': True
+                    }
+                    supabase.table('buses').insert(bus_dict).execute()
+                    
+            except Exception as e:
+                print(f"[CRON] Błąd przy analizie oferty: {e}")
+            await asyncio.sleep(2) # Odstęp, żeby Otomoto nie zablokowało serwera (zbyt dużo zapytań naraz)
+            
+        # 3. Oznacz jako sprzedane i usuwaj trwale stare ogłoszenia
+        for bus in db_buses:
+            if bus.get('status') == 'sprzedane':
+                if bus.get('data_sprzedazy'):
+                    try:
+                        dt_str = bus['data_sprzedazy'].replace('Z', '+00:00')
+                        sell_date = datetime.fromisoformat(dt_str)
+                        if datetime.now(timezone.utc) - sell_date > timedelta(days=5):
+                            print(f"[CRON] Auto {bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
+                            supabase.table('buses').delete().eq('id', bus['id']).execute()
+                            # Usuwanie plików z koszyka zdjęć
+                            images = bus.get('zdjecia', [])
+                            paths = [img.split('/')[-1] for img in images if "supabase.co" in img]
+                            if paths: supabase.storage.from_(supabase_bucket).remove([f"buses/{p}" for p in paths])
+                    except: pass
+            else:
+                is_missing = False
+                if bus.get('vin') and len(bus.get('vin')) > 5:
+                    if bus.get('vin') not in active_vins: is_missing = True
+                else:
+                    if bus.get('naped') and bus.get('naped') not in active_titles: is_missing = True
+                
+                # Upewniamy się, że active_vins nie jest pusty (czyli że połączyliśmy się w ogóle z Otomoto) by uniknąć fałszywego usuwania
+                if is_missing and active_vins:
+                    print(f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({bus.get('id')}) jako sprzedane.")
+                    supabase.table('buses').update({
+                        'status': 'sprzedane',
+                        'sold': True,
+                        'gwarancja': True, # W starym UI pole to włączało widoczność etykietki
+                        'data_sprzedazy': datetime.now(timezone.utc).isoformat()
+                    }).eq('id', bus['id']).execute()
+
+    except Exception as e:
+        print(f"[CRON] Błąd główny pętli: {e}")
+
+@app.on_event("startup")
+async def start_otomoto_cron():
+    try:
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(sync_otomoto_job, 'interval', minutes=30)
+        scheduler.start()
+        print("[CRON] Pomyślnie uruchomiono skaner. Automatyzacja działa w tle co 30 min.")
+    except Exception as e:
+        print("[CRON] Błąd uruchamiania schedulera:", e)
