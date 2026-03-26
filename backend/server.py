@@ -92,9 +92,9 @@ def verify_supabase_token(token: str) -> dict:
         )
         return payload
     except jwt.ExpiredSignatureError:
-    raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError as e:
-    raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 async def get_current_user_optional(
     request: Request,
