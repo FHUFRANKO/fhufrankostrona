@@ -242,21 +242,17 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['seats'] = bus_data.get('liczbaMiejsc') or bus_data.get('seats')
     result['gvw_kg'] = bus_data.get('dmc') or bus_data.get('gvw_kg')
     result['origin_country'] = bus_data.get('krajPochodzenia') or bus_data.get('origin_country')
-    result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
-
-    # --- FIX WIDOCZNOŚCI AUT ---
-    # ZAWSZE wymuszamy "aktywne", aby auto nigdy nie zniknęło ze strony głównej
-    result['status'] = 'aktywne'
+        result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
     
-    # Przekazujemy flagę sprzedaży, by nakładka "Sprzedane" zadziałała w React
-    is_sold = bool(bus_data.get('gwarancja'))
-    result['sold'] = is_sold
-    result['gwarancja'] = is_sold
+    # --- WYMUSZENIE WIDOCZNOŚCI DLA FRONTENDU ---
+    is_sold_val = bool(bus_data.get('gwarancja') or bus_data.get('sold'))
+    result['status'] = 'aktywne' # Nigdy nie zmieniaj na 'sprzedane', bo React ukryje auto!
+    result['sold'] = is_sold_val
+    result['gwarancja'] = is_sold_val
     
-    is_reserved = bool(bus_data.get('hak'))
-    result['reserved'] = is_reserved
-    result['hak'] = is_reserved
-
+    is_reserved_val = bool(bus_data.get('hak') or bus_data.get('reserved'))
+    result['reserved'] = is_reserved_val
+    result['hak'] = is_reserved_val
     return result
 
 # --- API ENDPOINTS ---
@@ -407,21 +403,21 @@ async def delete_listing(listing_id: str):
 async def toggle_sold(bus_id: str):
     try:
         from datetime import datetime, timezone
-        bus = supabase.table('buses').select('gwarancja').eq('id', bus_id).execute()
-        if not bus.data:
-            raise HTTPException(404, "Not found")
+        bus_req = supabase.table('buses').select('*').eq('id', bus_id).execute()
+        if not bus_req.data: raise HTTPException(404, "Nie znaleziono")
         
-        current = bus.data[0].get('gwarancja', False)
-        new_val = not current
+        new_state = not bool(bus_req.data[0].get('gwarancja'))
         update_data = {
-            'gwarancja': new_val,
-            'status': 'aktywne',  
+            'gwarancja': new_state,
+            'status': 'aktywne',
+            'data_sprzedazy': datetime.now(timezone.utc).isoformat() if new_state else None
         }
-        update_data['data_sprzedazy'] = datetime.now(timezone.utc).isoformat() if new_val else None
-            
-        response = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
-        mapped = map_bus_db_to_listing(response.data[0])
-        return {"success": True, "sold": new_val, "data": mapped}
+        
+        resp = supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+        mapped = map_bus_db_to_listing(resp.data[0])
+        return {"success": True, "sold": new_state, "data": mapped}
+    except Exception as e:
+        raise HTTPException(500, detail=str(e))
     except Exception as e:
         raise HTTPException(500, detail=str(e))
 
