@@ -339,10 +339,10 @@ async def check_auth(user: Optional[dict] = Depends(get_current_user_optional)):
 @api_router.get("/ogloszenia")
 async def get_all_listings():
     """Get all listings (public)"""
-    if not Client:
+    if not supabase:
         return [map_bus_db_to_listing(bus) for bus in MOCK_BUSES]
         
-    response = Client.table('buses').select('*').execute()
+    response = supabase.table('buses').select('*').execute()
     listings = [map_bus_db_to_listing(bus) for bus in response.data]
     # Sort by created_at desc
     listings.sort(key=lambda x: x.get('created_at', ''), reverse=True)
@@ -351,13 +351,13 @@ async def get_all_listings():
 @api_router.get("/ogloszenia/{listing_id}")
 async def get_listing_by_id(listing_id: str):
     """Get single listing (public)"""
-    if not Client:
+    if not supabase:
         bus = next((b for b in MOCK_BUSES if b['id'] == listing_id), None)
         if not bus:
             raise HTTPException(status_code=404, detail="Listing not found")
         return map_bus_db_to_listing(bus)
 
-    response = Client.table('buses').select('*').eq('id', listing_id).execute()
+    response = supabase.table('buses').select('*').eq('id', listing_id).execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Listing not found")
     return map_bus_db_to_listing(response.data[0])
@@ -392,7 +392,7 @@ async def create_listing(listing_data: ListingCreate):
             if bus_dict.get(k) is None:
                 bus_dict[k] = v
         
-        response = Client.table('buses').insert(bus_dict).execute()
+        response = supabase.table('buses').insert(bus_dict).execute()
         
         return {
             "success": True,
@@ -409,7 +409,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
     """Update listing"""
     try:
         # Check existence
-        response = Client.table('buses').select('*').eq('id', listing_id).execute()
+        response = supabase.table('buses').select('*').eq('id', listing_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Listing not found")
             
@@ -429,7 +429,7 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
             # No, map_listing_to_bus_db uses .get() so it handles partials if we pass partial dict?
             # Yes, if we pass partial dict to map_listing_to_bus_db, it will return fields.
             
-            response = Client.table('buses').update(bus_update).eq('id', listing_id).execute()
+            response = supabase.table('buses').update(bus_update).eq('id', listing_id).execute()
             
             if not response.data:
                 raise HTTPException(status_code=500, detail="Database update failed")
@@ -450,10 +450,10 @@ async def update_listing(listing_id: str, listing_update: ListingUpdate):
 async def delete_listing(listing_id: str):
     """Delete listing and its images"""
     # Najpierw pobieramy dane, aby wiedzieć jakie zdjęcia usunąć z chmury
-    listing = Client.table('buses').select('zdjecia, zdjecieGlowne').eq('id', listing_id).execute()
+    listing = supabase.table('buses').select('zdjecia, zdjecieGlowne').eq('id', listing_id).execute()
     
     # 1. Usuwamy wpis z bazy danych
-    response = Client.table('buses').delete().eq('id', listing_id).execute()
+    response = supabase.table('buses').delete().eq('id', listing_id).execute()
     
     if not response.data:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -475,7 +475,7 @@ async def delete_listing(listing_id: str):
                     paths_to_delete.append(f"buses/{filename}")
             
             if paths_to_delete:
-                Client.storage.from_("buses").remove(paths_to_delete)
+                supabase.storage.from_("buses").remove(paths_to_delete)
     except Exception as e:
         logging.warning(f"Nie udało się usunąć zdjęć z chmury: {e}")
 
@@ -493,8 +493,8 @@ async def upload_image(file: UploadFile = File(...)):
         # Try Supabase
         try:
             path = f"buses/{filename}"
-            Client.storage.from_("buses").upload(path, contents, file_options={"content-type": file.content_type})
-            public_url = Client.storage.from_("buses").get_public_url(path)
+            supabase.storage.from_("buses").upload(path, contents, file_options={"content-type": file.content_type})
+            public_url = supabase.storage.from_("buses").get_public_url(path)
             return {"success": True, "url": public_url}
         except Exception as e:
             logging.warning(f"Supabase upload failed, falling back to local: {e}")
@@ -536,8 +536,8 @@ async def upload_images_bulk(files: List[UploadFile] = File(...)):
             
             try:
                 path = f"buses/{unique_filename}"
-                Client.storage.from_("buses").upload(path, contents, file_options={"content-type": file.content_type})
-                public_url = Client.storage.from_("buses").get_public_url(path)
+                supabase.storage.from_("buses").upload(path, contents, file_options={"content-type": file.content_type})
+                public_url = supabase.storage.from_("buses").get_public_url(path)
                 uploaded_urls.append(public_url)
             except Exception as supabase_error:
                 logging.warning(f"Supabase upload failed, using local fallback: {supabase_error}")
@@ -727,31 +727,31 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold(bus_id: str):
-    bus = Client.table('buses').select('gwarancja').eq('id', bus_id).execute()
+    bus = supabase.table('buses').select('gwarancja').eq('id', bus_id).execute()
     if not bus.data: raise HTTPException(404, "Not found")
     current = bus.data[0].get('gwarancja', False)
-    Client.table('buses').update({'gwarancja': not current}).eq('id', bus_id).execute()
+    supabase.table('buses').update({'gwarancja': not current}).eq('id', bus_id).execute()
     return {"success": True, "sold": not current}
 
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved(bus_id: str):
-    bus = Client.table('buses').select('hak').eq('id', bus_id).execute()
+    bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
     if not bus.data: raise HTTPException(404, "Not found")
     current = bus.data[0].get('hak', False)
-    Client.table('buses').update({'hak': not current}).eq('id', bus_id).execute()
+    supabase.table('buses').update({'hak': not current}).eq('id', bus_id).execute()
     return {"success": True, "reserved": not current}
 
 # Stats Endpoint
 @api_router.get("/admin/stats", dependencies=[Depends(admin_required)])
 async def get_stats():
-    if not Client:
+    if not supabase:
         return {
             "total": len(MOCK_BUSES),
             "wyrozniowane": sum(1 for b in MOCK_BUSES if b.get('wyrozniowane')),
             "nowe": sum(1 for b in MOCK_BUSES if b.get('nowosc')),
             "flotowe": sum(1 for b in MOCK_BUSES if b.get('flotowy'))
         }
-    response = Client.table('buses').select('*').execute()
+    response = supabase.table('buses').select('*').execute()
     buses = response.data
     return {
         "total": len(buses),
@@ -763,16 +763,16 @@ async def get_stats():
 # Opinion Endpoints
 @api_router.get("/opinie")
 async def get_opinions():
-    if not Client:
+    if not supabase:
         return MOCK_OPINIONS
-    response = Client.table('opinions').select('*').eq('wyswietlaj', True).execute()
+    response = supabase.table('opinions').select('*').eq('wyswietlaj', True).execute()
     return response.data
 
 @api_router.get("/admin/opinions", dependencies=[Depends(admin_required)])
 async def get_all_opinions_admin():
-    if not Client:
+    if not supabase:
         return MOCK_OPINIONS
-    response = Client.table('opinions').select('*').execute()
+    response = supabase.table('opinions').select('*').execute()
     return response.data
 
 @api_router.post("/admin/opinions", dependencies=[Depends(admin_required)])
@@ -780,20 +780,20 @@ async def create_opinion(op: OpinionCreate):
     data = op.dict(by_alias=True)
     data['id'] = str(uuid.uuid4())
     data['dataPublikacji'] = datetime.now().isoformat()
-    resp = Client.table('opinions').insert(data).execute()
+    resp = supabase.table('opinions').insert(data).execute()
     return resp.data[0]
 
 @api_router.put("/admin/opinions/{op_id}", dependencies=[Depends(admin_required)])
 async def update_opinion(op_id: str, op: OpinionUpdate):
     data = {k: v for k, v in op.dict(by_alias=True).items() if v is not None}
     if data:
-        resp = Client.table('opinions').update(data).eq('id', op_id).execute()
+        resp = supabase.table('opinions').update(data).eq('id', op_id).execute()
         return resp.data[0]
     return {}
 
 @api_router.delete("/admin/opinions/{op_id}", dependencies=[Depends(admin_required)])
 async def delete_opinion(op_id: str):
-    Client.table('opinions').delete().eq('id', op_id).execute()
+    supabase.table('opinions').delete().eq('id', op_id).execute()
     return {"success": True}
 
 # Register Router
@@ -854,10 +854,10 @@ def extract_oto_value(html, key, label):
 
 async def sync_otomoto_job():
     print("[CRON] Rozpoczynam synchronizację z Otomoto...")
-    if not Client: return
+    if not supabase: return
 
     try:
-        db_resp = Client.table('buses').select('*').execute()
+        db_resp = supabase.table('buses').select('*').execute()
         db_buses = db_resp.data or []
         
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -940,8 +940,8 @@ async def sync_otomoto_job():
                         try:
                             img_r = requests.get(img_url, timeout=5)
                             fname = f"{uuid.uuid4()}.jpg"
-                            Client.storage.from_("buses").upload(f"buses/{fname}", img_r.content, file_options={"content-type": "image/jpeg"})
-                            uploaded_urls.append(Client.storage.from_("buses").get_public_url(f"buses/{fname}"))
+                            supabase.storage.from_("buses").upload(f"buses/{fname}", img_r.content, file_options={"content-type": "image/jpeg"})
+                            uploaded_urls.append(supabase.storage.from_("buses").get_public_url(f"buses/{fname}"))
                         except: pass
                             
                     desc_elem = BeautifulSoup(html, "html.parser").select_one('[data-testid="ad-description"]')
@@ -979,7 +979,7 @@ async def sync_otomoto_job():
                         'ladownosc': 1000,
                         'vat': True
                     }
-                    Client.table('buses').insert(bus_dict).execute()
+                    supabase.table('buses').insert(bus_dict).execute()
                     
             except Exception as e:
                 print(f"[CRON] Błąd przy analizie oferty: {e}")
@@ -994,11 +994,11 @@ async def sync_otomoto_job():
                         sell_date = datetime.fromisoformat(dt_str)
                         if datetime.now(timezone.utc) - sell_date > timedelta(days=5):
                             print(f"[CRON] Auto {bus['id']} ma status sprzedanego powyżej 5 dni. Usuwam trwale.")
-                            Client.table('buses').delete().eq('id', bus['id']).execute()
+                            supabase.table('buses').delete().eq('id', bus['id']).execute()
                             # Usuwanie plików z koszyka zdjęć
                             images = bus.get('zdjecia', [])
                             paths = [img.split('/')[-1] for img in images if "Client.co" in img]
-                            if paths: Client.storage.from_("buses").remove([f"buses/{p}" for p in paths])
+                            if paths: supabase.storage.from_("buses").remove([f"buses/{p}" for p in paths])
                     except: pass
             else:
                 is_missing = False
@@ -1010,7 +1010,7 @@ async def sync_otomoto_job():
                 # Upewniamy się, że active_vins nie jest pusty (czyli że połączyliśmy się w ogóle z Otomoto) by uniknąć fałszywego usuwania
                 if is_missing and active_vins:
                     print(f"[CRON] Auto zniknęło z profilu dealera na Otomoto. Oznaczam auto z bazy ({bus.get('id')}) jako sprzedane.")
-                    Client.table('buses').update({
+                    supabase.table('buses').update({
                         'status': 'sprzedane',
                         'sold': True,
                         'gwarancja': True, # W starym UI pole to włączało widoczność etykietki
