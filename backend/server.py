@@ -82,7 +82,7 @@ ADMIN_EMAILS = set(e.strip().lower() for e in os.environ.get('ADMIN_EMAILS', '')
 def verify_supabase_token(token: str) -> dict:
     """Verify Supabase JWT token"""
     if not JWT_SECRET:
-    raise HTTPException(status_code=500, detail="SUPABASE_JWT_SECRET not configured")
+        raise HTTPException(status_code=500, detail="SUPABASE_JWT_SECRET not configured")
     try:
         payload = jwt.decode(
             token, 
