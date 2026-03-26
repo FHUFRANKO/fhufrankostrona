@@ -631,6 +631,31 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         m_price = re.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
         if m_price:
             data["cenaBrutto"] = int(m_price.group(1))
+
+        # --- POBIERANIE LINKU YOUTUBE ---
+        try:
+            import re as regex_yt
+            yt_link = ""
+            
+            # Opcja 1: Szukanie wprost iframe z YouTube
+            iframe = soup.find('iframe', src=regex_yt.compile(r'youtube\.com|youtu\.be'))
+            if iframe:
+                yt_link = iframe.get('src', '')
+            
+            # Opcja 2: Przeszukanie ukrytych stanów strony (Otomoto często trzyma tam wideo)
+            if not yt_link:
+                yt_match = regex_yt.search(r'(https://www\.youtube\.com/watch\?v=[\w-]+|https://youtu\.be/[\w-]+)', str(soup))
+                if yt_match:
+                    yt_link = yt_match.group(0)
+
+            if yt_link:
+                yt_link = yt_link.replace('embed/', 'watch?v=')
+                # Przypisujemy pod kilkoma najpopularniejszymi nazwami zmiennych:
+                data['youtube'] = yt_link
+                data['youtubeLink'] = yt_link
+                data['video'] = yt_link
+        except Exception as e:
+            print("Błąd pobierania YT:", e)
         else:
             p_elem = soup.select_one('[data-testid="ad-price-container"] h3') or soup.find('h3', class_=lambda c: c and 'price' in str(c).lower())
             if not p_elem:
