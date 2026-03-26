@@ -453,7 +453,7 @@ async def create_listing(listing_data: ListingCreate):
             if bus_dict.get(k) is None:
                 bus_dict[k] = v
 
-        response = if bus_dict.get('cenaBrutto', 0) <= 0 or not bus_dict.get('zdjecia'):
+        if bus_dict.get('cenaBrutto', 0) <= 0 or not bus_dict.get('zdjecia'):
                         print(f"[CRON] Odrzucam puste ogłoszenie {bus_dict.get('marka')} - zablokowane przez Otomoto na podstronie.")
                     else:
                         supabase.table('buses').insert(bus_dict).execute()
