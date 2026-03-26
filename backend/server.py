@@ -601,6 +601,13 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         data["moc"] = extract_value("engine_power", "Moc")
         data["kubatura"] = extract_value("engine_capacity", "Pojemność skokowa")
         data["vin"] = extract_value("vin", "VIN")
+        if data.get("vin") and ("Zgadzam" in str(data["vin"]) or len(str(data["vin"])) > 20):
+            data["vin"] = ""
+            for div in soup.find_all('div', attrs={"data-testid": "advert-details-item"}):
+                p_tags = div.find_all('p')
+                if len(p_tags) >= 2 and "VIN" in p_tags[0].text:
+                    data["vin"] = p_tags[1].text.strip()
+
         data["marka"] = extract_value("make", "Marka pojazdu")
         data["model"] = extract_value("model", "Model pojazdu")
         data["wersja"] = extract_value("version", "Wersja")
@@ -625,8 +632,11 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         if m_price:
             data["cenaBrutto"] = int(m_price.group(1))
         else:
-            p_elem = soup.select_one('[data-testid="ad-price-container"] h3')
-            if p_elem: data["cenaBrutto"] = int(re.sub(r'[^\d]', '', p_elem.get_text()))
+            p_elem = soup.select_one('[data-testid="ad-price-container"] h3') or soup.find('h3', class_=lambda c: c and 'price' in str(c).lower())
+            if not p_elem:
+                p_elem = soup.find(attrs={"data-testid": "ad-price-container"})
+            if p_elem: 
+                data["cenaBrutto"] = int(re.sub(r'[^\d]', '', p_elem.get_text()))
 
         raw_images = re.findall(r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
         hq_images = []
@@ -662,7 +672,9 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
 
         for k in ["rok", "przebieg", "moc", "kubatura"]:
             if data.get(k):
-                try: data[k] = int(re.sub(r'[^\d]', '', str(data[k])))
+                try:
+                    v = str(data[k]).lower().replace('cm3', '').replace('cm³', '')
+                    data[k] = int(re.sub(r'[^\d]', '', v))
                 except: pass
 
         fuel = str(data.get("paliwo", "")).lower()
