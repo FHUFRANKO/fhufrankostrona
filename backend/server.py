@@ -624,7 +624,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
 
         title_elem = soup.select_one("h1")
         if title_elem:
-            data["title"] = title_elem.get_text(strip=True)
+            data["title"] = (title_elem.text if title_elem else " ")
         else:
             m_title = re.search(r'"title"[\s:]*"([^"]+)"', html)
             if m_title: data["title"] = m_title.group(1)
@@ -662,7 +662,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             if not p_elem:
                 p_elem = soup.find(attrs={"data-testid": "ad-price-container"})
             if p_elem: 
-                data["cenaBrutto"] = int(re.sub(r'[^\d]', '', p_elem.get_text()))
+                data["cenaBrutto"] = int(re.sub(r'[^\d]', '', (p_elem.text if p_elem else " ")))
 
         raw_images = re.findall(r'"(https://[^"]+\.olxcdn\.com/[^"]+)"', html)
         hq_images = []
@@ -684,7 +684,7 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
             for p in desc_elem.find_all("p"):
                 p.append("\n")
                 
-            clean_text = desc_elem.get_text(separator=' ', strip=False)
+            clean_text = (desc_elem.text if desc_elem else " ")
             clean_text = re.sub(r' {2,}', ' ', clean_text)
             clean_text = re.sub(r'\n\s*\n\s*\n+', '\n\n', clean_text)
             data["opis"] = clean_text.strip()
@@ -913,7 +913,7 @@ async def sync_otomoto_job():
                     
                     price_elem = BeautifulSoup(html, "html.parser").select_one('[data-testid="ad-price-container"] h3')
                     if price_elem:
-                        data["cenaBrutto"] = int(regex_cron.sub(r'[^\d]', '', price_elem.get_text()))
+                        data["cenaBrutto"] = int(regex_cron.sub(r'[^\d]', '', (price_elem.text if price_elem else " ")))
                     else:
                         m_price = regex_cron.search(r'"price"[\s:]*\{[^}]*?"value"[\s:]*(\d+)', html)
                         data["cenaBrutto"] = int(m_price.group(1)) if m_price else 0
@@ -950,7 +950,7 @@ async def sync_otomoto_job():
                     desc_elem = BeautifulSoup(html, "html.parser").select_one('[data-testid="ad-description"]')
                     if desc_elem:
                         for br in desc_elem.find_all("br"): br.replace_with("\n")
-                        opis = desc_elem.get_text(separator=' ', strip=True)
+                        opis = (desc_elem.text if desc_elem else " ")
                     else:
                         opis = "Zaimportowano automatycznie."
                         
@@ -985,7 +985,7 @@ async def sync_otomoto_job():
                     supabase.table('buses').insert(bus_dict).execute()
                     
             except Exception as e:
-                print(f"[CRON] Błąd przy analizie oferty: {e}")
+                print(f"[CRON] Błąd przy analizie oferty: {e}"); traceback.print_exc()
             await asyncio.sleep(2) # Odstęp, żeby Otomoto nie zablokowało serwera (zbyt dużo zapytań naraz)
             
         # 3. Oznacz jako sprzedane i usuwaj trwale stare ogłoszenia
