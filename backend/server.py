@@ -1098,12 +1098,7 @@ async def sync_otomoto_job():
 
 @app.on_event("startup")
 async def start_otomoto_cron():
-    try:
-        scheduler = AsyncIOScheduler()
-        scheduler.add_job(sync_otomoto_job, 'interval', minutes=30)
-        scheduler.start()
-        print("[CRON] Wymuszam pierwsze natychmiastowe skanowanie zaraz po starcie serwera!")
-        asyncio.create_task(sync_otomoto_job())
-        print("[CRON] Pomyślnie uruchomiono skaner. Automatyzacja działa w tle co 30 min.")
-    except Exception as e:
-        print("[CRON] Błąd uruchamiania schedulera:", e)
+    # Automatyczny skaner działający w tle został wyłączony.
+    # Pozostaje ręczne dodawanie i importowanie przez panel admina.
+    print("[CRON] Automatyczna synchronizacja z Otomoto jest wyłączona.")
+    return
