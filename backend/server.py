@@ -256,7 +256,7 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
         
-        # Poprawka: usunięto domyślne False, zapobiega to odznaczaniu przy edycji
+        # Omijamy nadpisywanie fałszem jeśli brak danych
         'gwarancja': listing_data.get('sold'),
         'hak': listing_data.get('reserved'),
 
@@ -312,7 +312,6 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['origin_country'] = bus_data.get('krajPochodzenia') or bus_data.get('origin_country')
     result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
 
-    # Bezpieczne flagi - rozwiązuje problem wyświetlania nakładek
     is_sold = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
     is_reserved = bus_data.get("reserved") or bus_data.get("hak") or False
 
@@ -790,12 +789,14 @@ async def toggle_sold(bus_id: str):
     if not bus.data:
         raise HTTPException(404, "Not found")
     
-    current = bus.data[0].get('gwarancja', False)
+    current = bus.data[0].get('gwarancja')
+    if current is None:
+        current = False
+        
     new_state = not current
     
     update_data = {
         'gwarancja': new_state,
-        'sold': new_state,
         'status': 'sprzedane' if new_state else 'aktywne'
     }
     supabase.table('buses').update(update_data).eq('id', bus_id).execute()
@@ -810,10 +811,13 @@ async def toggle_reserved(bus_id: str):
     if not bus.data:
         raise HTTPException(404, "Not found")
         
-    current = bus.data[0].get('hak', False)
+    current = bus.data[0].get('hak')
+    if current is None:
+        current = False
+        
     new_state = not current
     
-    supabase.table('buses').update({'hak': new_state, 'reserved': new_state}).eq('id', bus_id).execute()
+    supabase.table('buses').update({'hak': new_state}).eq('id', bus_id).execute()
     
     return {"success": True, "reserved": new_state}
 
