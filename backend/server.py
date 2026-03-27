@@ -255,22 +255,21 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'wyrozniowane': listing_data.get('wyrozniowane', False),
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
-        'gwarancja': listing_data.get('sold', False),
-        'hak': listing_data.get('reserved', False),
+        
+        # Poprawka: usunięto domyślne False, zapobiega to odznaczaniu przy edycji
+        'gwarancja': listing_data.get('sold'),
+        'hak': listing_data.get('reserved'),
 
         'miasto': listing_data.get('location_city', 'Smyków'),
         'pierwszaRejestracja': str(listing_data.get('first_registration_date'))[:10] if listing_data.get('first_registration_date') else None,
         'vin': listing_data.get('vin'),
 
-        # Pola wymagane przez baze do ktorych nie mamy wejscia w nowym UI
         'normaEmisji': 'Euro 6',
         'dmcKategoria': 'do 3.5t',
         'ladownosc': 1000,
         'vat': True,
     }
 
-    # Hack: przechowujemy wygenerowany na nowo Tytuł w starym polu "naped",
-    # zeby stara tabela bazy danych go nie odrzuciła
     if listing_data.get('title'):
         bus_data['naped'] = listing_data.get('title')
 
@@ -279,10 +278,8 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
 
 def map_bus_db_to_listing(bus_data: dict) -> dict:
     """Map database fields to new listing model while preserving legacy frontend keys"""
-    # Kopiujemy oryginalne dane z bazy
     result = dict(bus_data)
 
-    # 1. Odtworzenie POLSKICH kluczy (dla publicznej strony głównej)
     result['cenaBrutto'] = bus_data.get('cenaBrutto') or bus_data.get('price_pln')
     result['rok'] = bus_data.get('rok') or bus_data.get('production_year')
     result['przebieg'] = bus_data.get('przebieg') or bus_data.get('mileage_km')
@@ -294,11 +291,9 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['typNadwozia'] = bus_data.get('typNadwozia') or bus_data.get('body_type')
     result['opis'] = bus_data.get('opis') or bus_data.get('description_html')
 
-    # Zabezpieczenia dla list i obiektów (zapobiega crashom "Cannot read properties of undefined")
     result['zdjecia'] = bus_data.get('zdjecia') or []
     result['wyposazenie'] = bus_data.get('wyposazenie') or {}
 
-    # 2. Odtworzenie ANGIELSKICH kluczy (dla nowego Panelu Admina)
     result['title'] = bus_data.get('title') or f"{result.get('marka', '')} {bus_data.get('model', '')}".strip()
     result['price_pln'] = result['cenaBrutto']
     result['make'] = result['marka']
@@ -317,10 +312,15 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['origin_country'] = bus_data.get('krajPochodzenia') or bus_data.get('origin_country')
     result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
 
-    result["sold"] = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
-    result["reserved"] = bus_data.get("reserved") or bus_data.get("hak") or False
-    result["sold"] = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
-    result["reserved"] = bus_data.get("reserved") or bus_data.get("hak") or False
+    # Bezpieczne flagi - rozwiązuje problem wyświetlania nakładek
+    is_sold = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
+    is_reserved = bus_data.get("reserved") or bus_data.get("hak") or False
+
+    result["sold"] = is_sold
+    result["isSold"] = is_sold
+    result["reserved"] = is_reserved
+    result["isReserved"] = is_reserved
+
     return result
 
 # --- API ENDPOINTS ---
@@ -783,24 +783,40 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
         raise HTTPException(status_code=500, detail=f"Błąd krytyczny: {str(e)}")
 
 
+@api_router.post("/admin/listings/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold(bus_id: str):
-    bus = supabase.table('buses').select('gwarancja').eq('id', bus_id).execute()
+    bus = supabase.table('buses').select('gwarancja, status').eq('id', bus_id).execute()
     if not bus.data:
         raise HTTPException(404, "Not found")
+    
     current = bus.data[0].get('gwarancja', False)
-    supabase.table('buses').update({'gwarancja': not current}).eq('id', bus_id).execute()
-    return {"success": True, "sold": not current}
+    new_state = not current
+    
+    update_data = {
+        'gwarancja': new_state,
+        'sold': new_state,
+        'status': 'sprzedane' if new_state else 'aktywne'
+    }
+    supabase.table('buses').update(update_data).eq('id', bus_id).execute()
+    
+    return {"success": True, "sold": new_state}
 
 
+@api_router.post("/admin/listings/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved(bus_id: str):
     bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
     if not bus.data:
         raise HTTPException(404, "Not found")
+        
     current = bus.data[0].get('hak', False)
-    supabase.table('buses').update({'hak': not current}).eq('id', bus_id).execute()
-    return {"success": True, "reserved": not current}
+    new_state = not current
+    
+    supabase.table('buses').update({'hak': new_state, 'reserved': new_state}).eq('id', bus_id).execute()
+    
+    return {"success": True, "reserved": new_state}
+
 
 # Stats Endpoint
 
@@ -1105,4 +1121,3 @@ async def start_otomoto_cron():
     # Automatyczny skaner działający w tle został wyłączony.
     # Pozostaje ręczne dodawanie i importowanie przez panel admina.
     print("[CRON] Automatyczna synchronizacja z Otomoto jest wyłączona.")
-    return
