@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Alert, AlertDescription } from '../components/ui/alert';
 import { 
   Plus, 
   Edit, 
@@ -111,22 +110,20 @@ export const AdminPanel = () => {
     }
   };
 
+  // Poprawiony przełącznik statusu Sprzedany (tylko 1 dedykowany endpoint)
   const handleToggleSold = async (bus) => {
     try {
       const newSoldStatus = !bus.sold;
-      const updateData = { gwarancja: newSoldStatus };
-      if (newSoldStatus) {
-        updateData.hak = false; // Disable reserved if sold
-      }
-      await busApi.updateBus(bus.id, updateData); // This endpoint handles toggle properly in backend too if using simplified update, 
-      // actually backend expects specific structure but simpler is usually better.
-      // Wait, updateBus takes BusUpdate model.
-      // BusUpdate has gwarancja/sold mapped.
       
-      // Let's use the toggle endpoint for better safety if available, 
-      // or map correctly.
-      // busApi.toggleSoldStatus(bus.id) exists!
-      await busApi.toggleSoldStatus(bus.id);
+      // Bezpieczny wywoływacz w zależności od tego, jak nazwałeś funkcję w busApi.js
+      if (busApi.toggleSoldStatus) {
+        await busApi.toggleSoldStatus(bus.id);
+      } else if (busApi.toggleSold) {
+        await busApi.toggleSold(bus.id);
+      } else {
+        // Fallback jeśli używasz updateBus
+        await busApi.updateBus(bus.id, { sold: newSoldStatus, reserved: newSoldStatus ? false : bus.reserved });
+      }
       
       toast.success(newSoldStatus ? 'Oznaczono jako SPRZEDANE' : 'Odznaczono SPRZEDANE');
       fetchBuses();
@@ -136,10 +133,17 @@ export const AdminPanel = () => {
     }
   };
 
+  // Poprawiony przełącznik Rezerwacji
   const handleToggleReserved = async (bus) => {
     try {
-      await busApi.toggleReservedStatus(bus.id);
-      // Wait, toggleReservedStatus returns new status
+      if (busApi.toggleReservedStatus) {
+        await busApi.toggleReservedStatus(bus.id);
+      } else if (busApi.toggleReserved) {
+        await busApi.toggleReserved(bus.id);
+      } else {
+        await busApi.updateBus(bus.id, { reserved: !bus.reserved });
+      }
+
       toast.success('Zmieniono status rezerwacji');
       fetchBuses();
     } catch (error) {
@@ -148,28 +152,7 @@ export const AdminPanel = () => {
     }
   };
 
-  const handleSubmitBus = async (busData) => {
-    setLoading(true);
-    try {
-      // busData is from BusFormNew which returns mapped structure ready for API
-      if (editingBus) {
-        // Use new listing API for updates too?
-        // BusFormNew uses busApi.updateListing or createListing internally if passed correct props?
-        // Wait, BusFormNew handles submission itself!
-        // So I don't need this function?
-        // Ah, BusFormNew props: onSuccess, onCancel.
-        // It calls API internally.
-      }
-      // Actually BusFormNew calls API itself.
-      // So this function is unused here.
-    } catch (error) {
-      console.error('Error saving bus:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Opinion handlers
+  // Opinie handlers
   const handleAddOpinion = () => {
     setEditingOpinion(null);
     setShowOpinionForm(true);
@@ -552,7 +535,7 @@ const BusCardAdmin = ({ bus, onEdit, onDelete, onToggleSold, onToggleReserved })
             variant={bus.sold ? "destructive" : "outline"}
             size="sm"
             onClick={() => onToggleSold(bus)}
-            className={`flex-1 sm:flex-none ${!bus.sold && "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"}`}
+            className={`flex-1 sm:flex-none ${!bus.sold ? "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" : ""}`}
           >
             {bus.sold ? 'Odznacz sprzedane' : 'Oznacz jako sprzedane'}
           </Button>
