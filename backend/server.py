@@ -256,9 +256,12 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
         
-        # Omijamy nadpisywanie fałszem jeśli brak danych
+        # Bezpośredni zapis do natywnych kolumn i kopia do starych dla bezpieczeństwa
+        'sold': listing_data.get('sold'),
         'gwarancja': listing_data.get('sold'),
+        'reserved': listing_data.get('reserved'),
         'hak': listing_data.get('reserved'),
+        'status': 'sprzedane' if listing_data.get('sold') else 'aktywne',
 
         'miasto': listing_data.get('location_city', 'Smyków'),
         'pierwszaRejestracja': str(listing_data.get('first_registration_date'))[:10] if listing_data.get('first_registration_date') else None,
@@ -785,17 +788,20 @@ async def scrape_otomoto_endpoint(request: OtomotoScrapeRequest):
 @api_router.post("/admin/listings/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 @api_router.post("/ogloszenia/{bus_id}/toggle-sold", dependencies=[Depends(admin_required)])
 async def toggle_sold(bus_id: str):
-    bus = supabase.table('buses').select('gwarancja, status').eq('id', bus_id).execute()
+    bus = supabase.table('buses').select('sold, gwarancja, status').eq('id', bus_id).execute()
     if not bus.data:
         raise HTTPException(404, "Not found")
     
-    current = bus.data[0].get('gwarancja')
+    # Bierzemy status prosto z natywnej kolumny
+    current = bus.data[0].get('sold')
     if current is None:
-        current = False
+        current = bus.data[0].get('gwarancja', False)
         
     new_state = not current
     
+    # Aktualizujemy i natywną kolumnę i kolumny zapasowe
     update_data = {
+        'sold': new_state,
         'gwarancja': new_state,
         'status': 'sprzedane' if new_state else 'aktywne'
     }
@@ -807,17 +813,17 @@ async def toggle_sold(bus_id: str):
 @api_router.post("/admin/listings/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 @api_router.post("/ogloszenia/{bus_id}/toggle-reserved", dependencies=[Depends(admin_required)])
 async def toggle_reserved(bus_id: str):
-    bus = supabase.table('buses').select('hak').eq('id', bus_id).execute()
+    bus = supabase.table('buses').select('reserved, hak').eq('id', bus_id).execute()
     if not bus.data:
         raise HTTPException(404, "Not found")
         
-    current = bus.data[0].get('hak')
+    current = bus.data[0].get('reserved')
     if current is None:
-        current = False
+        current = bus.data[0].get('hak', False)
         
     new_state = not current
     
-    supabase.table('buses').update({'hak': new_state}).eq('id', bus_id).execute()
+    supabase.table('buses').update({'reserved': new_state, 'hak': new_state}).eq('id', bus_id).execute()
     
     return {"success": True, "reserved": new_state}
 
