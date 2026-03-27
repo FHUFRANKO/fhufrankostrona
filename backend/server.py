@@ -319,6 +319,8 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
 
     result["sold"] = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
     result["reserved"] = bus_data.get("reserved") or bus_data.get("hak") or False
+    result["sold"] = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
+    result["reserved"] = bus_data.get("reserved") or bus_data.get("hak") or False
     return result
 
 # --- API ENDPOINTS ---
