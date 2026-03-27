@@ -163,6 +163,10 @@ app = FastAPI()
 @app.middleware("http")
 async def _admin_guard(request: Request, call_next):
     """Protect /api/admin* routes"""
+    # Przepuszczanie wstępnych zapytań (OPTIONS) z przeglądarki klienta
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     path = request.url.path
 
     if path.startswith("/api/admin"):

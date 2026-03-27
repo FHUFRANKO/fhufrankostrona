@@ -33,17 +33,41 @@ export const AdminPanel = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchBuses();
-    fetchOpinions();
-    fetchStats();
-  }, []);
+    // Szybki test uprawnień, wymusza wyrzucenie klienta jeśli nie jest adminem
+    const verifyAccessAndLoad = async () => {
+      try {
+        await fetchStats(); 
+        fetchBuses();
+        fetchOpinions();
+      } catch (error) {
+        // Błąd obsługiwany bezpośrednio w fetchStats
+      }
+    };
+    verifyAccessAndLoad();
+  }, [navigate]);
+
+  const fetchStats = async () => {
+    try {
+      const data = await busApi.getStats();
+      setStats(data);
+    } catch (error) {
+      if (error.response?.status === 401 || String(error.message).includes('401')) {
+        toast.error('Brak dostępu. Zaloguj się w panelu.');
+        navigate('/login');
+        throw error; // Zatrzymuje dalesze próby ładowania strony
+      }
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const fetchBuses = async () => {
     try {
       const data = await busApi.getAllBuses();
       setBuses(data);
     } catch (error) {
-      if (error.response?.status !== 401) {
+      if (error.response?.status === 401) {
+        navigate('/login');
+      } else {
         console.error('Error fetching buses:', error);
         toast.error('Błąd podczas pobierania ogłoszeń');
       }
@@ -57,18 +81,6 @@ export const AdminPanel = () => {
     } catch (error) {
       if (error.response?.status !== 401) {
         console.error('Error fetching opinions:', error);
-        toast.error('Błąd podczas pobierania opinii');
-      }
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const data = await busApi.getStats();
-      setStats(data);
-    } catch (error) {
-      if (error.response?.status !== 401) {
-        console.error('Error fetching stats:', error);
       }
     }
   };
@@ -110,18 +122,15 @@ export const AdminPanel = () => {
     }
   };
 
-  // Poprawiony przełącznik statusu Sprzedany (tylko 1 dedykowany endpoint)
   const handleToggleSold = async (bus) => {
     try {
       const newSoldStatus = !bus.sold;
       
-      // Bezpieczny wywoływacz w zależności od tego, jak nazwałeś funkcję w busApi.js
       if (busApi.toggleSoldStatus) {
         await busApi.toggleSoldStatus(bus.id);
       } else if (busApi.toggleSold) {
         await busApi.toggleSold(bus.id);
       } else {
-        // Fallback jeśli używasz updateBus
         await busApi.updateBus(bus.id, { sold: newSoldStatus, reserved: newSoldStatus ? false : bus.reserved });
       }
       
@@ -133,7 +142,6 @@ export const AdminPanel = () => {
     }
   };
 
-  // Poprawiony przełącznik Rezerwacji
   const handleToggleReserved = async (bus) => {
     try {
       if (busApi.toggleReservedStatus) {
@@ -152,7 +160,6 @@ export const AdminPanel = () => {
     }
   };
 
-  // Opinie handlers
   const handleAddOpinion = () => {
     setEditingOpinion(null);
     setShowOpinionForm(true);
@@ -260,7 +267,6 @@ export const AdminPanel = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -294,7 +300,6 @@ export const AdminPanel = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="bg-white p-1 border rounded-lg shadow-sm">
@@ -312,33 +317,12 @@ export const AdminPanel = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6 animate-in fade-in-50 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatsCard 
-                title="Wszystkie busy" 
-                value={stats.total} 
-                icon={Truck} 
-                color="blue" 
-              />
-              <StatsCard 
-                title="Wyróżnione" 
-                value={stats.wyrozniowane} 
-                icon={Star} 
-                color="yellow" 
-              />
-              <StatsCard 
-                title="Nowe" 
-                value={stats.nowe} 
-                icon={Plus} 
-                color="green" 
-              />
-              <StatsCard 
-                title="Flotowe" 
-                value={stats.flotowe} 
-                icon={Eye} 
-                color="purple" 
-              />
+              <StatsCard title="Wszystkie busy" value={stats.total} icon={Truck} color="blue" />
+              <StatsCard title="Wyróżnione" value={stats.wyrozniowane} icon={Star} color="yellow" />
+              <StatsCard title="Nowe" value={stats.nowe} icon={Plus} color="green" />
+              <StatsCard title="Flotowe" value={stats.flotowe} icon={Eye} color="purple" />
             </div>
 
             <div className="bg-white p-6 rounded-xl border shadow-sm">
@@ -356,27 +340,17 @@ export const AdminPanel = () => {
             </div>
           </TabsContent>
 
-          {/* Ogłoszenia Tab */}
           <TabsContent value="ogloszenia" className="space-y-6 animate-in fade-in-50 duration-500">
             <div className="flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm">
               <h2 className="text-xl font-bold text-gray-800">Zarządzanie flotą</h2>
-              <Button
-                onClick={handleAddBus}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg transition-all"
-              >
+              <Button onClick={handleAddBus} className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg transition-all">
                 <Plus className="mr-2 h-4 w-4" />
                 Dodaj Bus
               </Button>
             </div>
 
             {buses.length === 0 ? (
-              <EmptyState 
-                icon={Truck} 
-                title="Brak ogłoszeń" 
-                description="Dodaj pierwsze ogłoszenie busa do systemu." 
-                action={handleAddBus} 
-                actionLabel="Dodaj Bus" 
-              />
+              <EmptyState icon={Truck} title="Brak ogłoszeń" description="Dodaj pierwsze ogłoszenie busa do systemu." action={handleAddBus} actionLabel="Dodaj Bus" />
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {buses.map((bus) => (
@@ -393,27 +367,17 @@ export const AdminPanel = () => {
             )}
           </TabsContent>
 
-          {/* Opinie Tab */}
           <TabsContent value="opinie" className="space-y-6 animate-in fade-in-50 duration-500">
             <div className="flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm">
               <h2 className="text-xl font-bold text-gray-800">Zarządzanie opiniami</h2>
-              <Button
-                onClick={handleAddOpinion}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg transition-all"
-              >
+              <Button onClick={handleAddOpinion} className="bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg transition-all">
                 <Plus className="mr-2 h-4 w-4" />
                 Dodaj Opinię
               </Button>
             </div>
 
             {opinions.length === 0 ? (
-              <EmptyState 
-                icon={MessageSquare} 
-                title="Brak opinii" 
-                description="Dodaj pierwszą opinię klienta." 
-                action={handleAddOpinion} 
-                actionLabel="Dodaj Opinię" 
-              />
+              <EmptyState icon={MessageSquare} title="Brak opinii" description="Dodaj pierwszą opinię klienta." action={handleAddOpinion} actionLabel="Dodaj Opinię" />
             ) : (
               <div className="grid grid-cols-1 gap-4">
                 {opinions.map((opinion) => (
@@ -433,7 +397,6 @@ export const AdminPanel = () => {
   );
 };
 
-// Sub-components for cleaner code
 const StatsCard = ({ title, value, icon: Icon, color }) => {
   const colors = {
     blue: "bg-blue-100 text-blue-600",
@@ -482,11 +445,7 @@ const BusCardAdmin = ({ bus, onEdit, onDelete, onToggleSold, onToggleReserved })
         <div className="flex items-start sm:items-center space-x-4">
           <div className="relative w-24 h-24 flex-shrink-0">
             {bus.zdjecia && bus.zdjecia.length > 0 ? (
-              <img
-                src={bus.zdjecia[0]}
-                alt={`${bus.marka} ${bus.model}`}
-                className="w-full h-full object-cover rounded-lg shadow-sm"
-              />
+              <img src={bus.zdjecia[0]} alt={`${bus.marka} ${bus.model}`} className="w-full h-full object-cover rounded-lg shadow-sm" />
             ) : (
               <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
                 <Truck className="h-8 w-8 text-gray-300" />
@@ -501,21 +460,10 @@ const BusCardAdmin = ({ bus, onEdit, onDelete, onToggleSold, onToggleReserved })
           
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="font-bold text-lg text-gray-800">
-                {bus.marka} {bus.model}
-              </h3>
-              {bus.wyrozniowane && (
-                <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded border border-yellow-200">
-                  Wyróżnione
-                </span>
-              )}
-              {bus.nowosc && (
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded border border-green-200">
-                  Nowość
-                </span>
-              )}
+              <h3 className="font-bold text-lg text-gray-800">{bus.marka} {bus.model}</h3>
+              {bus.wyrozniowane && <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded border border-yellow-200">Wyróżnione</span>}
+              {bus.nowosc && <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded border border-green-200">Nowość</span>}
             </div>
-            
             <p className="text-sm text-gray-500 mb-2 flex items-center gap-2">
               <span>{bus.rok} r.</span>
               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
@@ -523,49 +471,22 @@ const BusCardAdmin = ({ bus, onEdit, onDelete, onToggleSold, onToggleReserved })
               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
               <span>{bus.przebieg?.toLocaleString()} km</span>
             </p>
-            
-            <p className="text-lg font-bold text-yellow-600">
-              {bus.cenaBrutto?.toLocaleString()} zł
-            </p>
+            <p className="text-lg font-bold text-yellow-600">{bus.cenaBrutto?.toLocaleString()} zł</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-          <Button
-            variant={bus.sold ? "destructive" : "outline"}
-            size="sm"
-            onClick={() => onToggleSold(bus)}
-            className={`flex-1 sm:flex-none ${!bus.sold ? "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" : ""}`}
-          >
+          <Button variant={bus.sold ? "destructive" : "outline"} size="sm" onClick={() => onToggleSold(bus)} className={`flex-1 sm:flex-none ${!bus.sold ? "border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700" : ""}`}>
             {bus.sold ? 'Odznacz sprzedane' : 'Oznacz jako sprzedane'}
           </Button>
-          
-          <Button
-            variant={bus.reserved ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => onToggleReserved(bus)}
-            disabled={bus.sold}
-            className="flex-1 sm:flex-none"
-          >
+          <Button variant={bus.reserved ? "secondary" : "outline"} size="sm" onClick={() => onToggleReserved(bus)} disabled={bus.sold} className="flex-1 sm:flex-none">
             {bus.reserved ? 'Rezerwacja (Tak)' : 'Rezerwacja (Nie)'}
           </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(bus)}
-            className="flex-1 sm:flex-none"
-          >
+          <Button variant="outline" size="sm" onClick={() => onEdit(bus)} className="flex-1 sm:flex-none">
             <Edit className="h-4 w-4 mr-2" />
             Edytuj
           </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(bus.id)}
-            className="text-gray-400 hover:text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
-          >
+          <Button variant="ghost" size="sm" onClick={() => onDelete(bus.id)} className="text-gray-400 hover:text-red-600 hover:bg-red-50 flex-1 sm:flex-none">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -580,49 +501,20 @@ const OpinionCardAdmin = ({ opinion, onEdit, onDelete }) => (
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="font-bold text-gray-800">
-              {opinion.imie} {opinion.nazwisko}
-            </h3>
+            <h3 className="font-bold text-gray-800">{opinion.imie} {opinion.nazwisko}</h3>
             <div className="flex text-yellow-400">
-              {[...Array(opinion.ocena || 5)].map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-current" />
-              ))}
+              {[...Array(opinion.ocena || 5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
             </div>
-            {!opinion.wyswietlaj && (
-              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">
-                Ukryta
-              </span>
-            )}
+            {!opinion.wyswietlaj && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Ukryta</span>}
           </div>
-          
-          <p className="text-sm text-gray-500 mb-3">
-            {opinion.rodzajFirmy || 'Firma'} 
-            {opinion.zakupionyPojazd && ` • Pojazd: ${opinion.zakupionyPojazd}`}
-          </p>
-          
+          <p className="text-sm text-gray-500 mb-3">{opinion.rodzajFirmy || 'Firma'} {opinion.zakupionyPojazd && ` • Pojazd: ${opinion.zakupionyPojazd}`}</p>
           <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-            <p className="text-gray-700 italic text-sm">
-              "{opinion.komentarz}"
-            </p>
+            <p className="text-gray-700 italic text-sm">"{opinion.komentarz}"</p>
           </div>
         </div>
-        
         <div className="flex flex-col gap-2 ml-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(opinion)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(opinion.id)}
-            className="text-gray-400 hover:text-red-600 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => onEdit(opinion)}><Edit className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(opinion.id)} className="text-gray-400 hover:text-red-600 hover:bg-red-50"><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
     </CardContent>
