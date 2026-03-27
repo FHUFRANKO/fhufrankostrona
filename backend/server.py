@@ -317,6 +317,8 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result['origin_country'] = bus_data.get('krajPochodzenia') or bus_data.get('origin_country')
     result['condition_status'] = bus_data.get('stan') or bus_data.get('condition_status') or 'Używany'
 
+    result["sold"] = bus_data.get("sold") or bus_data.get("gwarancja") or (bus_data.get("status") == "sprzedane") or False
+    result["reserved"] = bus_data.get("reserved") or bus_data.get("hak") or False
     return result
 
 # --- API ENDPOINTS ---
