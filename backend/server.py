@@ -260,7 +260,6 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'nowosc': listing_data.get('nowosc', False),
         'flotowy': listing_data.get('flotowy', False),
         
-        # Bezpośredni zapis do natywnych kolumn i kopia do starych dla bezpieczeństwa
         'sold': listing_data.get('sold'),
         'gwarancja': listing_data.get('sold'),
         'reserved': listing_data.get('reserved'),
@@ -270,6 +269,10 @@ def map_listing_to_bus_db(listing_data: dict) -> dict:
         'miasto': listing_data.get('location_city', 'Smyków'),
         'pierwszaRejestracja': str(listing_data.get('first_registration_date'))[:10] if listing_data.get('first_registration_date') else None,
         'vin': listing_data.get('vin'),
+
+        # DODANE MAPOWANIE YOUTUBE
+        'youtubeUrl': listing_data.get('youtube_url') or listing_data.get('youtubeUrl') or listing_data.get('video'),
+        'youtube_url': listing_data.get('youtube_url') or listing_data.get('youtubeUrl') or listing_data.get('video'),
 
         'normaEmisji': 'Euro 6',
         'dmcKategoria': 'do 3.5t',
@@ -326,6 +329,12 @@ def map_bus_db_to_listing(bus_data: dict) -> dict:
     result["isSold"] = is_sold
     result["reserved"] = is_reserved
     result["isReserved"] = is_reserved
+
+    # DODANE MAPOWANIE YOUTUBE DO FRONTENDU
+    yt_link = bus_data.get('youtube_url') or bus_data.get('youtubeUrl') or bus_data.get('video')
+    result['video'] = yt_link
+    result['youtube_url'] = yt_link
+    result['youtubeUrl'] = yt_link
 
     return result
 
